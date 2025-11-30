@@ -1,0 +1,2513 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+prisma/
+  migrations/
+    20251116173333_add_direct_link_fields/
+      migration.sql
+    20251116175008_add_direct_link_fields_final/
+      migration.sql
+    20251117113702_add_profile_views/
+      migration.sql
+    migration_lock.toml
+  schema.prisma
+public/
+  next.svg
+  vercel.svg
+src/
+  actions/
+    linkNfcCard.ts
+    trackView.ts
+    unlinkNfcCard.ts
+    updateDirectLink.ts
+    updateFavorites.ts
+    updateProfile.ts
+  app/
+    [username]/
+      page.tsx
+    api/
+      auth/
+        [...nextauth]/
+          route.ts
+      favorites/
+        route.ts
+      profile/
+        route.ts
+      register/
+        route.ts
+    card/
+      [cardId]/
+        page.tsx
+    dashboard/
+      direct-link/
+        page.tsx
+      favorites/
+        page.tsx
+      profile/
+        page.tsx
+      settings/
+        page.tsx
+      layout.tsx
+      page.tsx
+    login/
+      page.tsx
+    register/
+      page.tsx
+    favicon.ico
+    globals.css
+    layout.tsx
+    page.tsx
+  components/
+    DashboardClient.tsx
+    DirectLinkInterstitial.tsx
+    VCardButton.tsx
+  hooks/
+    useCurrentUser.ts
+  providers/
+    AuthSessionProvider.tsx
+  types/
+    user.ts
+types/
+  next-auth.d.ts
+.eslintrc.json
+.gitignore
+next.config.mjs
+package.json
+postcss.config.mjs
+README.md
+tailwind.config.ts
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="prisma/migrations/20251116173333_add_direct_link_fields/migration.sql">
+-- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "username" TEXT,
+    "name" TEXT,
+    "email" TEXT,
+    "emailVerified" TIMESTAMP(3),
+    "hashedPassword" TEXT,
+    "image" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "title" TEXT,
+    "bio" TEXT,
+    "website" TEXT,
+    "twitter" TEXT,
+    "instagram" TEXT,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Account" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "provider" TEXT NOT NULL,
+    "providerAccountId" TEXT NOT NULL,
+    "refresh_token" TEXT,
+    "access_token" TEXT,
+    "expires_at" INTEGER,
+    "token_type" TEXT,
+    "scope" TEXT,
+    "id_token" TEXT,
+    "session_state" TEXT,
+
+    CONSTRAINT "Account_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Session" (
+    "id" TEXT NOT NULL,
+    "sessionToken" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "expires" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "VerificationToken" (
+    "identifier" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "expires" TIMESTAMP(3) NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "Favorite" (
+    "id" TEXT NOT NULL,
+    "ownerId" TEXT NOT NULL,
+    "slotIndex" INTEGER NOT NULL,
+    "url" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Favorite_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "Account"("provider", "providerAccountId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Session_sessionToken_key" ON "Session"("sessionToken");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "VerificationToken_token_key" ON "VerificationToken"("token");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "VerificationToken_identifier_token_key" ON "VerificationToken"("identifier", "token");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Favorite_ownerId_slotIndex_key" ON "Favorite"("ownerId", "slotIndex");
+
+-- AddForeignKey
+ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Favorite" ADD CONSTRAINT "Favorite_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+</file>
+
+<file path="prisma/migrations/20251116175008_add_direct_link_fields_final/migration.sql">
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "directLinkEnabled" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "directLinkUrl" TEXT;
+</file>
+
+<file path="prisma/migrations/20251117113702_add_profile_views/migration.sql">
+-- CreateTable
+CREATE TABLE "ProfileView" (
+    "id" TEXT NOT NULL,
+    "profileOwnerId" TEXT NOT NULL,
+    "viewedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "viewerIp" TEXT,
+
+    CONSTRAINT "ProfileView_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "ProfileView_profileOwnerId_idx" ON "ProfileView"("profileOwnerId");
+
+-- AddForeignKey
+ALTER TABLE "ProfileView" ADD CONSTRAINT "ProfileView_profileOwnerId_fkey" FOREIGN KEY ("profileOwnerId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+</file>
+
+<file path="prisma/migrations/migration_lock.toml">
+# Please do not edit this file manually
+# It should be added in your version-control system (e.g., Git)
+provider = "postgresql"
+</file>
+
+<file path="prisma/schema.prisma">
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Userモデル (NextAuth.js仕様に更新)
+// prisma/schema.prisma
+
+model User {
+  id            String    @id @default(cuid())
+  username      String?   @unique // 
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  hashedPassword String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  favorites     Favorite[] 
+
+  // --- ↓↓↓ ここから下のプロフィール項目を追加 ↓↓↓ ---
+  title         String? // 役職・肩書き
+  bio           String? @db.Text // 自己紹介文
+  website       String? // ウェブサイトURL
+  twitter       String? // Twitter URL
+  instagram     String? // Instagram URL
+  directLinkEnabled Boolean @default(false) // 機能のON/OFF (デフォルトはOFF)
+  directLinkUrl     String?                 // リダイレクト先のURL
+
+  // --- ↓↓↓ ProfileView リレーションを追加 ↓↓↓ ---
+  profileViews  ProfileView[] 
+  nfcCardId     String?   @unique // 紐付けられたNFCカードの一意なID
+}
+
+// Accountモデル (NextAuth.jsに必須)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+// Sessionモデル (NextAuth.jsに必須)
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// VerificationTokenモデル (NextAuth.jsに必須)
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+// prisma/schema.prisma の末尾に追加
+
+model Favorite {
+  id        String   @id @default(cuid())
+  ownerId   String   // このお気に入りの所有者のID
+  slotIndex Int      // スロットの番号 (0から4)
+  url       String   // 登録されたプロフィールURL or ユーザー名
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, slotIndex]) // 同じユーザーは同じスロット番号を登録できない
+}
+
+// --- ↓↓↓ 新しく追加する ProfileView モデル ↓↓↓
+model ProfileView {
+  id        String   @id @default(cuid())
+  // 閲覧されたユーザーのID
+  profileOwnerId String 
+  // 閲覧日時
+  viewedAt  DateTime @default(now())
+  // 閲覧したユーザーのIPアドレスを記録 (簡易的な重複防止用)
+  viewerIp  String?  
+
+  // 閲覧されたユーザーとのリレーション
+  profileOwner User @relation(fields: [profileOwnerId], references: [id], onDelete: Cascade)
+
+  // インデックスを追加して検索性能を向上
+  @@index([profileOwnerId]) 
+}
+</file>
+
+<file path="src/actions/linkNfcCard.ts">
+// src/actions/linkNfcCard.ts
+
+"use server";
+
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+export async function linkNfcCard(userId: string, cardId: string) {
+  console.log("🚀 NFC Link Action 呼び出し開始"); // ▼▼▼ 追加
+  console.log(`- ユーザーID: ${userId}, カードID: ${cardId}`); // ▼▼▼ 追加
+  try {
+    // 他のユーザーが既にそのカードIDを使用していないか確認
+    const existingCardUser = await prisma.user.findUnique({
+      where: { nfcCardId: cardId },
+    });
+
+    if (existingCardUser) {
+      console.log("🚫 カードは既に使用されています"); // ▼▼▼ 追加
+      return { success: false, error: "このNFCカードは既に使用されています。" };
+    }
+
+    // ユーザーにカードIDをセットして更新
+    await prisma.user.update({
+      where: { id: userId },
+      data: { nfcCardId: cardId },
+    });
+    
+    console.log("🎉 NFCカード紐付け成功！"); // ▼▼▼ 追加
+
+    return { success: true };
+
+  } catch (error) {
+    console.error("❌ NFC_LINK_ERROR", error); // ▼▼▼ エラー時にもログを出す
+    return { success: false, error: "NFCカードの紐付けに失敗しました。" };
+  }
+}
+</file>
+
+<file path="src/actions/trackView.ts">
+"use server";
+
+import { PrismaClient } from "@prisma/client";
+import { headers } from "next/headers";
+
+const prisma = new PrismaClient();
+
+/**
+ * プロフィール閲覧イベントをデータベースに記録します。
+ * @param profileOwnerId 閲覧されたユーザーのID
+ */
+export async function trackProfileView(profileOwnerId: string) {
+  try {
+    // 閲覧したユーザーのIPアドレスを取得
+    // NOTE: 実際の運用環境では、ロードバランサやプロキシの設定に応じて
+    // 'x-forwarded-for' などのヘッダーを確認する必要がある場合があります。
+    const forwardedFor = headers().get('x-forwarded-for');
+    // x-forwarded-for がある場合はカンマ区切りの最初のIPを、なければ x-real-ip を、どちらもなければ 'Unknown' を使用
+    const viewerIp = forwardedFor ? forwardedFor.split(',')[0].trim() : headers().get('x-real-ip') || 'Unknown';
+    
+    // 過去1時間以内に同じIPアドレスからの閲覧記録があるかチェック（簡易的な重複防止）
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000); 
+
+    const recentView = await prisma.profileView.findFirst({
+        where: {
+            profileOwnerId,
+            viewerIp,
+            viewedAt: {
+                gte: oneHourAgo, // 1時間前よりも新しい（gte）記録を探す
+            },
+        },
+    });
+
+    if (recentView) {
+        // 過去1時間以内に閲覧済みのため、記録をスキップ
+        return { success: true, message: "View skipped due to recent visit from same IP." };
+    }
+
+    // 新しい閲覧記録を作成
+    await prisma.profileView.create({
+      data: {
+        profileOwnerId,
+        viewerIp, // 取得したIPアドレスを記録
+      },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("TRACK_VIEW_ERROR", error);
+    // エラーが発生しても、プロフィール表示自体はブロックしない
+    return { success: false, error: "Failed to track view." };
+  }
+}
+
+/**
+ * 特定のユーザーの総閲覧数を取得します。
+ * @param profileOwnerId ユーザーID
+ */
+export async function getProfileViewCount(profileOwnerId: string) {
+    try {
+        const count = await prisma.profileView.count({
+            where: {
+                profileOwnerId: profileOwnerId,
+            },
+        });
+        return { success: true, count };
+    } catch (error) {
+        console.error("GET_VIEW_COUNT_ERROR", error);
+        return { success: false, count: 0, error: "Failed to fetch view count." };
+    }
+}
+</file>
+
+<file path="src/actions/unlinkNfcCard.ts">
+// src/actions/unlinkNfcCard.ts
+
+"use server";
+
+import { getServerSession } from "next-auth";
+// ▼▼▼ この2行を追加 ▼▼▼
+import { Prisma, PrismaClient } from "@prisma/client";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { revalidatePath } from "next/cache";
+
+const prisma = new PrismaClient();
+
+export async function unlinkNfcCard() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return { success: false, error: "認証されていません。" };
+    }
+
+    // ▼▼▼ このブロックを修正 ▼▼▼
+    // 更新するデータを、Prismaの型を使って明示的に定義
+    const dataToUpdate: Prisma.UserUpdateInput = {
+      nfcCardId: null,
+    };
+
+    // ユーザーのnfcCardIdをnullに設定して更新
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: dataToUpdate,
+    });
+    // ▲▲▲ ▲▲▲ ▲▲▲
+
+    // 関連ページのキャッシュをクリア
+    revalidatePath('/dashboard/settings');
+
+    return { success: true };
+
+  } catch (error) {
+    console.error("NFC_UNLINK_ERROR", error);
+    return { success: false, error: "NFCカードの紐付け解除に失敗しました。" };
+  }
+}
+</file>
+
+<file path="src/actions/updateDirectLink.ts">
+// src/actions/updateDirectLink.ts (完全な最終版)
+
+"use server";
+
+import { getServerSession } from "next-auth";
+import { PrismaClient } from "@prisma/client";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
+const prisma = new PrismaClient();
+
+// -----------------------------------------------------------
+// getDirectLinkSettings 関数
+// -----------------------------------------------------------
+export async function getDirectLinkSettings() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return { error: "認証されていません" };
+  }
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { directLinkEnabled: true, directLinkUrl: true },
+    });
+    return { success: true, settings: user };
+  } catch (error) {
+    return { error: "設定の読み込みに失敗しました。" };
+  }
+}
+
+// -----------------------------------------------------------
+// updateDirectLink 関数
+// -----------------------------------------------------------
+export async function updateDirectLink(enabled: boolean, url: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return { error: "認証されていません" };
+  }
+  try {
+    const dataToUpdate = {
+      directLinkEnabled: enabled,
+      directLinkUrl: enabled ? url : null,
+    };
+
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: dataToUpdate,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("UPDATE_DIRECTLINK_ERROR", error);
+    return { success: false, error: "設定の保存に失敗しました。" };
+  }
+}
+</file>
+
+<file path="src/actions/updateFavorites.ts">
+// src/actions/updateFavorites.ts
+
+"use server";
+
+import { getServerSession } from "next-auth";
+import { PrismaClient } from "@prisma/client";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
+const prisma = new PrismaClient();
+
+export async function updateFavorites(slots: string[]) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      throw new Error("認証されていません");
+    }
+    const ownerId = session.user.id;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.favorite.deleteMany({ where: { ownerId } });
+      const newFavorites = slots
+        .map((url, index) => ({ ownerId, slotIndex: index, url }))
+        .filter(fav => fav.url.trim() !== '');
+      if (newFavorites.length > 0) {
+        await tx.favorite.createMany({ data: newFavorites });
+      }
+    });
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "設定の保存に失敗しました。" };
+  }
+}
+</file>
+
+<file path="src/actions/updateProfile.ts">
+"use server";
+
+import { getServerSession } from "next-auth";
+import { PrismaClient } from "@prisma/client";
+import { authOptions } from "../app/api/auth/[...nextauth]/route";
+import { revalidatePath } from "next/cache";
+
+const prisma = new PrismaClient();
+
+interface ProfileData {
+  name?: string;
+  title?: string;
+  bio?: string;
+  website?: string;
+  twitter?: string;
+  instagram?: string;
+  image?: string | null;
+}
+
+export async function updateProfile(data: ProfileData) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      throw new Error("認証されていません");
+    }
+
+    // 1. データベースを更新する
+    const updatedUser = await prisma.user.update({
+      where: { id: session.user.id },
+      data: data,
+    });
+    console.log("🎉 データベースの更新コマンドは成功しました");
+
+    // ▼▼▼ ここからが最終検証コードです ▼▼▼
+    // 2. 更新直後に、改めてデータベースから同じユーザーの情報を取得する
+    const userFromDbAfterUpdate = await prisma.user.findUnique({
+      where: { id: session.user.id },
+    });
+    
+    // 3. その「DBから取得したばかりの生データ」をターミナルに出力する
+    console.log("📝 更新直後のDBデータ:", userFromDbAfterUpdate);
+    // ▲▲▲ ▲▲▲ ▲▲▲
+
+    revalidatePath('/dashboard/profile');
+    if (updatedUser.username) {
+        revalidatePath(`/${updatedUser.username}`);
+    }
+
+    // フロントには、最初にupdateした結果を返す
+    return { success: true, user: updatedUser };
+
+  } catch (error) {
+    console.error("❌ PROFILE_UPDATE_ERROR:", error);
+    return { success: false, error: "プロフィールの更新に失敗しました。" };
+  }
+}
+</file>
+
+<file path="src/app/[username]/page.tsx">
+// src/app/[username]/page.tsx
+
+import { PrismaClient } from "@prisma/client";
+import { trackProfileView } from "@/actions/trackView";
+import VCardButton from "@/components/VCardButton";
+import DirectLinkInterstitial from "@/components/DirectLinkInterstitial";
+
+const prisma = new PrismaClient();
+
+interface UserProfilePageProps {
+  params: {
+    username: string;
+  };
+  // ▼▼▼ searchParamsを受け取れるようにpropsを追加 ▼▼▼
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+
+export default async function UserProfilePage({ params, searchParams }: UserProfilePageProps) { // searchParamsを追加
+  const { username } = params;
+
+  const user = await prisma.user.findUnique({
+    where: {
+      username: decodeURIComponent(username),
+    },
+  });
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <h1 className="text-2xl font-bold">ユーザーが見つかりません</h1>
+      </div>
+    );
+  }
+  
+  // ▼▼▼ ダイレクトリンクのロジックを修正 ▼▼▼
+  // URLに "from=interstitial" が含まれていない場合のみ、ダイレクトリンクを評価する
+  const fromInterstitial = searchParams.from === 'interstitial';
+
+  if (user.directLinkEnabled && user.directLinkUrl && !fromInterstitial) {
+    return (
+      <DirectLinkInterstitial 
+        redirectUrl={user.directLinkUrl}
+        profileUrl={`/${user.username}`}
+      />
+    );
+  }
+  // ▲▲▲ ▲▲▲ ▲▲▲
+
+  // 通常のプロフィール表示
+  await trackProfileView(user.id);
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="w-full max-w-sm bg-white border border-gray-200 rounded-lg shadow-md p-8">
+        <div className="flex flex-col items-center">
+          {user.image ? (
+            <img className="w-24 h-24 mb-3 rounded-full shadow-lg object-cover" src={user.image} alt={user.name || 'プロフィール写真'} />
+          ) : (
+            <div className="w-24 h-24 mb-3 rounded-full shadow-lg bg-gray-200" />
+          )}
+          <h5 className="mb-1 text-xl font-medium text-gray-900">{user.name}</h5>
+          <span className="text-sm text-gray-500">{user.title}</span>
+          <p className="text-sm text-center text-gray-600 my-4">{user.bio}</p>
+          
+          <div className="flex mt-4 space-x-3 md:mt-6">
+            <VCardButton user={{ name: user.name, title: user.title, email: user.email, website: user.website }} />
+          </div>
+          
+          <div className="flex mt-4 space-x-3 md:mt-6">
+            {user.website && <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Website</a>}
+            {user.twitter && <a href={user.twitter} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Twitter</a>}
+            {user.instagram && <a href={user.instagram} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Instagram</a>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/api/auth/[...nextauth]/route.ts">
+// src/app/api/auth/[...nextauth]/route.ts
+
+import NextAuth, { AuthOptions } from "next-auth";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { PrismaClient } from "@prisma/client";
+import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
+
+const prisma = new PrismaClient();
+
+export const authOptions: AuthOptions = {
+  adapter: PrismaAdapter(prisma),
+
+  providers: [
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("メールアドレスとパスワードは必須です");
+        }
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+        });
+        if (!user || !user.hashedPassword) {
+          throw new Error("無効な認証情報です");
+        }
+        const isCorrectPassword = await bcrypt.compare(
+          credentials.password,
+          user.hashedPassword
+        );
+        if (!isCorrectPassword) {
+          throw new Error("無効な認証情報です");
+        }
+        return user;
+      },
+    }),
+  ],
+
+  callbacks: {
+    // 1. トークンにはユーザーIDを格納し、セッション更新時にも最新化する
+    async jwt({ token, user, trigger, session }) {
+      // ログイン時
+      if (user) {
+        token.sub = user.id; // subは標準的なJWTの主題フィールド
+      }
+      
+      // セッション更新時 (useSessionのupdate()が呼ばれた時)
+      // これにより、NFC解除後などにセッションが即座に更新される
+      if (trigger === "update" && token.sub) {
+        // DBから最新情報を取得してトークンを上書き
+        const dbUser = await prisma.user.findUnique({ where: { id: token.sub as string } });
+        if (dbUser) {
+          token.nfcCardId = dbUser.nfcCardId;
+        }
+      }
+
+      return token;
+    },
+    
+    // 2. セッションが要求されるたびに、DBから最新のユーザー情報を取得してセッションを構築する
+    async session({ session, token }) {
+      if (session.user && token.sub) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub },
+        });
+
+        if (dbUser) {
+          session.user.id = dbUser.id;
+          session.user.name = dbUser.name;
+          session.user.email = dbUser.email;
+          session.user.image = dbUser.image;
+          (session.user as any).username = dbUser.username;
+          (session.user as any).title = dbUser.title;
+          (session.user as any).bio = dbUser.bio;
+          (session.user as any).website = dbUser.website;
+          (session.user as any).twitter = dbUser.twitter;
+          (session.user as any).instagram = dbUser.instagram;
+          (session.user as any).nfcCardId = dbUser.nfcCardId;
+        }
+      }
+      return session;
+    },
+  },
+  
+  session: { 
+    strategy: "jwt" 
+  },
+  
+  secret: process.env.NEXTAUTH_SECRET,
+
+  debug: process.env.NODE_ENV === "development",
+};
+
+const handler = NextAuth(authOptions);
+
+export { handler as GET, handler as POST };
+</file>
+
+<file path="src/app/api/favorites/route.ts">
+// src/app/api/favorites/route.ts
+
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+// ↓↓↓ この型定義を追加 ↓↓↓
+interface FavoriteProfile {
+    username: string | null;
+    name: string | null;
+    image: string | null;
+}
+
+// GETリクエスト（お気に入りデータの取得）を処理する
+export async function GET(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    // 1. ログインユーザーのお気に入りスロット設定を取得
+    const favorites = await prisma.favorite.findMany({
+      where: { ownerId: session.user.id },
+      orderBy: { slotIndex: 'asc' },
+    });
+
+    // 2. 5件分のスロット配列を作成
+    const slots = Array(5).fill('');
+    favorites.forEach(fav => {
+      if (fav.slotIndex >= 0 && fav.slotIndex < 5) {
+        slots[fav.slotIndex] = fav.url;
+      }
+    });
+
+    // 3. スロットの中からusernameだけを抽出
+    const usernames = slots.filter(slot => slot && !slot.startsWith('http'));
+
+    // 4. usernameを使って、ユーザープロフィール情報を取得
+    let profiles: FavoriteProfile[] = [];
+    if (usernames.length > 0) {
+      profiles = await prisma.user.findMany({
+        where: { username: { in: usernames } },
+        select: { username: true, name: true, image: true },
+      });
+    }
+
+    // 5. 最終的なデータをフロントエンドに返す
+    return NextResponse.json({ slots, profiles });
+
+  } catch (error) {
+    console.error("GET_FAVORITES_ERROR", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}
+</file>
+
+<file path="src/app/api/profile/route.ts">
+// src/app/api/profile/route.ts
+
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+import { getServerSession } from "next-auth"; 
+import { authOptions } from "../auth/[...nextauth]/route";
+
+const prisma = new PrismaClient();
+
+// PATCHリクエスト（データの一部を更新する）を処理する関数
+// このファイルは現在、サーバーアクションに役割を譲ったため、直接は使用されていません。
+// 将来的にクライアントサイドからの複雑な更新処理が必要になった場合のために残しておきます。
+export async function PATCH(request: Request) {
+  try {
+    // 現在ログインしているユーザーのセッション情報を取得
+    const session = await getServerSession(authOptions);
+
+    // ログインしていない場合はエラー
+    if (!session?.user?.id) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    // リクエストボディから更新したいプロフィール情報を取得
+    const body = await request.json();
+    const { name, title, bio, website, twitter, instagram } = body;
+
+    // データベースのユーザー情報を更新
+    const updatedUser = await prisma.user.update({
+      where: {
+        id: session.user.id, // ログインしているユーザーのIDを指定
+      },
+      data: {
+        name,
+        title,
+        bio,
+        website,
+        twitter,
+        instagram,
+      },
+    });
+
+    // 成功したら更新されたユーザー情報を返す
+    return NextResponse.json(updatedUser);
+
+  } catch (error) {
+    console.error("PROFILE_UPDATE_ERROR", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}
+</file>
+
+<file path="src/app/api/register/route.ts">
+// src/app/api/register/route.ts (最終版)
+
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { email, name, password, username } = body;
+
+    // 必須項目のバリデーション
+    if (!email || !password || !username) {
+      return new NextResponse("Email, password, and username are required", { status: 400 });
+    }
+
+    // ユーザー名が有効な形式かチェック (半角英数字とアンダースコアのみ)
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return new NextResponse("Username must be alphanumeric", { status: 400 });
+    }
+
+    // ユーザー名の重複チェック
+    const existingUserByUsername = await prisma.user.findUnique({
+      where: { username },
+    });
+    if (existingUserByUsername) {
+      return new NextResponse("Username already taken", { status: 409 });
+    }
+
+    // メールアドレスの重複チェック
+    const existingUserByEmail = await prisma.user.findUnique({
+      where: { email },
+    });
+    if (existingUserByEmail) {
+      return new NextResponse("Email already taken", { status: 409 });
+    }
+
+    // パスワードをハッシュ化
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // データベースに新しいユーザーを作成
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        hashedPassword,
+        username,
+      },
+    });
+
+    return NextResponse.json(user);
+
+  } catch (error) {
+    console.error("REGISTRATION_ERROR", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}
+</file>
+
+<file path="src/app/card/[cardId]/page.tsx">
+// src/app/card/[cardId]/page.tsx
+
+import { PrismaClient } from "@prisma/client";
+import { getServerSession } from "next-auth";
+// ▼▼▼ この行を修正します ▼▼▼
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+// ▲▲▲ ▲▲▲ ▲▲▲
+import { redirect } from "next/navigation";
+import Link from "next/link";
+
+const prisma = new PrismaClient();
+
+interface CardPageProps {
+  params: {
+    cardId: string;
+  };
+}
+
+export default async function CardPage({ params }: CardPageProps) {
+  const { cardId } = params;
+
+  // 1. このカードIDに紐付いているユーザーを探す
+  const userWithCard = await prisma.user.findUnique({
+    where: { nfcCardId: cardId },
+  });
+
+  if (userWithCard) {
+    // --- カードが登録済みの場合の処理 ---
+
+    // 2. 現在ログインしているユーザー情報を取得（ログインしていない場合はnull）
+    const session = await getServerSession(authOptions);
+
+    if (session?.user?.id === userWithCard.id) {
+      // 3. 自分のカードをスキャンし、かつログイン済みの場合
+      // -> ダッシュボードへリダイレクト
+      redirect('/dashboard');
+    } else {
+      // 4. 他人のカード、または自分のカードだが未ログインの場合
+      // -> そのユーザーの公開プロフィールへリダイレクト
+      redirect(`/${userWithCard.username}`);
+    }
+
+  } else {
+    // --- カードが未登録の場合の処理 ---
+    
+    // 5. カードをアカウントに紐付けるための選択画面を表示
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="p-8 bg-white rounded-lg shadow-md w-full max-w-md text-center">
+          <h1 className="text-2xl font-bold mb-2">NFCカードを有効化</h1>
+          <p className="text-gray-600 mb-6">
+            このカードをあなたのアカウントに紐付けます。
+          </p>
+          <div className="space-y-4">
+            <Link 
+              // 新規登録ページに、カードIDをURLパラメータとして渡す
+              href={`/register?cardId=${cardId}`}
+              className="block w-full px-4 py-3 text-lg font-semibold text-center text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+            >
+              新規登録して紐付ける
+            </Link>
+            <Link 
+              // ログインページに、カードIDをURLパラメータとして渡す
+              href={`/login?cardId=${cardId}`}
+              className="block w-full px-4 py-3 text-lg font-semibold text-center text-gray-800 bg-gray-200 rounded-lg hover:bg-gray-300"
+            >
+              既存アカウントにログインして紐付ける
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+</file>
+
+<file path="src/app/dashboard/direct-link/page.tsx">
+// src/app/dashboard/direct-link/page.tsx
+"use client";
+import { useState, useEffect } from "react";
+import { getDirectLinkSettings, updateDirectLink } from "@/actions/updateDirectLink";
+
+export default function DirectLinkPage() {
+  const [enabled, setEnabled] = useState(false);
+  const [url, setUrl] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    getDirectLinkSettings().then(res => {
+      if (res.success && res.settings) {
+        setEnabled(res.settings.directLinkEnabled);
+        setUrl(res.settings.directLinkUrl || "");
+      }
+    });
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
+    
+    // enabledがfalseの場合は、urlに空文字列を渡す
+    const result = await updateDirectLink(enabled, url); 
+    
+    if (result.success) {
+      setSuccess("設定を保存しました！");
+    } else {
+      setError(result.error || "保存に失敗しました。");
+    }
+    setIsLoading(false);
+  };
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">ダイレクトリンク設定</h1>
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md max-w-2xl">
+        {error && <p className="mb-4 text-red-500">{error}</p>}
+        {success && <p className="mb-4 text-green-500">{success}</p>}
+        <div className="flex items-center justify-between mb-4">
+          <label htmlFor="enabled" className="text-lg font-medium text-gray-700">機能を有効にする</label>
+          <button type="button" onClick={() => setEnabled(!enabled)} className={`${enabled ? 'bg-indigo-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out`}>
+            <span className={`${enabled ? 'translate-x-5' : 'translate-x-0'} inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`} />
+          </button>
+        </div>
+        {enabled && (
+          <div>
+            <label htmlFor="url" className="block text-sm font-medium text-gray-700">リダイレクト先URL</label>
+            <input type="url" id="url" value={url} onChange={(e) => setUrl(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="https://..." />
+          </div>
+        )}
+        <div className="mt-6">
+          <button type="submit" disabled={isLoading} className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400">
+            {isLoading ? "保存中..." : "保存する"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/dashboard/favorites/page.tsx">
+// src/app/dashboard/favorites/page.tsx (本当に最終確定版)
+
+"use client";
+
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+
+// updateFavoritesサーバーアクションのみをインポート
+import { updateFavorites } from "@/actions/updateFavorites";
+
+export default function FavoritesPage() {
+  const { status } = useSession();
+  const router = useRouter();
+
+  const [slots, setSlots] = useState<string[]>(['', '', '', '', '']);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  // ページ読み込み時に、APIから現在の設定を取得する
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      setIsFetching(true);
+      try {
+        const response = await fetch('/api/favorites'); // ★★★ APIルートを呼び出します ★★★
+        if (!response.ok) {
+          throw new Error("Failed to fetch favorites");
+        }
+        const data = await response.json();
+        if (data.slots) {
+          setSlots(data.slots);
+        }
+      } catch (err) {
+        setError("設定の読み込みに失敗しました。");
+      } finally {
+        setIsFetching(false);
+      }
+    };
+    
+    if (status === "authenticated") {
+      fetchFavorites();
+    }
+    if (status === "unauthenticated") {
+        router.push("/login");
+    }
+  }, [status, router]);
+
+  const handleSlotChange = (index: number, value: string) => {
+    const newSlots = [...slots];
+    newSlots[index] = value;
+    setSlots(newSlots);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
+
+    const result = await updateFavorites(slots);
+
+    if (result.success) {
+      setSuccess("お気に入りを保存しました！");
+    } else {
+      setError(result.error || "保存に失敗しました。");
+    }
+    setIsLoading(false);
+  };
+
+  if (status === "loading" || isFetching) {
+    return <div className="text-center p-10">読み込み中...</div>;
+  }
+  
+  if (status === "unauthenticated") {
+    return null;
+  }
+
+  return (
+    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">お気に入りスロット設定</h1>
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md">
+        {error && <p className="mb-4 text-red-500">{error}</p>}
+        {success && <p className="mb-4 text-green-500">{success}</p>}
+
+        <p className="text-gray-600 mb-6">
+          ダッシュボードに表示する、自分や他の人のプロフィールURLまたはユーザー名を設定します。（最大5件）
+        </p>
+
+        <div className="space-y-4">
+          {slots.map((url, index) => (
+            <div key={index}>
+              <label htmlFor={`slot-${index}`} className="block text-sm font-medium text-gray-700">
+                スロット {index + 1}
+              </label>
+              <input
+                type="text"
+                id={`slot-${index}`}
+                value={url}
+                onChange={(e) => handleSlotChange(index, e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                placeholder="https://... or username"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6">
+          <button type="submit" disabled={isLoading} className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400">
+            {isLoading ? "保存中..." : "保存する"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/dashboard/profile/page.tsx">
+// src/app/dashboard/profile/page.tsx (最終・完成版)
+
+"use client";
+
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { updateProfile } from "@/actions/updateProfile";
+
+export default function ProfilePage() {
+  const { data: session, status, update } = useSession();
+  const router = useRouter();
+
+  const [name, setName] = useState("");
+  const [title, setTitle] = useState("");
+  const [bio, setBio] = useState("");
+  const [website, setWebsite] = useState("");
+  const [twitter, setTwitter] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [image, setImage] = useState<string | null>(null);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+      return;
+    }
+    if (status === "authenticated") {
+      const user = session.user as any;
+      setName(user.name || "");
+      setTitle(user.title || "");
+      setBio(user.bio || "");
+      setWebsite(user.website || "");
+      setTwitter(user.twitter || "");
+      setInstagram(user.instagram || "");
+      setImage(user.image || "");
+    }
+  }, [status, session, router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
+
+    const imageData = image === "" ? null : image;
+    const profileData = { name, title, bio, website, twitter, instagram, image: imageData };
+    
+    const result = await updateProfile(profileData);
+
+    if (result.success) {
+      setSuccess("プロフィールが正常に更新されました！");
+      await update();
+      router.refresh();
+    } else {
+      setError(result.error || "プロフィールの更新に失敗しました。");
+    }
+    setIsLoading(false);
+  };
+
+  if (status === "loading") {
+    return <div className="text-center p-10">読み込み中...</div>;
+  }
+
+  if (status === "authenticated") {
+    return (
+      <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">プロフィール編集</h1>
+        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md">
+          {error && <p className="mb-4 text-red-500">{error}</p>}
+          {success && <p className="mb-4 text-green-500">{success}</p>}
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="image" className="block text-sm font-medium" style={{ color: '#374151' }}>プロフィール写真URL</label>
+              <div className="mt-2 flex items-center gap-x-3">
+                 {image ? (
+                  <img src={image} alt="プロフィール写真プレビュー" className="h-24 w-24 rounded-full object-cover" />
+                ) : (
+                  <div className="h-24 w-24 bg-gray-200 rounded-full" />
+                )}
+              </div>
+              <input type="url" id="image" value={image || ''} onChange={(e) => setImage(e.target.value)} className="mt-2 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="https://..." />
+              <p className="text-xs text-gray-500 mt-1">公開されている画像のURLを入力してください。</p>
+            </div>
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium" style={{ color: '#374151' }}>名前</label>
+              <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+            </div>
+            <div>
+              <label htmlFor="title" className="block text-sm font-medium" style={{ color: '#374151' }}>役職・肩書き</label>
+              <input type="text" id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+            </div>
+            <div>
+              <label htmlFor="bio" className="block text-sm font-medium" style={{ color: '#374151' }}>自己紹介</label>
+              <textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={4} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></textarea>
+            </div>
+            <div>
+              <label htmlFor="website" className="block text-sm font-medium" style={{ color: '#374151' }}>ウェブサイト</label>
+              <input type="url" id="website" value={website} onChange={(e) => setWebsite(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="https://..." />
+            </div>
+            <div>
+              <label htmlFor="twitter" className="block text-sm font-medium" style={{ color: '#374151' }}>Twitter</label>
+              <input type="url" id="twitter" value={twitter} onChange={(e) => setTwitter(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="https://twitter.com/..." />
+            </div>
+            <div>
+              <label htmlFor="instagram" className="block text-sm font-medium" style={{ color: '#374151' }}>Instagram</label>
+              <input type="url" id="instagram" value={instagram} onChange={(e) => setInstagram(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="https://instagram.com/..." />
+            </div>
+          </div>
+          <div className="mt-6">
+            <button type="submit" disabled={isLoading} className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400">
+              {isLoading ? "保存中..." : "保存する"}
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  return <div className="text-center p-10">読み込み中...</div>;
+}
+</file>
+
+<file path="src/app/dashboard/settings/page.tsx">
+"use client";
+
+import { useState } from "react"; // useEffectは不要に
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { unlinkNfcCard } from "@/actions/unlinkNfcCard"; // サーバーアクションをインポート
+
+export default function SettingsPage() {
+  const { data: session, status, update } = useSession(); // update を追加
+  const router = useRouter();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  // NFCカードの紐付けを解除する処理
+  const handleUnlink = async () => {
+    if (!confirm("本当にNFCカードとの紐付けを解除しますか？")) {
+      return;
+    }
+    setIsLoading(true);
+    setMessage('');
+    setError('');
+
+    const result = await unlinkNfcCard();
+
+    if (result.success) {
+      setMessage("NFCカードの紐付けを解除しました。");
+      // セッション情報を更新して、画面表示を即座に切り替える
+      await update();
+    } else {
+      setError(result.error || "解除に失敗しました。");
+    }
+    setIsLoading(false);
+  };
+
+  if (status === "loading") {
+    return <div className="text-center p-10">読み込み中...</div>;
+  }
+  if (status === "unauthenticated") {
+    router.push("/login");
+    return null;
+  }
+  
+  // セッション情報からnfcCardIdを取得
+  const nfcCardId = (session?.user as any)?.nfcCardId;
+
+  return (
+    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">アカウント設定</h1>
+      
+      {message && <p className="mb-4 text-green-500">{message}</p>}
+      {error && <p className="mb-4 text-red-500">{error}</p>}
+
+      {/* NFCカード設定セクション */}
+      <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h2 className="text-xl font-bold mb-4 text-gray-700">NFCカード連携</h2>
+        <div className="border-t border-gray-200 pt-4">
+          {nfcCardId ? (
+            <>
+              <p className="text-gray-600 mb-1">
+                現在、あなたのアカウントには以下のNFCカードが紐付けられています。
+              </p>
+              <p className="text-gray-800 font-mono bg-gray-100 p-2 rounded mb-4">
+                {nfcCardId}
+              </p>
+              <button
+                onClick={handleUnlink}
+                disabled={isLoading}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:bg-gray-400"
+              >
+                {isLoading ? "解除中..." : "NFCカードの紐付けを解除する"}
+              </button>
+            </>
+          ) : (
+            <p className="text-gray-600">
+              現在、アカウントに紐付けられているNFCカードはありません。
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* 将来のためのプレースホルダー */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-bold mb-4 text-gray-700">その他</h2>
+        <p className="text-gray-500">パスワード変更やアカウント削除などの機能は、ここに追加されます。</p>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/dashboard/layout.tsx">
+// src/app/dashboard/layout.tsx (一時的なデバッグ用コード)
+
+import Link from "next/link";
+// getServerSession と redirect を一時的にコメントアウト
+// import { getServerSession } from "next-auth";
+// import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+// import { redirect } from "next/navigation";
+
+export default function DashboardLayout({
+  children,
+}: {
+  // ▼▼▼ ここを React.ReactNode に修正しました ▼▼▼
+  children: React.ReactNode;
+}) {
+  // セッションチェックを一時的に無効化
+  // const session = await getServerSession(authOptions);
+  // if (!session) {
+  //   redirect("/login");
+  // }
+
+  return (
+    <div className="flex min-h-screen bg-gray-100">
+      <aside className="w-64 bg-gray-800 text-white p-4 flex flex-col">
+        <div className="mb-8">
+          <Link href="/dashboard" className="text-2xl font-bold text-white">
+            My Dashboard
+          </Link>
+        </div>
+        <nav className="flex-grow">
+          <ul>
+            <li className="mb-2">
+              <Link href="/dashboard" className="block p-2 rounded hover:bg-gray-700">
+                ダッシュボード
+              </Link>
+            </li>
+            <li className="mb-2">
+              <Link href="/dashboard/profile" className="block p-2 rounded hover:bg-gray-700">
+                プロフィール編集
+              </Link>
+            </li>
+            <li className="mb-2">
+              <Link href="/dashboard/favorites" className="block p-2 rounded hover:bg-gray-700">
+                お気に入り設定
+              </Link>
+            </li>
+            <li className="mb-2">
+              <Link href="/dashboard/direct-link" className="block p-2 rounded hover:bg-gray-700">
+                ダイレクトリンク設定
+              </Link>
+            </li>
+            <li className="mb-2 border-t border-gray-700 mt-4 pt-4">
+              <Link href="/dashboard/settings" className="block p-2 rounded hover:bg-gray-700">
+                アカウント設定
+              </Link>
+            </li>
+          </ul>
+        </nav>
+        <div>
+           <p className="text-sm text-gray-400">&copy; 2025 nfc-platform</p>
+        </div>
+      </aside>
+      <main className="flex-1 p-8">
+        {children}
+      </main>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/dashboard/page.tsx">
+// src/app/dashboard/page.tsx (元のコードに戻す)
+
+import DashboardClient from "@/components/DashboardClient";
+
+export default function DashboardPage() {
+  return (
+    <div>
+      <h1 className="text-2xl font-bold mb-8 text-gray-800">ダッシュボード</h1>
+      <DashboardClient />
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/login/page.tsx">
+// src/app/login/page.tsx
+
+"use client";
+
+import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation'; // useSearchParams をインポート
+import { signIn } from 'next-auth/react';
+import Link from 'next/link';
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const router = useRouter();
+  const searchParams = useSearchParams(); // searchParams を取得
+  const cardId = searchParams.get('cardId'); // URLから cardId を取得
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    try {
+      const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+      });
+
+      if (result?.ok) {
+        // ★★★ ログイン成功後の紐付け処理は、次のタスクでここに追加します ★★★
+        router.push('/dashboard');
+      } else {
+        setError('メールアドレスまたはパスワードが正しくありません。');
+      }
+    } catch (err) {
+      setError('予期せぬエラーが発生しました。');
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="p-8 bg-white rounded-lg shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-6 text-center">ログイン</h2>
+        {/* ▼▼▼ cardId がある場合にメッセージを表示 ▼▼▼ */}
+        {cardId && (
+          <div className="mb-4 p-3 bg-indigo-100 text-indigo-700 rounded-md text-center">
+            <p className="font-semibold">ログインしてNFCカードを紐付けます</p>
+            <p className="text-sm">ID: {cardId}</p>
+          </div>
+        )}
+        {error && <p className="mb-4 text-red-500 text-center">{error}</p>}
+        <form onSubmit={handleSubmit}>
+          {/* ... (フォームの中身は変更なし) ... */}
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">メールアドレス</label>
+            <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required />
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">パスワード</label>
+            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" required />
+          </div>
+          <div className="flex items-center justify-between">
+            <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full">ログインする</button>
+          </div>
+          <div className="text-center mt-4">
+            <Link href="/forgot-password">
+              <span className="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">
+                パスワードをお忘れですか？
+              </span>
+            </Link>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/app/register/page.tsx">
+// src/app/register/page.tsx (最終版)
+
+"use client";
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+export default function RegisterPage() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState(''); // usernameのStateを追加
+  const [error, setError] = useState('');
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    // フロントエンドでの簡単なバリデーション
+    if (!email || !password || !username) {
+      setError('ユーザー名、メールアドレス、パスワードは必須です。');
+      return;
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setError('ユーザー名は半角英数字とアンダースコアのみ使用できます。');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          username, // 送信するデータにusernameを追加
+        }),
+      });
+
+      if (res.ok) {
+        router.push('/login');
+      } else {
+        const data = await res.json();
+        if (res.status === 409) {
+            if (data === "Username already taken") {
+                setError('このユーザー名は既に使用されています。');
+            } else if (data === "Email already taken") {
+                setError('このメールアドレスは既に使用されています。');
+            }
+        } else {
+             setError(data.message || '登録に失敗しました。');
+        }
+      }
+    } catch (err) {
+      setError('予期せぬエラーが発生しました。');
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="p-8 bg-white rounded-lg shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-6 text-center">新規登録</h2>
+        {error && <p className="mb-4 text-red-500 text-center">{error}</p>}
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
+              名前
+            </label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
+              ユーザー名
+            </label>
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              required
+              pattern="^[a-zA-Z0-9_]+$"
+              title="ユーザー名は半角英数字とアンダースコアのみ使用できます。"
+            />
+             <p className="text-xs text-gray-500 mt-1">プロフィールURLに使われます (例: app.com/{username})</p>
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+              メールアドレス
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              required
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+              パスワード
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+              required
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <button
+              type="submit"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+            >
+              登録する
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/DashboardClient.tsx">
+// src/components/DashboardClient.tsx (最終・完成版)
+
+"use client";
+
+import { useState, useEffect, useRef } from "react"; // useRef をインポート
+import { useSession } from "next-auth/react";
+import { useSearchParams, useRouter } from 'next/navigation';
+import Link from "next/link";
+import { getProfileViewCount } from "@/actions/trackView";
+import { linkNfcCard } from "@/actions/linkNfcCard";
+
+interface FavoriteProfile {
+  username: string | null;
+  name: string | null;
+  image: string | null;
+}
+
+export default function DashboardClient() {
+  const { data: session, status, update } = useSession();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  // ★▼▼▼ ref を追加 ▼▼▼
+  const hasLinkedRef = useRef(false); // 紐付け処理が既に実行されたか追跡するためのref
+
+  const [favoriteSlots, setFavoriteSlots] = useState<string[]>([]);
+  const [favoriteProfiles, setFavoriteProfiles] = useState<FavoriteProfile[]>([]);
+  const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
+  const [viewCount, setViewCount] = useState(0);
+  const [copySuccess, setCopySuccess] = useState('');
+
+  useEffect(() => {
+    // ログを追加
+    console.log("🟢 DashboardClient useEffect が発火しました。");
+    console.log("  - status:", status);
+    console.log("  - session?.user?.id:", session?.user?.id);
+    console.log("  - cardId param:", searchParams.get('cardId'));
+    console.log("  - link param:", searchParams.get('link'));
+    console.log("  - hasLinkedRef.current:", hasLinkedRef.current); // ▼▼▼ 追加
+
+    const fetchFavoritesData = async () => { /* ... */ };
+    const fetchViewCount = async (userId: string) => { /* ... */ };
+
+    const handleLinkCard = async () => {
+      const cardId = searchParams.get('cardId');
+      const shouldLink = searchParams.get('link');
+
+      console.log("🟡 handleLinkCard 呼び出し");
+
+      // ★▼▼▼ 紐付け実行条件をより厳密に修正 ▼▼▼
+      // 認証済み、かつカードIDとlink=trueがURLにあり、かつまだ紐付け処理が実行されていない場合
+      if (status === "authenticated" && session?.user?.id && cardId && shouldLink === 'true' && !hasLinkedRef.current) {
+        hasLinkedRef.current = true; // 処理実行フラグを立てる
+
+        console.log(`🔵 NFCカード紐付け開始: userId=${session.user.id}, cardId=${cardId}`);
+        const result = await linkNfcCard(session.user.id, cardId);
+        
+        if (result.success) {
+          alert('NFCカードをアカウントに紐付けました！');
+          await update();
+        } else {
+          alert(`エラー: ${result.error}`);
+        }
+        router.replace('/dashboard', { scroll: false }); // URLクエリパラメータを削除
+      } else {
+        console.log("⚪ NFCカード紐付けスキップ条件:");
+        console.log(`  - status: ${status}`);
+        console.log(`  - session?.user?.id: ${session?.user?.id}`);
+        console.log(`  - cardId: ${cardId}`);
+        console.log(`  - shouldLink: ${shouldLink}`);
+        console.log(`  - hasLinkedRef.current: ${hasLinkedRef.current}`);
+      }
+    };
+    
+    // ▼▼▼ useEffect内での呼び出しロジックを修正 ▼▼▼
+    // 認証済みで、かつセッションのユーザーIDが確定したら、紐付け処理を試みる
+    if (status === "authenticated" && session?.user?.id) {
+      fetchFavoritesData(); // お気に入りデータも取得
+      fetchViewCount(session.user.id); // 閲覧数も取得
+      handleLinkCard(); // 紐付け処理を実行
+    }
+    // ▲▲▲ ▲▲▲ ▲▲▲
+
+  }, [status, session, searchParams, router]); // 依存配列に session を追加し、router も含める
+
+  const profileUrl = status === "authenticated" ? `${window.location.origin}/${(session.user as any).username || ''}` : "";
+  const copyUrlToClipboard = () => { /* ... */ };
+
+  if (status === "loading") {
+    return <p className="text-gray-800">読み込み中...</p>;
+  }
+  if (status === "unauthenticated" || !session?.user) {
+    return <p className="text-red-500">アクセス権がありません。</p>;
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* ... (ダッシュボードのコンテンツは変更なし) ... */}
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h3 className="text-lg font-bold mb-4 text-gray-800">お気に入りスロット</h3>
+        {isLoadingFavorites ? (
+          <p className="text-gray-500">お気に入りを読み込み中...</p>
+        ) : (
+          <div className="flex space-x-4">
+            {favoriteSlots.map((slot, index) => {
+              const profile = favoriteProfiles.find(p => p.username === slot);
+              return (
+                <div key={index} className="flex-1 text-center">
+                  {profile ? (
+                    <Link href={`/${profile.username}`} className="block group">
+                      {profile.image ? (
+                        <img src={profile.image} alt={profile.name || ''} className="w-16 h-16 rounded-full mx-auto mb-2 object-cover group-hover:opacity-80 transition-opacity" />
+                      ) : (
+                        <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-2 group-hover:opacity-80 transition-opacity" />
+                      )}
+                      <p className="text-xs text-gray-600 truncate group-hover:text-blue-500">{profile.name}</p>
+                    </Link>
+                  ) : slot ? (
+                    <a href={slot} target="_blank" rel="noopener noreferrer" className="block group">
+                       <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-2 flex items-center justify-center group-hover:opacity-80 transition-opacity">
+                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-gray-400">
+                           <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                         </svg>
+                       </div>
+                       <p className="text-xs text-gray-600 truncate group-hover:text-blue-500">外部リンク</p>
+                    </a>
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-100 border-2 border-dashed rounded-full mx-auto mb-2" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="md:col-span-1 space-y-8">
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-bold mb-4 text-gray-800">プロフィールプレビュー</h3>
+            <div className="flex flex-col items-center">
+                {session.user.image ? (
+                  <img src={session.user.image} alt="プロフィールプレビュー" className="w-24 h-24 bg-gray-200 rounded-full mb-4 object-cover" />
+                ) : (
+                  <div className="w-24 h-24 bg-gray-200 rounded-full mb-4" />
+                )}
+                <p className="font-bold text-lg text-gray-800">{session.user.name || '名前未設定'}</p>
+                <p className="text-sm text-gray-500">{(session.user as any).title || '役職未設定'}</p>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-bold mb-4 text-gray-800">インサイト</h3>
+            <p className="text-gray-800">閲覧数: {viewCount} 回</p>
+          </div>
+        </div>
+        <div className="md:col-span-2 bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-bold mb-4 text-gray-800">共有ツール</h3>
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <div className="text-center">
+                  <div className="w-32 h-32 bg-gray-200 flex items-center justify-center">
+                      <p className="text-xs text-gray-500">QRコード (一時無効)</p>
+                  </div>
+                  <p className="text-sm mt-2 text-gray-800">プロフィールQRコード</p>
+              </div>
+              <div className="flex-1 w-full">
+                  <label className="text-sm font-bold text-gray-800">プロフィールURL</label>
+                  <div className="flex items-center mt-2">
+                      <input type="text" readOnly value={profileUrl} className="w-full p-2 border rounded-l-md bg-gray-100 text-gray-700" />
+                      <button onClick={copyUrlToClipboard} className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600 relative w-20">
+                        {copySuccess ? 'OK!' : 'コピー'}
+                      </button>
+                  </div>
+              </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/DirectLinkInterstitial.tsx">
+// src/components/DirectLinkInterstitial.tsx
+
+"use client";
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+
+interface DirectLinkInterstitialProps {
+  redirectUrl: string;
+  profileUrl: string;
+}
+
+export default function DirectLinkInterstitial({ redirectUrl, profileUrl }: DirectLinkInterstitialProps) {
+  const [countdown, setCountdown] = useState(3);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.location.href = redirectUrl;
+    }, 3000);
+
+    const interval = setInterval(() => {
+      setCountdown((prevCount) => {
+        if (prevCount <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prevCount - 1;
+      });
+    }, 1000);
+
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
+  }, [redirectUrl]);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
+      <div className="w-full max-w-md bg-gray-800 rounded-lg shadow-xl p-8 text-center">
+        <div className="w-32 h-32 bg-gray-700 rounded-full mx-auto mb-6 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16 text-gray-400">
+           {/* ▼▼▼ この中の path d="..." の部分を修正しました ▼▼▼ */}
+           <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold mb-4">リンクを開いています...</h1>
+        
+        <div className="space-y-4">
+          <Link 
+            href={`${profileUrl}?from=interstitial`}
+            className="block w-full px-4 py-3 text-lg font-semibold text-center text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+          >
+            プロフィールを見る
+          </Link>
+        </div>
+
+        <p className="text-gray-400 mt-6">
+          {countdown > 0 ? `${countdown}秒後に自動で移動します` : '移動中...'}
+        </p>
+
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/VCardButton.tsx">
+// src/components/VCardButton.tsx
+
+"use client";
+
+interface VCardButtonProps {
+  user: {
+    name: string | null;
+    title: string | null;
+    email: string | null;
+    website: string | null;
+  };
+}
+
+export default function VCardButton({ user }: VCardButtonProps) {
+  const generateVCard = () => {
+    const vCard = `BEGIN:VCARD
+VERSION:3.0
+N:${user.name || ''}
+FN:${user.name || ''}
+TITLE:${user.title || ''}
+EMAIL:${user.email || ''}
+URL:${user.website || ''}
+END:VCARD`;
+
+    const blob = new Blob([vCard], { type: "text/vcard;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${user.name || 'contact'}.vcf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <button
+      onClick={generateVCard}
+      className="inline-flex items-center px-4 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800"
+    >
+      連絡先を保存
+    </button>
+  );
+}
+</file>
+
+<file path="src/hooks/useCurrentUser.ts">
+// src/hooks/useCurrentUser.ts
+
+import { useSession } from "next-auth/react";
+
+export const useCurrentUser = () => {
+  const session = useSession();
+  return session.data?.user;
+};
+</file>
+
+<file path="src/providers/AuthSessionProvider.tsx">
+// src/providers/AuthSessionProvider.tsx
+
+"use client";
+
+import { SessionProvider } from "next-auth/react";
+
+interface AuthSessionProviderProps {
+  children: React.ReactNode;
+}
+
+export default function AuthSessionProvider({ children }: AuthSessionProviderProps) {
+  return <SessionProvider>{children}</SessionProvider>;
+}
+</file>
+
+<file path="src/types/user.ts">
+// src/types/user.ts
+
+export interface UserProfile {
+  id: string;
+  name: string | null;
+  email: string | null;
+  title: string | null;
+  bio: string | null;
+  website: string | null;
+  twitter: string | null;
+  instagram: string | null;
+  image: string | null; // ▼▼▼ この行を追加してください ▼▼▼
+}
+</file>
+
+<file path="types/next-auth.d.ts">
+// types/next-auth.d.ts (最終修正版)
+
+import { DefaultSession, DefaultUser } from "next-auth";
+
+// PrismaのUserモデルと一致するように、NextAuthのUser型を拡張
+interface User extends DefaultUser {
+  id: string;
+  username: string | null;
+  title: string | null;
+  bio: string | null;
+  website: string | null;
+  twitter: string | null;
+  instagram: string | null;
+  image: string | null; // ▼▼▼ この行を追加してください ▼▼▼
+  nfcCardId: string | null; // ▼▼▼ この行を追加 ▼▼▼
+
+}
+
+declare module "next-auth" {
+  // Sessionオブジェクトのuserプロパティを、上で拡張したUser型で上書き
+  interface Session {
+    user: User;
+  }
+}
+
+declare module "next-auth/jwt" {
+  // JWTトークンにも必要なプロパティを追加
+  interface JWT {
+    id: string;
+    username: string | null;
+    image: string | null; // ▼▼▼ この行を追加してください ▼▼▼
+  }
+}
+</file>
+
+<file path="public/next.svg">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
+</file>
+
+<file path="public/vercel.svg">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 283 64"><path fill="black" d="M141 16c-11 0-19 7-19 18s9 18 20 18c7 0 13-3 16-7l-7-5c-2 3-6 4-9 4-5 0-9-3-10-7h28v-3c0-11-8-18-19-18zm-9 15c1-4 4-7 9-7s8 3 9 7h-18zm117-15c-11 0-19 7-19 18s9 18 20 18c6 0 12-3 16-7l-8-5c-2 3-5 4-8 4-5 0-9-3-11-7h28l1-3c0-11-8-18-19-18zm-10 15c2-4 5-7 10-7s8 3 9 7h-19zm-39 3c0 6 4 10 10 10 4 0 7-2 9-5l8 5c-3 5-9 8-17 8-11 0-19-7-19-18s8-18 19-18c8 0 14 3 17 8l-8 5c-2-3-5-5-9-5-6 0-10 4-10 10zm83-29v46h-9V5h9zM37 0l37 64H0L37 0zm92 5-27 48L74 5h10l18 30 17-30h10zm59 12v10l-3-1c-6 0-10 4-10 10v15h-9V17h9v9c0-5 6-9 13-9z"/></svg>
+</file>
+
+<file path="src/app/globals.css">
+/* src/app/globals.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+</file>
+
+<file path="src/app/layout.tsx">
+// src/app/layout.tsx
+
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+
+// この行を新しく追加します
+import AuthSessionProvider from "@/providers/AuthSessionProvider";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Create Next App",
+  description: "Generated by create next app",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body className={inter.className}>
+        {/* AuthSessionProviderでchildrenをラップします */}
+        <AuthSessionProvider>
+          {children}
+        </AuthSessionProvider>
+      </body>
+    </html>
+  );
+}
+</file>
+
+<file path="src/app/page.tsx">
+// src/app/page.tsx (修正版)
+
+"use client";
+
+import { useSession, signOut } from "next-auth/react"; // useCurrentUserの代わりにuseSessionを直接使う
+import Link from "next/link";
+
+export default function Home() {
+  // sessionデータと、読み込み状態(status)を取得
+  const { data: session, status } = useSession();
+
+  // ローディング中の表示
+  if (status === "loading") {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-24">
+        <p>読み込み中...</p>
+      </main>
+    );
+  }
+
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gray-100">
+      <div className="bg-white p-8 rounded-lg shadow-md text-center">
+        <h1 className="text-3xl font-bold mb-4">
+          ようこそ！
+        </h1>
+
+        {/* ログインしている場合 (statusが'authenticated') */}
+        {status === "authenticated" && session.user && (
+          <div className="space-y-4">
+            <p className="text-xl">
+              こんにちは、<span className="font-semibold">{session.user.name || session.user.email}</span> さん
+            </p>
+            
+            <div className="flex justify-center items-center gap-4">
+              <Link href="/dashboard/profile" className="inline-block bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                プロフィールを編集する
+              </Link>
+              
+              <button
+                onClick={() => signOut()} // ログアウトボタン
+                className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+              >
+                ログアウト
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ログアウトしている場合 (statusが'unauthenticated') */}
+        {status === "unauthenticated" && (
+          <div className="space-y-4">
+            <p className="text-xl">
+              ログインしていません。
+            </p>
+            <div className="flex justify-center gap-4">
+              <Link href="/login" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                ログイン
+              </Link>
+              <Link href="/register" className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                新規登録
+              </Link>
+            </div>
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}
+</file>
+
+<file path=".eslintrc.json">
+{
+  "extends": "next/core-web-vitals"
+}
+</file>
+
+<file path=".gitignore">
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+/src/generated/prisma
+</file>
+
+<file path="next.config.mjs">
+/** @type {import('next').NextConfig} */
+const nextConfig = {};
+
+export default nextConfig;
+</file>
+
+<file path="package.json">
+{
+  "name": "nfc-platform",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "^2.11.1",
+    "@prisma/client": "^6.19.0",
+    "axios": "^1.13.2",
+    "bcryptjs": "^3.0.3",
+    "next": "14.2.5",
+    "next-auth": "^4.24.13",
+    "qrcode.react": "^4.2.0",
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.9.36",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20",
+    "@types/qrcode.react": "^1.0.5",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.5",
+    "postcss": "^8",
+    "prisma": "^6.19.0",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}
+</file>
+
+<file path="postcss.config.mjs">
+/** @type {import('postcss-load-config').Config} */
+const config = {
+  plugins: {
+    tailwindcss: {},
+  },
+};
+
+export default config;
+</file>
+
+<file path="README.md">
+This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+
+## Getting Started
+
+First, run the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+</file>
+
+<file path="tailwind.config.ts">
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: [
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      backgroundImage: {
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
+        "gradient-conic":
+          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
+      },
+    },
+  },
+  plugins: [],
+};
+export default config;
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+</file>
+
+</files>

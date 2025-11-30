@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Userモデル (NextAuth.js仕様に更新)
+// prisma/schema.prisma
+
+model User {
+  id            String    @id @default(cuid())
+  username      String?   @unique // 
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  hashedPassword String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  favorites     Favorite[] 
+
+  // --- ↓↓↓ ここから下のプロフィール項目を追加 ↓↓↓ ---
+  title         String? // 役職・肩書き
+  bio           String? @db.Text // 自己紹介文
+  website       String? // ウェブサイトURL
+  twitter       String? // Twitter URL
+  instagram     String? // Instagram URL
+  directLinkEnabled Boolean @default(false) // 機能のON/OFF (デフォルトはOFF)
+  directLinkUrl     String?                 // リダイレクト先のURL
+
+  // --- ↓↓↓ ProfileView リレーションを追加 ↓↓↓ ---
+  profileViews  ProfileView[] 
+  nfcCardId     String?   @unique // 紐付けられたNFCカードの一意なID
+}
+
+// Accountモデル (NextAuth.jsに必須)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+// Sessionモデル (NextAuth.jsに必須)
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// VerificationTokenモデル (NextAuth.jsに必須)
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+// prisma/schema.prisma の末尾に追加
+
+model Favorite {
+  id        String   @id @default(cuid())
+  ownerId   String   // このお気に入りの所有者のID
+  slotIndex Int      // スロットの番号 (0から4)
+  url       String   // 登録されたプロフィールURL or ユーザー名
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, slotIndex]) // 同じユーザーは同じスロット番号を登録できない
+}
+
+// --- ↓↓↓ 新しく追加する ProfileView モデル ↓↓↓
+model ProfileView {
+  id        String   @id @default(cuid())
+  // 閲覧されたユーザーのID
+  profileOwnerId String 
+  // 閲覧日時
+  viewedAt  DateTime @default(now())
+  // 閲覧したユーザーのIPアドレスを記録 (簡易的な重複防止用)
+  viewerIp  String?  
+
+  // 閲覧されたユーザーとのリレーション
+  profileOwner User @relation(fields: [profileOwnerId], references: [id], onDelete: Cascade)
+
+  // インデックスを追加して検索性能を向上
+  @@index([profileOwnerId]) 
+}
