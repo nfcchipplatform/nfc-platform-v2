@@ -2,7 +2,7 @@
 
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth"; // ★ここが重要
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -14,37 +14,25 @@ interface CardPageProps {
   };
 }
 
-// このページは動的にレンダリングされる必要があるため強制
 export const dynamic = 'force-dynamic';
 
 export default async function CardPage({ params }: CardPageProps) {
   const { cardId } = params;
 
-  // 1. データベースでこのカードIDを持つユーザーを探す
   const userWithCard = await prisma.user.findUnique({
     where: { nfcCardId: cardId },
   });
 
-  // ---------------------------------------------------------
-  // パターンA：すでに誰かのカードとして登録されている場合
-  // ---------------------------------------------------------
   if (userWithCard) {
-    // ログイン中のユーザー情報を取得
     const session = await getServerSession(authOptions);
 
-    // もし「自分のカード」を自分で読み込んだなら、ダッシュボードへ案内
     if (session?.user?.id === userWithCard.id) {
       redirect('/dashboard');
     } 
     
-    // 他人のカード（または未ログイン）なら、その人の公開プロフィールへ転送
-    // これがあなたの求めている「紐付けされたユーザーのページに飛ばす」処理です
     redirect(`/${userWithCard.username}`);
   }
 
-  // ---------------------------------------------------------
-  // パターンB：まだ誰のものでもないカードの場合
-  // ---------------------------------------------------------
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
       <div className="p-8 bg-white rounded-xl shadow-lg w-full max-w-md text-center">
@@ -58,7 +46,6 @@ export default async function CardPage({ params }: CardPageProps) {
         </p>
         
         <div className="space-y-6">
-          {/* ログインボタン */}
           <div>
             <Link 
               href={`/login?cardId=${cardId}`}
@@ -80,7 +67,6 @@ export default async function CardPage({ params }: CardPageProps) {
             </div>
           </div>
 
-          {/* 新規登録ボタン */}
           <div>
             <Link 
               href={`/register?cardId=${cardId}`}
