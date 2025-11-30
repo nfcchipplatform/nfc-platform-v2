@@ -2,7 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth"; // 修正箇所
+import { authOptions } from "@/lib/auth"; // ★ここが修正ポイント
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
