@@ -32,7 +32,7 @@ export default function DashboardLayout({
       {/* --- スマホ用ヘッダー (MD以上で非表示) --- */}
       <div className="md:hidden bg-gray-900 text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
         <Link href="/dashboard" className="text-xl font-bold">
-          My Dashboard
+          Dashboard
         </Link>
         <button 
           onClick={() => setIsMenuOpen(!isMenuOpen)}
