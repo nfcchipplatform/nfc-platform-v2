@@ -139,7 +139,7 @@ function LoginForm() {
                   : 'bg-blue-600 hover:bg-blue-700 text-white'
               }`}
             >
-              {isLoading ? 'ログイン中...' : 'ログインする'}
+              {isLoading ? 'ログイン中...' : 'ログイン'}
             </button>
           </div>
           

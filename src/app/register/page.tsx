@@ -153,7 +153,7 @@ function RegisterForm() {
           <div className="text-center mt-6 border-t pt-6">
              {/* ここで Link を使っているため、importが必要です */}
              <Link href={cardId ? `/login?cardId=${cardId}` : "/login"} className="text-blue-600 font-bold hover:underline">
-               ログイン画面へ戻る
+               ログイン画面
              </Link>
           </div>
         </form>
