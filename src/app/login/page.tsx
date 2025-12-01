@@ -1,33 +1,9 @@
 "use client";
 
 import { useState, Suspense } from 'react';
-
-// ★★★ 実装時の注意 ★★★
-// VS Codeに貼り付ける際は、以下の「プレビュー用モック」ブロックをすべて削除し、
-// その下の「正規のimport」のコメントアウト（//）を外して有効にしてください。
-
-// --- プレビュー用モック（VS Codeでは削除してください） ---
-const useSearchParams = () => ({ get: (key: string) => null });
-const signIn = async (provider: string, options: any) => {
-  console.log("Mock SignIn", provider, options);
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return { ok: true };
-};
-const Link = ({ href, children, className }: any) => (
-  <a href={href} className={className} onClick={(e) => {
-    // ページ遷移を抑制してログを見やすくする
-    if(href.startsWith('/')) e.preventDefault();
-    console.log(`Link to: ${href}`);
-  }}>
-    {children}
-  </a>
-);
-// --- モックここまで ---
-
-// --- 正規のimport（VS Codeではこちらを有効にしてください） ---
-// import { useSearchParams } from 'next/navigation';
-// import { signIn } from 'next-auth/react';
-// import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { signIn } from 'next-auth/react';
+import Link from 'next/link';
 
 export default function LoginPage() {
   return (
@@ -65,9 +41,7 @@ function LoginForm() {
           ? `/dashboard?cardId=${cardId}&link=true` 
           : '/dashboard';
         
-        // プレビュー環境では遷移しないようにログ出力のみ
-        console.log(`本来ならここへ遷移: ${targetUrl}`);
-        // window.location.href = targetUrl;
+        window.location.href = targetUrl;
       } else {
         setError('メールアドレスまたはパスワードが正しくありません。');
         setIsLoading(false);
@@ -80,7 +54,6 @@ function LoginForm() {
   };
 
   return (
-    // ▼▼▼ 修正箇所: ここに 'flex-col' が必要です（縦並びにするため） ▼▼▼
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
       <div className="p-8 bg-white rounded-lg shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">ログイン</h2>
@@ -171,7 +144,6 @@ function LoginForm() {
           利用規約
         </a>
       </div>
-
     </div>
   );
 }
