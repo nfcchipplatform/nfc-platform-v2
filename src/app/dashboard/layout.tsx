@@ -97,9 +97,26 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      {/* --- メインコンテンツ --- */}
-      <main className="flex-1 p-4 md:p-8 w-full overflow-hidden">
-        {children}
+      {/* --- メインコンテンツ (修正部分) --- */}
+      {/* flex-colに変更し、内部要素を縦並びにします */}
+      <main className="flex-1 flex flex-col w-full min-h-screen overflow-hidden">
+        
+        {/* コンテンツエリア: flex-growで余白を埋めます */}
+        <div className="flex-grow p-4 md:p-8">
+           {children}
+        </div>
+
+        {/* 最下部フッター: ここに追加しました */}
+        <footer className="py-6 flex justify-center items-center space-x-6 text-xs text-gray-500">
+            <Link href="/privacy-policy" className="hover:text-gray-800 hover:underline transition-colors">
+                プライバシーポリシー
+            </Link>
+            <span className="text-gray-300">|</span>
+            <Link href="/terms" className="hover:text-gray-800 hover:underline transition-colors">
+                利用規約
+            </Link>
+        </footer>
+
       </main>
     </div>
   );
