@@ -1,124 +1,82 @@
-// src/app/dashboard/layout.tsx
+// src/app/card/[cardId]/page.tsx
 
-"use client"; // スマホメニューの開閉状態管理のために必要
-
+import { PrismaClient } from "@prisma/client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth"; // ★ここが重要
+import { redirect } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
-import { usePathname } from "next/navigation";
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const pathname = usePathname();
+const prisma = new PrismaClient();
 
-  // 現在のページかどうか判定する関数
-  const isActive = (path: string) => pathname === path;
+interface CardPageProps {
+  params: {
+    cardId: string;
+  };
+}
 
-  // メニュー項目のリスト
-  const menuItems = [
-    { name: "ダッシュボード", path: "/dashboard" },
-    { name: "プロフィール編集", path: "/dashboard/profile" },
-    { name: "お気に入り設定", path: "/dashboard/favorites" },
-    { name: "ダイレクトリンク", path: "/dashboard/direct-link" },
-    { name: "アカウント設定", path: "/dashboard/settings" },
-  ];
+export const dynamic = 'force-dynamic';
+
+export default async function CardPage({ params }: CardPageProps) {
+  const { cardId } = params;
+
+  const userWithCard = await prisma.user.findUnique({
+    where: { nfcCardId: cardId },
+  });
+
+  if (userWithCard) {
+    const session = await getServerSession(authOptions);
+
+    if (session?.user?.id === userWithCard.id) {
+      redirect('/dashboard');
+    } 
+    
+    redirect(`/${userWithCard.username}`);
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row">
-      
-      {/* --- スマホ用ヘッダー (MD以上で非表示) --- */}
-      <div className="md:hidden bg-gray-900 text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
-        <Link href="/dashboard" className="text-xl font-bold">
-          PONNU
-        </Link>
-        <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="p-2 focus:outline-none"
-        >
-          {/* ハンバーガーアイコン */}
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {isMenuOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
-        </button>
-      </div>
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+      <div className="p-8 bg-white rounded-xl shadow-lg w-full max-w-md text-center">
+        <h1 className="text-2xl font-bold mb-2 text-gray-800">NFCカードを有効化</h1>
+        <p className="text-sm text-gray-500 mb-6 font-mono bg-gray-100 py-1 px-2 rounded inline-block">
+          ID: {cardId}
+        </p>
+        <p className="text-gray-600 mb-8">
+          このカードはまだ登録されていません。<br/>
+          あなたのアカウントに紐付けますか？
+        </p>
+        
+        <div className="space-y-6">
+          <div>
+            <Link 
+              href={`/login?cardId=${cardId}`}
+              className="block w-full px-6 py-4 text-lg font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors shadow-md"
+            >
+              既存アカウントでログインして紐付け
+            </Link>
+            <p className="text-xs text-gray-500 mt-2">
+              すでにアカウントをお持ちの方はこちら
+            </p>
+          </div>
 
-      {/* --- スマホ用ドロップダウンメニュー --- */}
-      {isMenuOpen && (
-        <div className="md:hidden bg-gray-800 text-white w-full sticky top-16 z-40 shadow-lg">
-          <nav className="flex flex-col p-4 space-y-2">
-            {menuItems.map((item) => (
-              <Link
-                key={item.path}
-                href={item.path}
-                onClick={() => setIsMenuOpen(false)} // クリックしたら閉じる
-                className={`block p-3 rounded transition-colors ${
-                  isActive(item.path) ? "bg-indigo-600 font-bold" : "hover:bg-gray-700"
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
-            {/* スマホ用メニュー下部リンク */}
-            <div className="mt-4 pt-4 border-t border-gray-600 flex flex-col space-y-2 text-sm text-gray-400">
-               <Link href="/privacy-policy" onClick={() => setIsMenuOpen(false)} className="hover:text-white">
-                 プライバシーポリシー
-               </Link>
-               <Link href="/terms" onClick={() => setIsMenuOpen(false)} className="hover:text-white">
-                 利用規約
-               </Link>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
             </div>
-          </nav>
-        </div>
-      )}
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">または</span>
+            </div>
+          </div>
 
-      {/* --- PC用サイドバー (MD以上で表示) --- */}
-      <aside className="hidden md:flex w-64 bg-gray-900 text-white p-6 flex-col shrink-0 min-h-screen sticky top-0 h-screen overflow-y-auto">
-        <div className="mb-10">
-          <Link href="/dashboard" className="text-2xl font-bold tracking-wider">
-            PONNU
-          </Link>
+          <div>
+            <Link 
+              href={`/register?cardId=${cardId}`}
+              className="block w-full px-6 py-3 text-base font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded-xl hover:bg-gray-200 transition-colors"
+            >
+              新しくアカウントを作成して紐付け
+            </Link>
+          </div>
         </div>
-        <nav className="flex-grow">
-          <ul className="space-y-2">
-            {menuItems.map((item) => (
-              <li key={item.path}>
-                <Link
-                  href={item.path}
-                  className={`block p-3 rounded transition-colors ${
-                    isActive(item.path) ? "bg-indigo-600 font-bold shadow-md" : "hover:bg-gray-800 text-gray-300 hover:text-white"
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <div className="mt-auto pt-6 border-t border-gray-700">
-           {/* サイドバー下部リンク */}
-           <div className="flex flex-col space-y-2 mb-4 text-xs text-gray-400">
-              <Link href="/privacy-policy" className="hover:text-white transition-colors">
-                プライバシーポリシー
-              </Link>
-              <Link href="/terms" className="hover:text-white transition-colors">
-                利用規約
-              </Link>
-           </div>
-           <p className="text-xs text-gray-500">&copy; 2025 PONNU</p>
-        </div>
-      </aside>
-
-      {/* --- メインコンテンツ --- */}
-      <main className="flex-1 p-4 md:p-8 w-full overflow-hidden">
-        {children}
-      </main>
+      </div>
     </div>
   );
 }
