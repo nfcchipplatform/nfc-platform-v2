@@ -102,7 +102,7 @@ export default function DashboardClient() {
   const copyUrlToClipboard = () => {
     if (!profileUrl) return;
     navigator.clipboard.writeText(profileUrl).then(() => {
-      setCopySuccess('コピーしました！');
+      setCopySuccess('コピー完了');
       setTimeout(() => setCopySuccess(''), 2000);
     });
   };
