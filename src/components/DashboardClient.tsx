@@ -209,7 +209,7 @@ export default function DashboardClient() {
                         {copySuccess || 'コピー'}
                       </button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">このURLをSNSのプロフィールやNFCカードに書き込んで共有しましょう。</p>
+                  <p className="text-xs text-gray-500 mt-2">このURLをSNSのプロフィールやICチップに書き込んで共有しましょう。</p>
               </div>
               
               <div className="border-t pt-6">
