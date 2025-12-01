@@ -35,16 +35,18 @@ export default function Home() {
             </div>
             
             <div className="flex flex-col gap-3">
+              {/* ▼ 変更: 緑から青へ（メインアクション） */}
               <Link 
                 href="/dashboard/profile" 
-                className="block w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors"
+                className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors"
               >
                 プロフィールを編集
               </Link>
               
+              {/* ▼ 変更: 赤からグレーへ（サブアクション） */}
               <button
                 onClick={() => signOut()} 
-                className="block w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors"
+                className="block w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-lg border border-gray-300 transition-colors"
               >
                 ログアウト
               </button>
