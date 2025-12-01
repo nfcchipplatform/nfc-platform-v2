@@ -79,7 +79,7 @@ export default function FavoritesPage() {
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-      <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">お気に入りスロット設定</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">マイフィンガー設定</h1>
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md">
         {error && <p className="mb-4 text-red-500">{error}</p>}
         {success && <p className="mb-4 text-green-500">{success}</p>}

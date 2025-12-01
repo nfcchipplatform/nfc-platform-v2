@@ -118,7 +118,7 @@ export default function DashboardClient() {
     <div className="space-y-8">
       {/* お気に入りスロット */}
       <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-bold mb-4 text-gray-800">お気に入りスロット</h3>
+        <h3 className="text-lg font-bold mb-4 text-gray-800">マイフィンガー</h3>
         
         {isLoadingFavorites ? (
           <div className="flex justify-center p-4">
