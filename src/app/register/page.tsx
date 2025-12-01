@@ -164,6 +164,26 @@ function RegisterForm() {
           </div>
         </form>
       </div>
+            {/* ▼▼▼ 追加箇所: フッターリンク ▼▼▼ */}
+      <div className="mt-8 flex items-center justify-center gap-6 text-xs text-gray-500">
+        <a 
+          href="https://ponnu.net/privacy-policy.pdf" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="hover:text-gray-800 hover:underline transition-colors"
+        >
+          プライバシーポリシー
+        </a>
+        <a 
+          href="https://ponnu.net/terms-of-service.pdf" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="hover:text-gray-800 hover:underline transition-colors"
+        >
+          利用規約
+        </a>
+      </div>
+      {/* ▲▲▲ 追加ここまで ▲▲▲ */}
     </div>
   );
 }
