@@ -126,10 +126,8 @@ function LoginForm() {
           </div>
         </form>
       </div>
-    </div>
-    
-  );
-        <div className="mt-8 flex items-center justify-center gap-6 text-xs text-gray-500">
+            {/* ▼▼▼ 追加箇所: フッターリンク ▼▼▼ */}
+      <div className="mt-8 flex items-center justify-center gap-6 text-xs text-gray-500">
         <a 
           href="https://ponnu.net/privacy-policy.pdf" 
           target="_blank" 
@@ -147,4 +145,8 @@ function LoginForm() {
           利用規約
         </a>
       </div>
+      {/* ▲▲▲ 追加ここまで ▲▲▲ */}
+    </div>
+    
+  );
 }
