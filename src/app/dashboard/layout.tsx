@@ -32,7 +32,7 @@ export default function DashboardLayout({
       {/* --- スマホ用ヘッダー (MD以上で非表示) --- */}
       <div className="md:hidden bg-gray-900 text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
         <Link href="/dashboard" className="text-xl font-bold">
-          Dashboard
+          PONNU
         </Link>
         <button 
           onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -73,7 +73,7 @@ export default function DashboardLayout({
       <aside className="hidden md:flex w-64 bg-gray-900 text-white p-6 flex-col shrink-0 min-h-screen sticky top-0 h-screen overflow-y-auto">
         <div className="mb-10">
           <Link href="/dashboard" className="text-2xl font-bold tracking-wider">
-            Dashboard
+            PONNU
           </Link>
         </div>
         <nav className="flex-grow">
