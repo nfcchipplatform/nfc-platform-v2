@@ -108,11 +108,11 @@ export default function DashboardLayout({
 
         {/* 最下部フッター: ここに追加しました */}
         <footer className="py-6 flex justify-center items-center space-x-6 text-xs text-gray-500">
-            <Link href="/privacy-policy" className="hover:text-gray-800 hover:underline transition-colors">
+            <Link href="https://ponnu.net/privacy-policy.pdf" className="hover:text-gray-800 hover:underline transition-colors">
                 プライバシーポリシー
             </Link>
             <span className="text-gray-300">|</span>
-            <Link href="/terms" className="hover:text-gray-800 hover:underline transition-colors">
+            <Link href="https://ponnu.net/terms-of-service.pdf" className="hover:text-gray-800 hover:underline transition-colors">
                 利用規約
             </Link>
         </footer>
