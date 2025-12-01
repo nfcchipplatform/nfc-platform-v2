@@ -93,7 +93,7 @@ export default function DashboardLayout({
           </ul>
         </nav>
         <div className="mt-auto pt-6 border-t border-gray-700">
-           <p className="text-xs text-gray-500">&copy; 2025 NFC Platform</p>
+           <p className="text-xs text-gray-500">&copy; 2025 PONNU</p>
         </div>
       </aside>
 
