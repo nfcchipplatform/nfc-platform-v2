@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+// ▼▼▼ この行が必要です！これが抜けていたのがエラーの原因です ▼▼▼
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 
@@ -57,12 +58,12 @@ function RegisterForm() {
       }
 
       if (res.ok) {
-        // ★★★ 改良ポイント：登録成功後、すぐに自動ログインする ★★★
+        // 登録成功後、自動ログイン
         console.log("登録成功。自動ログインを試みます。");
         setStatusMessage('登録完了！ 自動ログイン中...');
 
         const loginResult = await signIn('credentials', {
-          redirect: false, // ページ遷移は自分で制御する
+          redirect: false,
           email,
           password,
         });
@@ -71,21 +72,17 @@ function RegisterForm() {
           console.log("自動ログイン成功。ダッシュボードへ移動します。");
           setStatusMessage('ログイン成功！ ダッシュボードへ移動します...');
           
-          // カードIDがある場合は、紐付けフラグ付きでダッシュボードへ
           const targetUrl = cardId 
             ? `/dashboard?cardId=${cardId}&link=true` 
             : '/dashboard';
           
-          // 確実に移動させる
           window.location.href = targetUrl;
         } else {
-          // 万が一自動ログインに失敗した場合
           console.error("自動ログイン失敗");
-          window.location.href = '/login'; // 手動ログインへ誘導
+          window.location.href = '/login';
         }
 
       } else {
-        // 登録エラー時
         setError(data.message || '登録に失敗しました。');
         setIsLoading(false);
         setStatusMessage('');
@@ -100,7 +97,6 @@ function RegisterForm() {
   };
 
   return (
-    // ▼▼▼ 修正: 'flex-col' を追加して縦並びにしました ▼▼▼
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <div className="p-8 bg-white rounded-lg shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">新規登録</h2>
@@ -112,14 +108,12 @@ function RegisterForm() {
            </div>
         )}
 
-        {/* 状況メッセージ（青） */}
         {statusMessage && (
           <div className="mb-6 p-4 bg-blue-100 border border-blue-400 text-blue-800 rounded-lg text-center font-bold animate-pulse">
             ⏳ {statusMessage}
           </div>
         )}
 
-        {/* エラーメッセージ（赤） */}
         {error && (
           <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg text-center font-bold">
             ⚠️ {error}
@@ -157,6 +151,7 @@ function RegisterForm() {
           </button>
 
           <div className="text-center mt-6 border-t pt-6">
+             {/* ここで Link を使っているため、importが必要です */}
              <Link href={cardId ? `/login?cardId=${cardId}` : "/login"} className="text-blue-600 font-bold hover:underline">
                ログイン画面へ戻る
              </Link>
@@ -164,7 +159,6 @@ function RegisterForm() {
         </form>
       </div>
 
-      {/* フッターリンク */}
       <div className="mt-8 flex items-center justify-center gap-6 text-xs text-gray-500">
         <a 
           href="https://ponnu.net/privacy-policy.pdf" 
