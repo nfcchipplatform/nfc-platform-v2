@@ -102,7 +102,7 @@ export default function DashboardClient() {
   const copyUrlToClipboard = () => {
     if (!profileUrl) return;
     navigator.clipboard.writeText(profileUrl).then(() => {
-      setCopySuccess('コピー完了');
+      setCopySuccess('完了');
       setTimeout(() => setCopySuccess(''), 2000);
     });
   };
@@ -232,7 +232,6 @@ export default function DashboardClient() {
                     </div>
                     <div className="text-sm text-gray-600">
                         <p>スマートフォンで読み取ると、<br/>あなたのプロフィールページが開きます。</p>
-                        <p className="text-xs text-gray-400 mt-2">※リアルタイムで生成されています</p>
                     </div>
                 </div>
               </div>
