@@ -119,7 +119,7 @@ function LoginForm() {
           <div className="text-center mt-6 border-t pt-6">
             <p className="text-sm text-gray-600 mb-2">アカウントをお持ちでない場合</p>
             <Link href={cardId ? `/register?cardId=${cardId}` : "/register"} className="text-blue-600 font-bold hover:underline">
-              新規登録はこちら
+              新規登録
             </Link>
           </div>
         </form>
