@@ -117,7 +117,7 @@ export default function DashboardClient() {
   return (
     <div className="space-y-8">
       {/* お気に入りスロット */}
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
         <h3 className="text-lg font-bold mb-4 text-gray-800">マイフィンガー</h3>
         
         {isLoadingFavorites ? (
@@ -125,40 +125,42 @@ export default function DashboardClient() {
             <p className="text-gray-500 animate-pulse">データを読み込んでいます...</p>
           </div>
         ) : (
-          /* ▼▼▼ 修正箇所 1: 横スクロール(overflow-x-auto)を削除し、justify-betweenとgap-2で均等配置 ▼▼▼ */
-          <div className="flex justify-between gap-2 pb-2">
+          /* ▼▼▼ 変更箇所: justify-between と gap-1 で均等配置し、paddingを調整 ▼▼▼ */
+          <div className="flex justify-between gap-1 pb-2">
             {favoriteSlots.length === 0 && (
                <p className="text-sm text-gray-400 w-full text-center">お気に入りはまだ設定されていません</p>
             )}
             {favoriteSlots.map((slot, index) => {
               const profile = favoriteProfiles.find(p => p.username === slot);
               return (
-                /* ▼▼▼ 修正箇所 2: min-w-[80px] を削除し、w-1/5 (5等分) を指定 ▼▼▼ */
-                <div key={index} className="flex-1 w-1/5 text-center">
+                /* ▼▼▼ 変更箇所: min-w-[80px] を削除し、幅を柔軟に(flex-1)しつつ最小幅0(min-w-0)を設定 ▼▼▼ */
+                <div key={index} className="flex-1 text-center min-w-0">
                   {profile ? (
                     <Link href={`/${profile.username}`} className="block group">
                       {profile.image ? (
-                        <img src={profile.image} alt={profile.name || ''} className="w-16 h-16 rounded-full mx-auto mb-2 object-cover group-hover:opacity-80 transition-opacity border border-gray-200" />
+                        /* ▼▼▼ 変更箇所: 画像サイズをスマホで小さく(w-10 h-10)、PCで元のサイズ(sm:w-16)に ▼▼▼ */
+                        <img src={profile.image} alt={profile.name || ''} className="w-10 h-10 sm:w-16 sm:h-16 rounded-full mx-auto mb-2 object-cover group-hover:opacity-80 transition-opacity border border-gray-200" />
                       ) : (
-                        <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-2 group-hover:opacity-80 transition-opacity" />
+                        <div className="w-10 h-10 sm:w-16 sm:h-16 bg-gray-200 rounded-full mx-auto mb-2 group-hover:opacity-80 transition-opacity" />
                       )}
-                      <p className="text-xs text-gray-600 truncate font-medium group-hover:text-blue-500">{profile.name || profile.username}</p>
+                      {/* ▼▼▼ 変更箇所: 文字サイズをスマホで極小(text-[10px])、PCで小(sm:text-xs)に調整 ▼▼▼ */}
+                      <p className="text-[10px] sm:text-xs text-gray-600 truncate font-medium group-hover:text-blue-500 px-1">{profile.name || profile.username}</p>
                     </Link>
                   ) : slot ? (
                     <a href={slot} target="_blank" rel="noopener noreferrer" className="block group">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-2 flex items-center justify-center group-hover:opacity-80 transition-opacity border border-gray-200">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-gray-400">
+                        <div className="w-10 h-10 sm:w-16 sm:h-16 bg-gray-100 rounded-full mx-auto mb-2 flex items-center justify-center group-hover:opacity-80 transition-opacity border border-gray-200">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
                           </svg>
                         </div>
-                        <p className="text-xs text-gray-600 truncate group-hover:text-blue-500">外部リンク</p>
+                        <p className="text-[10px] sm:text-xs text-gray-600 truncate group-hover:text-blue-500 px-1">外部リンク</p>
                     </a>
                   ) : (
                     <Link href="/dashboard/favorites" className="block group opacity-50 hover:opacity-100">
-                        <div className="w-16 h-16 bg-gray-50 border-2 border-dashed border-gray-300 rounded-full mx-auto mb-2 flex items-center justify-center">
-                            <span className="text-gray-300 text-2xl">+</span>
+                        <div className="w-10 h-10 sm:w-16 sm:h-16 bg-gray-50 border-2 border-dashed border-gray-300 rounded-full mx-auto mb-2 flex items-center justify-center">
+                            <span className="text-gray-300 text-lg sm:text-2xl">+</span>
                         </div>
-                        <p className="text-xs text-gray-400">未設定</p>
+                        <p className="text-[10px] sm:text-xs text-gray-400">未設定</p>
                     </Link>
                   )}
                 </div>
@@ -242,4 +244,4 @@ export default function DashboardClient() {
       </div>
     </div>
   );
-} 
+}
