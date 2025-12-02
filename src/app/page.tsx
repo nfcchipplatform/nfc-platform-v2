@@ -20,7 +20,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-gray-100 p-6">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm text-center">
         <h1 className="text-2xl font-bold mb-6 text-gray-800">
-          ようこそ！
+          PONNU
         </h1>
 
         {/* ログイン済みの場合 */}
