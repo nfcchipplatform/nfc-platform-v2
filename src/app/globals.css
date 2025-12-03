@@ -1,5 +1,34 @@
-/* src/app/globals.css */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 既存のTailwind CSS定義の上に追記 */
+
+/* --- DynamicRabbitCharacter 用アニメーション定義 --- */
+
+/* @keyframes 定義: 左右にわずかに揺れる動き */
+@keyframes sway {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(0.5deg); /* わずかに右に傾く */
+  }
+  50% {
+    transform: rotate(0deg); /* 中央に戻る */
+  }
+  75% {
+    transform: rotate(-0.5deg); /* わずかに左に傾く */
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* アニメーションクラス */
+.animate-sway {
+  /* 4秒周期で滑らかに無限ループ */
+  animation: sway 4s ease-in-out infinite; 
+  /* 足元を支点にして揺らす */
+  transform-origin: bottom center; 
+}
