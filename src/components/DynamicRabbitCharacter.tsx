@@ -2,43 +2,49 @@
 
 import React from 'react';
 
+/**
+ * P1～P7 のパラメーター定義
+ * すべて 1(最小) ～ 5(最大) の範囲を想定
+ */
 interface DynamicRabbitCharacterProps {
-  earLength: number; // P1: 親指の長さ
-  armLength: number; // P2: 人差し指・小指（外側の指）の長さ
-  legLength: number; // P3: 中指・薬指（内側の指）の長さ
-  bodySize: number;  // P4: 手のひら（胴体）の大きさ
+  thumbLength: number;   // P1: 親指の長さ
+  indexLength: number;   // P2: 人差し指の長さ
+  middleLength: number;  // P3: 中指の長さ
+  ringLength: number;    // P4: 薬指の長さ
+  littleLength: number;  // P5: 小指の長さ
+  bodySize: number;      // P6: 胴体（手のひら）の大きさ
+  emotionType: number;   // P7: 表情 (1:喜, 2:怒, 3:哀, 4:楽, 5:睡眠)
 }
 
 const DynamicRabbitCharacter: React.FC<DynamicRabbitCharacterProps> = ({
-  earLength,
-  armLength,
-  legLength,
+  thumbLength,
+  indexLength,
+  middleLength,
+  ringLength,
+  littleLength,
   bodySize,
+  emotionType,
 }) => {
-  // --- パラメーターの正規化 ---
-  // 入力値 1～5 を、描画用のスケール係数に変換
+  // --- 1. パラメーターの正規化係数計算 ---
   const baseParam = 3.0;
-  const getFactor = (val: number, sensitivity: number = 1.0) => {
+  // 各指の長さを計算するヘルパー (感度1.2倍で変化をわかりやすく)
+  const getFingerFactor = (val: number) => {
     const normalized = val / baseParam;
-    // 基準1.0倍を中心に、sensitivityの強度で増減させる
-    return 1.0 + (normalized - 1.0) * sensitivity;
+    return 1.0 + (normalized - 1.0) * 1.2;
   };
 
-  // 各パーツへのパラメーター割り当て
-  // P1: 親指 (旧:耳) -> 感度高め
-  const pThumb = getFactor(earLength, 1.0);
+  // 各パーツのスケール係数
+  const fThumb = getFingerFactor(thumbLength);
+  const fIndex = getFingerFactor(indexLength);
+  const fMiddle = getFingerFactor(middleLength);
+  const fRing = getFingerFactor(ringLength);
+  const fLittle = getFingerFactor(littleLength);
   
-  // P2: 外側の指 (旧:手) -> 人差し指と小指
-  const pOuterFinger = getFactor(armLength, 1.0); 
-  
-  // P3: 内側の指 (旧:足) -> 中指と薬指
-  const pInnerFinger = getFactor(legLength, 1.0); 
-  
-  // P4: 胴体 (旧:胴体) -> 手のひら全体
-  const pBody = getFactor(bodySize, 0.6);
+  // 胴体は極端に変わりすぎないよう感度を抑える
+  const fBody = 1.0 + (bodySize / baseParam - 1.0) * 0.5;
 
-  // --- スタイル定数 ---
-  const STROKE_WIDTH = 6; // 線を少し太くしてポップに
+  // --- 2. 共通スタイル定義 ---
+  const STROKE_WIDTH = 6;
   const FILL_COLOR = 'white';
   const STROKE_COLOR = 'black';
   
@@ -46,120 +52,169 @@ const DynamicRabbitCharacter: React.FC<DynamicRabbitCharacterProps> = ({
     fill: FILL_COLOR,
     stroke: STROKE_COLOR,
     strokeWidth: STROKE_WIDTH,
-    strokeLinecap: 'round', // 端っこを丸く
+    strokeLinecap: 'round',
     strokeLinejoin: 'round',
   };
 
-  // --- 座標計算 (Canvasサイズ: 240x360) ---
-  const viewBoxHeight = 360;
-  const centerX = 120;
-  const centerY = 160; // 重心を少し上に
+  // --- 3. 座標・形状計算 ---
+  // ViewBox: 300x400 (指が伸びても収まるように縦長に)
+  const viewBoxW = 300;
+  const viewBoxH = 400;
+  const centerX = viewBoxW / 2;
+  const centerY = viewBoxH * 0.65; // 重心を少し下げる
 
-  // 1. 胴体（手のひら）
-  // 卵型に近い円形
-  const palmRx = 70 * pBody; // 横幅半径
-  const palmRy = 80 * pBody; // 縦幅半径
-  const palmTopY = centerY - palmRy;
-  const palmBottomY = centerY + palmRy;
+  // 手のひら（胴体）のサイズ
+  const palmRx = 75 * fBody;
+  const palmRy = 85 * fBody;
 
-  // 2. 親指 (Thumb) - 向かって左上から生える
-  // 角度をつけて配置
-  const thumbBaseX = centerX - palmRx * 0.8;
-  const thumbBaseY = centerY - palmRy * 0.4;
-  const thumbLen = 50 * pThumb;
-  const thumbWidth = 25 * pBody; // 親指の太さは胴体に連動
+  // 指を描画する関数 (角度、長さ、幅を指定)
+  const createFingerPath = (angleDeg: number, factor: number, widthBase: number) => {
+    const angleRad = (angleDeg - 90) * (Math.PI / 180); // -90で真上を0度に
+    const length = 70 * factor; // 基本長さ70 * 係数
+    const width = widthBase * fBody;
 
-  const thumbPath = `
-    M ${thumbBaseX} ${thumbBaseY}
-    Q ${thumbBaseX - thumbLen} ${thumbBaseY - thumbLen * 0.5} ${thumbBaseX - thumbLen - 10} ${thumbBaseY - thumbLen}
-    A ${thumbWidth/2} ${thumbWidth/2} 0 0 1 ${thumbBaseX - thumbLen + 15} ${thumbBaseY - thumbLen - 15}
-    Q ${thumbBaseX - thumbLen * 0.2} ${thumbBaseY - thumbLen} ${thumbBaseX + 10} ${thumbBaseY - 20}
-    L ${thumbBaseX} ${thumbBaseY}
-    Z
-  `;
+    // 指の根本（手のひらの輪郭上）
+    const startX = centerX + palmRx * Math.cos(angleRad);
+    const startY = centerY + palmRy * Math.sin(angleRad);
 
-  // 3. 4本の指（足）
-  // 胴体の下部曲線に沿って配置
-  // 指の幅
-  const fingerWidth = 20 * pBody; 
-  // 指の間隔
-  const spacing = fingerWidth * 1.2;
+    // 指の先端
+    const tipX = centerX + (palmRx + length) * Math.cos(angleRad);
+    const tipY = centerY + (palmRy + length) * Math.sin(angleRad);
 
-  // 各指の長さ計算 (付け根からの長さ)
-  const lenIndex = 40 * pOuterFinger;  // 人差し指 (左外)
-  const lenMiddle = 50 * pInnerFinger; // 中指 (左内)
-  const lenRing = 50 * pInnerFinger;   // 薬指 (右内)
-  const lenLittle = 35 * pOuterFinger; // 小指 (右外)
-
-  // 指のX座標 (中心から左右に展開)
-  const xMiddle = centerX - spacing * 0.5;
-  const xRing = centerX + spacing * 0.5;
-  const xIndex = centerX - spacing * 1.5;
-  const xLittle = centerX + spacing * 1.5;
-
-  // 指の付け根Y座標 (楕円の方程式から簡易的に算出、あるいは固定オフセット)
-  // ここではシンプルに胴体の下部付近を基準にする
-  const fingerBaseY = centerY + palmRy * 0.8;
-
-  // 指生成ヘルパー関数 (棒状のパス)
-  const createFingerPath = (x: number, y: number, length: number, width: number, angleDeg: number) => {
-    // 角度に応じた先端位置の計算
-    const rad = (angleDeg * Math.PI) / 180;
-    const tipX = x + length * Math.sin(rad);
-    const tipY = y + length * Math.cos(rad);
-    
-    // シンプルな線分（太線）として描画
-    return `M ${x} ${y} L ${tipX} ${tipY}`;
+    // 単純な線ではなく、太さを持った「U字型」のパスを生成して接続を綺麗にする
+    // (ここでは strokeWidth を太くして線で表現する簡易実装を採用し、レイヤー順序で制御します)
+    return {
+      d: `M ${startX} ${startY} L ${tipX} ${tipY}`,
+      width: width
+    };
   };
 
-  // 4本の指のパス (少し放射状に広げる)
-  const pathIndex = createFingerPath(xIndex, fingerBaseY - 10, lenIndex, fingerWidth, -15);
-  const pathMiddle = createFingerPath(xMiddle, fingerBaseY, lenMiddle, fingerWidth, -5);
-  const pathRing = createFingerPath(xRing, fingerBaseY, lenRing, fingerWidth, 5);
-  const pathLittle = createFingerPath(xLittle, fingerBaseY - 10, lenLittle, fingerWidth, 15);
+  // 各指の定義 (角度は時計回り、真上が0度だと仮定するがSVG座標系では調整が必要)
+  // ここでは配置バランスを調整
+  // 親指: 左側面 (-50度くらい)
+  const p1 = createFingerPath(-50, fThumb, 28);
+  // 人差し指: 左上 (-20度)
+  const p2 = createFingerPath(-20, fIndex, 24);
+  // 中指: 真上 (0度)
+  const p3 = createFingerPath(0, fMiddle, 24);
+  // 薬指: 右上 (20度)
+  const p4 = createFingerPath(20, fRing, 22);
+  // 小指: 右側面 (45度)
+  const p5 = createFingerPath(45, fLittle, 20);
 
-  // 4. 顔パーツ
-  // 手のひらの中央より少し上に配置
-  const faceY = centerY - 10;
-  const eyeOffsetX = 20 * pBody;
-  const eyeSize = 6;
+
+  // --- 4. 表情のレンダリング (P7) ---
+  const renderFace = () => {
+    // 1:喜, 2:怒, 3:哀, 4:楽, 5:睡眠
+    // 範囲外の値が来たら「4:楽(通常)」として扱う
+    const mode = Math.min(5, Math.max(1, emotionType));
+    
+    const faceY = centerY - 10 * fBody; // 顔の中心Y
+    const eyeSpace = 25 * fBody; // 目の間隔
+
+    // 共通パーツ
+    const leftEyeX = centerX - eyeSpace;
+    const rightEyeX = centerX + eyeSpace;
+
+    switch (mode) {
+      case 1: // 【喜】 笑った目、大きな口
+        return (
+          <g>
+            {/* 目: ^ ^ */}
+            <path d={`M ${leftEyeX - 10} ${faceY} L ${leftEyeX} ${faceY - 10} L ${leftEyeX + 10} ${faceY}`} fill="none" stroke={STROKE_COLOR} strokeWidth={4} strokeLinecap="round" />
+            <path d={`M ${rightEyeX - 10} ${faceY} L ${rightEyeX} ${faceY - 10} L ${rightEyeX + 10} ${faceY}`} fill="none" stroke={STROKE_COLOR} strokeWidth={4} strokeLinecap="round" />
+            {/* 口: 大きなD型 */}
+            <path d={`M ${centerX - 20} ${faceY + 20} Q ${centerX} ${faceY + 50}, ${centerX + 20} ${faceY + 20} Z`} fill={STROKE_COLOR} stroke="none" />
+          </g>
+        );
+
+      case 2: // 【怒】 つり目、への字口、漫符
+        return (
+          <g>
+             {/* 眉/目: \ /  */}
+            <path d={`M ${leftEyeX - 10} ${faceY - 15} L ${leftEyeX + 10} ${faceY}`} fill="none" stroke={STROKE_COLOR} strokeWidth={5} />
+            <path d={`M ${rightEyeX + 10} ${faceY - 15} L ${rightEyeX - 10} ${faceY}`} fill="none" stroke={STROKE_COLOR} strokeWidth={5} />
+            {/* 黒目 */}
+            <circle cx={leftEyeX} cy={faceY} r={3} fill={STROKE_COLOR} />
+            <circle cx={rightEyeX} cy={faceY} r={3} fill={STROKE_COLOR} />
+            {/* 口: への字 */}
+            <path d={`M ${centerX - 15} ${faceY + 35} Q ${centerX} ${faceY + 15}, ${centerX + 15} ${faceY + 35}`} fill="none" stroke={STROKE_COLOR} strokeWidth={4} strokeLinecap="round" />
+            {/* 怒りマーク */}
+            <path d={`M ${centerX + 50} ${faceY - 40} L ${centerX + 60} ${faceY - 50} M ${centerX + 60} ${faceY - 40} L ${centerX + 50} ${faceY - 50}`} stroke={STROKE_COLOR} strokeWidth={3} />
+          </g>
+        );
+
+      case 3: // 【哀】 涙、困り眉、波線口
+        return (
+          <g>
+            {/* 目: / \ (困り) */}
+            <path d={`M ${leftEyeX - 10} ${faceY} L ${leftEyeX + 10} ${faceY - 5}`} fill="none" stroke={STROKE_COLOR} strokeWidth={4} />
+            <path d={`M ${rightEyeX + 10} ${faceY} L ${rightEyeX - 10} ${faceY - 5}`} fill="none" stroke={STROKE_COLOR} strokeWidth={4} />
+             {/* 涙 */}
+            <path d={`M ${leftEyeX} ${faceY + 10} Q ${leftEyeX - 5} ${faceY + 25}, ${leftEyeX} ${faceY + 30} Q ${leftEyeX + 5} ${faceY + 25}, ${leftEyeX} ${faceY + 10}`} fill="skyblue" stroke="none" />
+            {/* 口: 波線 */}
+            <path d={`M ${centerX - 15} ${faceY + 30} Q ${centerX - 5} ${faceY + 20}, ${centerX} ${faceY + 30} Q ${centerX + 5} ${faceY + 40}, ${centerX + 15} ${faceY + 30}`} fill="none" stroke={STROKE_COLOR} strokeWidth={3} strokeLinecap="round" />
+          </g>
+        );
+      
+      case 5: // 【睡眠】 閉じた目、Zzz
+        return (
+          <g>
+            {/* 目: 一本線 (閉じてる) */}
+            <path d={`M ${leftEyeX - 10} ${faceY} L ${leftEyeX + 10} ${faceY}`} fill="none" stroke={STROKE_COLOR} strokeWidth={4} />
+            <path d={`M ${rightEyeX - 10} ${faceY} L ${rightEyeX + 10} ${faceY}`} fill="none" stroke={STROKE_COLOR} strokeWidth={4} />
+            {/* 口: 小さい丸 (寝息) */}
+            <circle cx={centerX} cy={faceY + 30} r={5} fill="none" stroke={STROKE_COLOR} strokeWidth={3} />
+            {/* Zzz */}
+            <text x={centerX + 40} y={faceY - 20} fontFamily="sans-serif" fontSize="24" fontWeight="bold" fill={STROKE_COLOR}>Zzz</text>
+          </g>
+        );
+
+      case 4: // 【楽】 (デフォルト) 普通の笑顔
+      default:
+        return (
+          <g>
+            {/* 目: 普通の黒丸 */}
+            <circle cx={leftEyeX} cy={faceY} r={6} fill={STROKE_COLOR} />
+            <circle cx={rightEyeX} cy={faceY} r={6} fill={STROKE_COLOR} />
+            {/* 口: にっこり */}
+            <path d={`M ${centerX - 15} ${faceY + 20} Q ${centerX} ${faceY + 35}, ${centerX + 15} ${faceY + 20}`} fill="none" stroke={STROKE_COLOR} strokeWidth={4} strokeLinecap="round" />
+          </g>
+        );
+    }
+  };
 
   return (
     <svg
       width="240"
-      height={viewBoxHeight}
-      viewBox={`0 0 240 ${viewBoxHeight}`}
+      height={320}
+      viewBox={`0 0 ${viewBoxW} ${viewBoxH}`}
       xmlns="http://www.w3.org/2000/svg"
       className="character-svg animate-sway" 
       style={{ overflow: 'visible' }}
     >
-      {/* --- 描画レイヤー順序 --- */}
+      {/* 描画順序:
+        1. 指 (手のひらの後ろに配置して接続部を隠す)
+        2. 手のひら (胴体)
+        3. 顔パーツ
+      */}
 
-      {/* 1. 親指 (胴体の後ろ) */}
-      <path d={thumbPath} {...COMMON_STYLE} />
+      {/* --- 指レイヤー --- */}
+      {/* 各指は単なる線(stroke)で描画し、先端を丸く(round)することで指らしく見せる */}
+      <g>
+        <path d={p1.d} {...COMMON_STYLE} strokeWidth={p1.width} />
+        <path d={p2.d} {...COMMON_STYLE} strokeWidth={p2.width} />
+        <path d={p3.d} {...COMMON_STYLE} strokeWidth={p3.width} />
+        <path d={p4.d} {...COMMON_STYLE} strokeWidth={p4.width} />
+        <path d={p5.d} {...COMMON_STYLE} strokeWidth={p5.width} />
+      </g>
 
-      {/* 2. 4本の指 (足) - 太いストロークで描画 */}
-      {/* 指先を丸く表現するため strokeLinecap="round" を利用 */}
-      <path d={pathIndex} {...COMMON_STYLE} strokeWidth={fingerWidth} />
-      <path d={pathMiddle} {...COMMON_STYLE} strokeWidth={fingerWidth} />
-      <path d={pathRing} {...COMMON_STYLE} strokeWidth={fingerWidth} />
-      <path d={pathLittle} {...COMMON_STYLE} strokeWidth={fingerWidth} />
-
-      {/* 3. 胴体 (手のひら) - メイン */}
+      {/* --- 胴体（手のひら）レイヤー --- */}
       <ellipse cx={centerX} cy={centerY} rx={palmRx} ry={palmRy} {...COMMON_STYLE} />
 
-      {/* 4. 顔 */}
-      {/* 目 */}
-      <circle cx={centerX - eyeOffsetX} cy={faceY} r={eyeSize} fill={STROKE_COLOR} />
-      <circle cx={centerX + eyeOffsetX} cy={faceY} r={eyeSize} fill={STROKE_COLOR} />
-      {/* 口 (小さなカーブ) */}
-      <path
-        d={`M ${centerX - 5} ${faceY + 10} Q ${centerX} ${faceY + 15}, ${centerX + 5} ${faceY + 10}`}
-        fill="none"
-        stroke={STROKE_COLOR}
-        strokeWidth={3}
-        strokeLinecap="round"
-      />
+      {/* --- 顔レイヤー --- */}
+      {renderFace()}
+
     </svg>
   );
 };
