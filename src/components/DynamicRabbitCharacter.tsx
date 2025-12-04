@@ -217,6 +217,6 @@ const DynamicRabbitCharacter: React.FC<DynamicRabbitCharacterProps> = ({
 
     </svg>
   );
-}; 
+};
 
 export default DynamicRabbitCharacter;
