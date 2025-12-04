@@ -3,10 +3,10 @@
 import React from 'react';
 
 interface DynamicRabbitCharacterProps {
-  earLength: number;
-  armLength: number;
-  legLength: number;
-  bodySize: number;
+  earLength: number; // P1: 親指の長さ
+  armLength: number; // P2: 人差し指・小指（外側の指）の長さ
+  legLength: number; // P3: 中指・薬指（内側の指）の長さ
+  bodySize: number;  // P4: 手のひら（胴体）の大きさ
 }
 
 const DynamicRabbitCharacter: React.FC<DynamicRabbitCharacterProps> = ({
@@ -15,37 +15,30 @@ const DynamicRabbitCharacter: React.FC<DynamicRabbitCharacterProps> = ({
   legLength,
   bodySize,
 }) => {
+  // --- パラメーターの正規化 ---
+  // 入力値 1～5 を、描画用のスケール係数に変換
   const baseParam = 3.0;
-  
-  // 基本の係数計算関数
   const getFactor = (val: number, sensitivity: number = 1.0) => {
     const normalized = val / baseParam;
+    // 基準1.0倍を中心に、sensitivityの強度で増減させる
     return 1.0 + (normalized - 1.0) * sensitivity;
   };
 
-  // 【修正】手と足の入力値(1～5)を、(3～5)の範囲に変換する関数
-  // これにより、入力1のときに 以前の3相当（1.0倍）のサイズになります。
-  // 入力5のときは 以前の5相当 のサイズになります。
-  const mapToMediumBase = (val: number) => {
-    // 1 -> 3.0
-    // 5 -> 5.0
-    // 傾き 0.5
-    return 3.0 + (val - 1.0) * 0.5;
-  };
+  // 各パーツへのパラメーター割り当て
+  // P1: 親指 (旧:耳) -> 感度高め
+  const pThumb = getFactor(earLength, 1.0);
+  
+  // P2: 外側の指 (旧:手) -> 人差し指と小指
+  const pOuterFinger = getFactor(armLength, 1.0); 
+  
+  // P3: 内側の指 (旧:足) -> 中指と薬指
+  const pInnerFinger = getFactor(legLength, 1.0); 
+  
+  // P4: 胴体 (旧:胴体) -> 手のひら全体
+  const pBody = getFactor(bodySize, 0.6);
 
-  // P1: 耳 (変更なし)
-  const pEar = getFactor(earLength, 0.8);
-  
-  // P2: 手 (1331の「3」を基準にするため、マッピング関数を通す)
-  const pArm = getFactor(mapToMediumBase(armLength), 0.8); 
-  
-  // P3: 足 (1331の「3」を基準にするため、マッピング関数を通す)
-  const pLeg = getFactor(mapToMediumBase(legLength), 0.9); 
-  
-  // P4: 胴体 (変更なし)
-  const pBody = getFactor(bodySize, 0.7);
-
-  const STROKE_WIDTH = 5;
+  // --- スタイル定数 ---
+  const STROKE_WIDTH = 6; // 線を少し太くしてポップに
   const FILL_COLOR = 'white';
   const STROKE_COLOR = 'black';
   
@@ -53,81 +46,83 @@ const DynamicRabbitCharacter: React.FC<DynamicRabbitCharacterProps> = ({
     fill: FILL_COLOR,
     stroke: STROKE_COLOR,
     strokeWidth: STROKE_WIDTH,
-    strokeLinecap: 'round',
+    strokeLinecap: 'round', // 端っこを丸く
     strokeLinejoin: 'round',
   };
 
-  const viewBoxHeight = 400;
+  // --- 座標計算 (Canvasサイズ: 240x360) ---
+  const viewBoxHeight = 360;
   const centerX = 120;
-  
-  // 1. 胴体
-  const headTopY = 70 * (2 - pBody) + 20; 
-  const neckY = 130 + 20;
-  const bodyBottomY = neckY + 110 * pBody;
-  const bodyWidthHalf = 70 * pBody;
+  const centerY = 160; // 重心を少し上に
 
-  const bodyPath = `
-    M ${centerX - 35 * pBody} ${neckY}
-    C ${centerX - 45 * pBody} ${neckY - 30}, ${centerX - 45 * pBody} ${headTopY}, ${centerX} ${headTopY}
-    C ${centerX + 45 * pBody} ${headTopY}, ${centerX + 45 * pBody} ${neckY - 30}, ${centerX + 35 * pBody} ${neckY}
-    C ${centerX + bodyWidthHalf + 10} ${neckY + 40}, ${centerX + bodyWidthHalf} ${bodyBottomY - 10}, ${centerX} ${bodyBottomY}
-    C ${centerX - bodyWidthHalf} ${bodyBottomY - 10}, ${centerX - bodyWidthHalf - 10} ${neckY + 40}, ${centerX - 35 * pBody} ${neckY}
+  // 1. 胴体（手のひら）
+  // 卵型に近い円形
+  const palmRx = 70 * pBody; // 横幅半径
+  const palmRy = 80 * pBody; // 縦幅半径
+  const palmTopY = centerY - palmRy;
+  const palmBottomY = centerY + palmRy;
+
+  // 2. 親指 (Thumb) - 向かって左上から生える
+  // 角度をつけて配置
+  const thumbBaseX = centerX - palmRx * 0.8;
+  const thumbBaseY = centerY - palmRy * 0.4;
+  const thumbLen = 50 * pThumb;
+  const thumbWidth = 25 * pBody; // 親指の太さは胴体に連動
+
+  const thumbPath = `
+    M ${thumbBaseX} ${thumbBaseY}
+    Q ${thumbBaseX - thumbLen} ${thumbBaseY - thumbLen * 0.5} ${thumbBaseX - thumbLen - 10} ${thumbBaseY - thumbLen}
+    A ${thumbWidth/2} ${thumbWidth/2} 0 0 1 ${thumbBaseX - thumbLen + 15} ${thumbBaseY - thumbLen - 15}
+    Q ${thumbBaseX - thumbLen * 0.2} ${thumbBaseY - thumbLen} ${thumbBaseX + 10} ${thumbBaseY - 20}
+    L ${thumbBaseX} ${thumbBaseY}
     Z
   `;
 
-  // 2. 耳
-  const earBaseY = headTopY + 10 * pBody;
-  const earHeight = 50 * pEar;
+  // 3. 4本の指（足）
+  // 胴体の下部曲線に沿って配置
+  // 指の幅
+  const fingerWidth = 20 * pBody; 
+  // 指の間隔
+  const spacing = fingerWidth * 1.2;
 
-  // 3. 腕
-  const shoulderX = centerX - bodyWidthHalf + 20 * pBody; 
-  const shoulderY = neckY + 40 * pBody;
-  const armThickness = 20 * pArm;
-  const armLen = 50 * pArm;
-  const handX = shoulderX - armLen * 0.9; 
-  const handY = shoulderY - armLen * 0.7;
+  // 各指の長さ計算 (付け根からの長さ)
+  const lenIndex = 40 * pOuterFinger;  // 人差し指 (左外)
+  const lenMiddle = 50 * pInnerFinger; // 中指 (左内)
+  const lenRing = 50 * pInnerFinger;   // 薬指 (右内)
+  const lenLittle = 35 * pOuterFinger; // 小指 (右外)
 
-  const leftArmPath = `
-    M ${shoulderX} ${shoulderY - 10} 
-    Q ${shoulderX - 10} ${shoulderY - 40} ${handX + 5} ${handY - 5}
-    A ${armThickness/2} ${armThickness/2} 0 0 0 ${handX - 5} ${handY + 15}
-    Q ${shoulderX - 40} ${shoulderY + 10} ${shoulderX} ${shoulderY + 20}
-    Z
-  `;
+  // 指のX座標 (中心から左右に展開)
+  const xMiddle = centerX - spacing * 0.5;
+  const xRing = centerX + spacing * 0.5;
+  const xIndex = centerX - spacing * 1.5;
+  const xLittle = centerX + spacing * 1.5;
 
-  // 4. 足
-  const legRootY = bodyBottomY - 25 * pBody; 
-  const legSpacing = 30 * pBody;
+  // 指の付け根Y座標 (楕円の方程式から簡易的に算出、あるいは固定オフセット)
+  // ここではシンプルに胴体の下部付近を基準にする
+  const fingerBaseY = centerY + palmRy * 0.8;
 
-  const legW = 25 * pLeg;
-  const legH = 40 * pLeg;
-  const footL = 35 * pLeg;
+  // 指生成ヘルパー関数 (棒状のパス)
+  const createFingerPath = (x: number, y: number, length: number, width: number, angleDeg: number) => {
+    // 角度に応じた先端位置の計算
+    const rad = (angleDeg * Math.PI) / 180;
+    const tipX = x + length * Math.sin(rad);
+    const tipY = y + length * Math.cos(rad);
+    
+    // シンプルな線分（太線）として描画
+    return `M ${x} ${y} L ${tipX} ${tipY}`;
+  };
 
-  const lx = centerX - legSpacing;
-  const ly = legRootY;
+  // 4本の指のパス (少し放射状に広げる)
+  const pathIndex = createFingerPath(xIndex, fingerBaseY - 10, lenIndex, fingerWidth, -15);
+  const pathMiddle = createFingerPath(xMiddle, fingerBaseY, lenMiddle, fingerWidth, -5);
+  const pathRing = createFingerPath(xRing, fingerBaseY, lenRing, fingerWidth, 5);
+  const pathLittle = createFingerPath(xLittle, fingerBaseY - 10, lenLittle, fingerWidth, 15);
 
-  const leftLegPath = `
-    M ${lx} ${ly}
-    L ${lx} ${ly + legH}
-    Q ${lx} ${ly + legH + legW} ${lx - footL} ${ly + legH + legW * 0.8}
-    Q ${lx - footL - 10} ${ly + legH} ${lx - footL} ${ly + legH - 10}
-    L ${lx - legW} ${ly + 10}
-    L ${lx} ${ly}
-    Z
-  `;
-
-  const rx = centerX + legSpacing;
-  const ry = legRootY;
-
-  const rightLegPath = `
-    M ${rx} ${ry}
-    L ${rx} ${ry + legH}
-    Q ${rx} ${ry + legH + legW} ${rx + footL} ${ry + legH + legW * 0.8}
-    Q ${rx + footL + 10} ${ry + legH} ${rx + footL} ${ry + legH - 10}
-    L ${rx + legW} ${ry + 10}
-    L ${rx} ${ry}
-    Z
-  `;
+  // 4. 顔パーツ
+  // 手のひらの中央より少し上に配置
+  const faceY = centerY - 10;
+  const eyeOffsetX = 20 * pBody;
+  const eyeSize = 6;
 
   return (
     <svg
@@ -138,30 +133,31 @@ const DynamicRabbitCharacter: React.FC<DynamicRabbitCharacterProps> = ({
       className="character-svg animate-sway" 
       style={{ overflow: 'visible' }}
     >
-      <g transform={`rotate(-10, ${centerX}, ${earBaseY})`}>
-        <ellipse cx={centerX - 20 * pBody} cy={earBaseY - earHeight / 2} rx={18 * pBody} ry={earHeight} {...COMMON_STYLE} />
-      </g>
-      <g transform={`rotate(10, ${centerX}, ${earBaseY})`}>
-        <ellipse cx={centerX + 20 * pBody} cy={earBaseY - earHeight / 2} rx={18 * pBody} ry={earHeight} {...COMMON_STYLE} />
-      </g>
+      {/* --- 描画レイヤー順序 --- */}
 
-      <path d={leftArmPath} {...COMMON_STYLE} />
-      <g transform={`scale(-1, 1) translate(-240, 0)`}>
-        <path d={leftArmPath} {...COMMON_STYLE} />
-      </g>
+      {/* 1. 親指 (胴体の後ろ) */}
+      <path d={thumbPath} {...COMMON_STYLE} />
 
-      <path d={leftLegPath} {...COMMON_STYLE} />
-      <path d={rightLegPath} {...COMMON_STYLE} />
+      {/* 2. 4本の指 (足) - 太いストロークで描画 */}
+      {/* 指先を丸く表現するため strokeLinecap="round" を利用 */}
+      <path d={pathIndex} {...COMMON_STYLE} strokeWidth={fingerWidth} />
+      <path d={pathMiddle} {...COMMON_STYLE} strokeWidth={fingerWidth} />
+      <path d={pathRing} {...COMMON_STYLE} strokeWidth={fingerWidth} />
+      <path d={pathLittle} {...COMMON_STYLE} strokeWidth={fingerWidth} />
 
-      <path d={bodyPath} {...COMMON_STYLE} />
+      {/* 3. 胴体 (手のひら) - メイン */}
+      <ellipse cx={centerX} cy={centerY} rx={palmRx} ry={palmRy} {...COMMON_STYLE} />
 
-      <circle cx={centerX - 18 * pBody} cy={headTopY + 30 * pBody} r={5 * pBody} fill={STROKE_COLOR} />
-      <circle cx={centerX + 18 * pBody} cy={headTopY + 30 * pBody} r={5 * pBody} fill={STROKE_COLOR} />
+      {/* 4. 顔 */}
+      {/* 目 */}
+      <circle cx={centerX - eyeOffsetX} cy={faceY} r={eyeSize} fill={STROKE_COLOR} />
+      <circle cx={centerX + eyeOffsetX} cy={faceY} r={eyeSize} fill={STROKE_COLOR} />
+      {/* 口 (小さなカーブ) */}
       <path
-        d={`M ${centerX - 6 * pBody} ${headTopY + 45 * pBody} Q ${centerX} ${headTopY + 45 * pBody + 6 * pBody}, ${centerX + 6 * pBody} ${headTopY + 45 * pBody}`}
+        d={`M ${centerX - 5} ${faceY + 10} Q ${centerX} ${faceY + 15}, ${centerX + 5} ${faceY + 10}`}
         fill="none"
         stroke={STROKE_COLOR}
-        strokeWidth={STROKE_WIDTH - 1}
+        strokeWidth={3}
         strokeLinecap="round"
       />
     </svg>
