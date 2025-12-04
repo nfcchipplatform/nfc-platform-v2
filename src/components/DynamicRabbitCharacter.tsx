@@ -1,12 +1,12 @@
 import React from 'react';
 
 interface CharacterProps {
-  thumbLength: number;  // P1: 親指 (アンテナ/ツノ)
+  thumbLength: number;  // P1: 親指 (アンテナ)
   indexLength: number;  // P2: 人差し指 (左足外)
   middleLength: number; // P3: 中指 (左足内)
   ringLength: number;   // P4: 薬指 (右足内)
   littleLength: number; // P5: 小指 (右足外)
-  bodySize: number;     // P6: 胴体の大きさ (1:丸 -> 5:ひょうたん)
+  bodySize: number;     // P6: 胴体の大きさ (1:正円 -> 5:縦長楕円)
   emotionType: number;  // P7: 表情
 }
 
@@ -23,41 +23,45 @@ const TenohiraCharacter: React.FC<CharacterProps> = ({
   const cx = 150;
   const cy = 150;
 
-  // --- 胴体の形状計算（丸 -> ひょうたん） ---
-  // 基本半径
-  const R = 45 + (bodySize * 6);
-  
-  // くびれの計算: bodySizeが1のときは0、5のときは最大20pxくびれる
-  const pinch = bodySize > 1 ? (bodySize - 1) * 5 : 0;
-  const waistX = R - pinch; 
+  // --- 胴体の形状計算（正円 -> 縦長楕円） ---
+  // ベースの半径 (横幅)
+  // サイズ1のとき45、サイズ5のとき55（少しだけ太くなる）
+  const rx = 45 + (bodySize - 1) * 2.5;
 
-  // ひょうたん型（または丸）のパスを作成
-  // 上下左右の4つのカーブ（Q:2次ベジェ曲線）で描画
-  // 制御点を(cx ± R, cy ± R/2)に置くことで、サイズ1のときは円に近い形、
-  // サイズが上がると中央(cy)に向かって絞られる形になります。
+  // 高さの半径 (縦幅)
+  // サイズ1のときrxと同じ(正円)、サイズ5のときrx + 50 程度まで伸びる(縦長)
+  // これにより添付画像のシルエット(縦長の卵型)を再現
+  const ry = rx + (bodySize - 1) * 12;
+
+  // 胴体を描画するパス (楕円)
+  // ベジェ曲線(Q)で円/楕円を描画
+  // 制御点はコーナーの座標(cx ± rx, cy ± ry)
   const bodyPath = `
-    M ${cx} ${cy - R} 
-    Q ${cx + R} ${cy - R / 2} ${cx + waistX} ${cy} 
-    Q ${cx + R} ${cy + R / 2} ${cx} ${cy + R} 
-    Q ${cx - R} ${cy + R / 2} ${cx - waistX} ${cy} 
-    Q ${cx - R} ${cy - R / 2} ${cx} ${cy - R} 
+    M ${cx} ${cy - ry} 
+    Q ${cx + rx} ${cy - ry} ${cx + rx} ${cy} 
+    Q ${cx + rx} ${cy + ry} ${cx} ${cy + ry} 
+    Q ${cx - rx} ${cy + ry} ${cx - rx} ${cy} 
+    Q ${cx - rx} ${cy - ry} ${cx} ${cy - ry} 
     Z
   `;
 
-  // --- 足・親指の計算 ---
-  
-  // 親指（アンテナ）: 左上 (-135度方向)
-  // バイキンマン風ジグザグ
-  const lenThumb = 30 + (thumbLength * 12);
-  const angleThumb = -3 * Math.PI / 4; 
-  
-  // 始点（胴体の表面から生えるようにRを使って計算）
-  // ※ひょうたん型になっても左上(-135度)の半径はほぼRに近いのでそのまま使用
-  const tStart = {
-    x: cx + R * Math.cos(angleThumb),
-    y: cy + R * Math.sin(angleThumb)
+  // --- 座標計算ヘルパー（楕円の周上の点を取得） ---
+  const getEllipseCoords = (angleRad: number, radiusX: number, radiusY: number) => {
+    return {
+      x: cx + radiusX * Math.cos(angleRad),
+      y: cy + radiusY * Math.sin(angleRad)
+    };
   };
+
+  // --- 親指（アンテナ）の計算 ---
+  const lenThumb = 30 + (thumbLength * 12);
+  const angleThumb = -3 * Math.PI / 4; // 左上 (-135度)
   
+  // 始点：楕円の表面上に配置
+  const tStart = getEllipseCoords(angleThumb, rx, ry);
+  
+  // アンテナの描画計算（ジグザグ）
+  // 楕円の法線方向ではなく、単純に中心からのベクトル方向に伸ばす
   const vecX = Math.cos(angleThumb);
   const vecY = Math.sin(angleThumb);
   const perpX = -vecY; 
@@ -79,7 +83,7 @@ const TenohiraCharacter: React.FC<CharacterProps> = ({
 
   const thumbPath = `M ${tStart.x} ${tStart.y} L ${tMid1.x} ${tMid1.y} L ${tMid2.x} ${tMid2.y} L ${tEnd.x} ${tEnd.y}`;
 
-  // 足（4本の指）
+  // --- 足（4本の指）の計算 ---
   const lenIndex = 15 + (indexLength * 8);
   const lenMiddle = 15 + (middleLength * 8);
   const lenRing = 15 + (ringLength * 8);
@@ -92,13 +96,12 @@ const TenohiraCharacter: React.FC<CharacterProps> = ({
 
   // 足の座標計算関数
   const getLegCoords = (angle: number, length: number) => {
-    // 胴体の輪郭座標を計算（簡易的に円Rとみなす）
-    // ※厳密にはひょうたん型のアウトライン上ですが、下側は膨らんでいるためRで近似しても違和感は少ない
-    const startX = cx + R * Math.cos(angle);
-    const startY = cy + R * Math.sin(angle);
-    const endX = cx + (R + length) * Math.cos(angle);
-    const endY = cy + (R + length) * Math.sin(angle);
-    return { startX, startY, endX, endY };
+    // 楕円の表面からスタート
+    const start = getEllipseCoords(angle, rx, ry);
+    // 足の向き：中心から放射状
+    const endX = cx + (rx + length) * Math.cos(angle);
+    const endY = cy + (ry + length) * Math.sin(angle);
+    return { startX: start.x, startY: start.y, endX, endY };
   };
 
   const legIndex = getLegCoords(angleIndex, lenIndex);
@@ -154,18 +157,17 @@ const TenohiraCharacter: React.FC<CharacterProps> = ({
         <line x1={legIndex.startX} y1={legIndex.startY} x2={legIndex.endX} y2={legIndex.endY} stroke="black" strokeWidth="14" strokeLinecap="round" />
         <line x1={legLittle.startX} y1={legLittle.startY} x2={legLittle.endX} y2={legLittle.endY} stroke="black" strokeWidth="14" strokeLinecap="round" />
 
-        {/* 胴体 (丸～ひょうたん型) */}
+        {/* 胴体 (楕円) */}
         <path d={bodyPath} fill="white" stroke="black" strokeWidth="6" />
 
         {/* 手前側の足 */}
         <line x1={legMiddle.startX} y1={legMiddle.startY} x2={legMiddle.endX} y2={legMiddle.endY} stroke="black" strokeWidth="14" strokeLinecap="round" />
         <line x1={legRing.startX} y1={legRing.startY} x2={legRing.endX} y2={legRing.endY} stroke="black" strokeWidth="14" strokeLinecap="round" />
         
-        {/* 足の付け根を綺麗にするため、胴体内部と同じ白で「足の根元」を上書き (strokeなしのbodyPath) */}
+        {/* 足の付け根の処理 */}
         <path d={bodyPath} fill="white" stroke="none" />
 
         {/* 親指 (アンテナ) */}
-        {/* 白い丸(付け根)は削除しました。胴体の線とそのまま繋がって見えます */}
         <path d={thumbPath} stroke="black" strokeWidth="12" fill="none" strokeLinecap="round" strokeLinejoin="round" />
 
         {/* 顔 */}
