@@ -2,47 +2,71 @@
 
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth"; // ★ここが修正ポイント
+import { authOptions } from "@/lib/auth";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-interface FavoriteProfile {
-    username: string | null;
-    name: string | null;
-    image: string | null;
-}
-
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const ownerId = session?.user?.id;
+
+    if (!ownerId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // --- 1. フォロー中リスト (全件) を取得 ---
+    const rawFollowing = await prisma.follow.findMany({
+        where: { followerId: ownerId },
+        select: {
+            following: {
+                select: {
+                    id: true,
+                    username: true,
+                    name: true,
+                    image: true,
+                    title: true,
+                }
+            }
+        },
+        orderBy: { createdAt: 'desc' },
+    });
+
+    // 扱いやすい形に変換
+    const followingList = rawFollowing.map(f => f.following);
+
+    // --- 2. トップ5選抜リスト (Favorite) を取得 ---
     const favorites = await prisma.favorite.findMany({
-      where: { ownerId: session.user.id },
+      where: { ownerId: ownerId },
+      select: {
+          slotIndex: true,
+          selectedUser: {
+              select: {
+                  id: true,
+                  username: true,
+                  name: true,
+                  image: true,
+                  title: true,
+              }
+          }
+      },
       orderBy: { slotIndex: 'asc' },
     });
 
-    const slots = Array(5).fill('');
+    // 5つのスロットの配列を準備 (空の部分はnull)
+    const top5Slots = Array(5).fill(null);
     favorites.forEach(fav => {
-      if (fav.slotIndex >= 0 && fav.slotIndex < 5) {
-        slots[fav.slotIndex] = fav.url;
+      if (fav.slotIndex >= 0 && fav.slotIndex < 5 && fav.selectedUser) {
+        top5Slots[fav.slotIndex] = fav.selectedUser;
       }
     });
 
-    const usernames = slots.filter(slot => slot && !slot.startsWith('http'));
-
-    let profiles: FavoriteProfile[] = [];
-    if (usernames.length > 0) {
-      profiles = await prisma.user.findMany({
-        where: { username: { in: usernames } },
-        select: { username: true, name: true, image: true },
-      });
-    }
-
-    return NextResponse.json({ slots, profiles });
+    // 両方のデータを返す
+    return NextResponse.json({ 
+        followingList, 
+        top5Slots 
+    });
 
   } catch (error) {
     console.error("GET_FAVORITES_ERROR", error);

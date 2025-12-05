@@ -4,41 +4,52 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // ↓↓↓ バージョン6.19.0のために必須です ↓↓↓
+  url      = env("DATABASE_URL") 
 }
 
-// Userモデル (NextAuth.js仕様に更新)
-// prisma/schema.prisma
-
+// Userモデル
 model User {
-  id            String    @id @default(cuid())
-  username      String?   @unique // 
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  hashedPassword String?
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  favorites     Favorite[] 
+  id                String    @id @default(cuid())
+  username          String?   @unique
+  name              String?
+  email             String?   @unique
+  emailVerified     DateTime?
+  hashedPassword    String?
+  image             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  accounts          Account[]
+  sessions          Session[]
 
-  // --- ↓↓↓ ここから下のプロフィール項目を追加 ↓↓↓ ---
-  title         String? // 役職・肩書き
-  bio           String? @db.Text // 自己紹介文
-  website       String? // ウェブサイトURL
-  twitter       String? // Twitter URL
-  instagram     String? // Instagram URL
-  directLinkEnabled Boolean @default(false) // 機能のON/OFF (デフォルトはOFF)
-  directLinkUrl     String?                 // リダイレクト先のURL
+  // --- プロフィール拡張項目 ---
+  title             String?
+  bio               String?   @db.Text
+  website           String?
+  twitter           String?
+  instagram         String?
+  directLinkEnabled Boolean   @default(false)
+  directLinkUrl     String?
+  
+  // --- NFCカード連携 ---
+  nfcCardId         String?   @unique
 
-  // --- ↓↓↓ ProfileView リレーションを追加 ↓↓↓ ---
-  profileViews  ProfileView[] 
-  nfcCardId     String?   @unique // 紐付けられたNFCカードの一意なID
+  // --- プロフィール閲覧履歴 ---
+  profileViews      ProfileView[]
+
+  // --- ↓↓↓ 復活させたリレーション定義 ↓↓↓ ---
+  
+  // 1. お気に入り (トップ5選抜) 機能
+  favorites         Favorite[] @relation("FavoriteOwner")
+  favoritedBy       Favorite[] @relation("FavoriteSelectedUser")
+
+  // 2. フォロー機能
+  followers         Follow[]   @relation("FollowerRelation")
+  following         Follow[]   @relation("FollowingRelation")
 }
 
-// Accountモデル (NextAuth.jsに必須)
+// Accountモデル
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -58,16 +69,16 @@ model Account {
   @@unique([provider, providerAccountId])
 }
 
-// Sessionモデル (NextAuth.jsに必須)
+// Sessionモデル
 model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
+  id           String    @id @default(cuid())
+  sessionToken String    @unique
   userId       String
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// VerificationTokenモデル (NextAuth.jsに必須)
+// VerificationTokenモデル
 model VerificationToken {
   identifier String
   token      String   @unique
@@ -75,34 +86,45 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
-// prisma/schema.prisma の末尾に追加
 
+// --- ↓↓↓ 復活させたFavoriteモデル ↓↓↓ ---
 model Favorite {
-  id        String   @id @default(cuid())
-  ownerId   String   // このお気に入りの所有者のID
-  slotIndex Int      // スロットの番号 (0から4)
-  url       String   // 登録されたプロフィールURL or ユーザー名
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(cuid())
+  ownerId        String    // 選抜した人のID
+  slotIndex      Int       // スロット番号 (0-4)
+  selectedUserId String    // 選抜された人のID
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner          User      @relation("FavoriteOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  selectedUser   User      @relation("FavoriteSelectedUser", fields: [selectedUserId], references: [id], onDelete: Restrict)
 
-  @@unique([ownerId, slotIndex]) // 同じユーザーは同じスロット番号を登録できない
+  @@unique([ownerId, slotIndex])
+  @@index([selectedUserId])
 }
 
-// --- ↓↓↓ 新しく追加する ProfileView モデル ↓↓↓
+// Followモデル
+model Follow {
+  id            String    @id @default(cuid())
+  followerId    String    // フォローした人のID
+  followingId   String    // フォローされた人のID
+  createdAt     DateTime  @default(now())
+
+  follower      User      @relation("FollowingRelation", fields: [followerId], references: [id], onDelete: Cascade)
+  following     User      @relation("FollowerRelation", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+// ProfileViewモデル
 model ProfileView {
-  id        String   @id @default(cuid())
-  // 閲覧されたユーザーのID
-  profileOwnerId String 
-  // 閲覧日時
-  viewedAt  DateTime @default(now())
-  // 閲覧したユーザーのIPアドレスを記録 (簡易的な重複防止用)
-  viewerIp  String?  
+  id             String    @id @default(cuid())
+  profileOwnerId String
+  viewedAt       DateTime  @default(now())
+  viewerIp       String?
 
-  // 閲覧されたユーザーとのリレーション
-  profileOwner User @relation(fields: [profileOwnerId], references: [id], onDelete: Cascade)
+  profileOwner   User      @relation(fields: [profileOwnerId], references: [id], onDelete: Cascade)
 
-  // インデックスを追加して検索性能を向上
-  @@index([profileOwnerId]) 
+  @@index([profileOwnerId])
 }
