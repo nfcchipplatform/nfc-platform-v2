@@ -9,7 +9,7 @@ import { revalidatePath } from "next/cache";
 
 const prisma = new PrismaClient();
 
-export async function updateFavorites(userIds: string[]) {
+export async function updateFavorites(inputs: string[]) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -17,29 +17,47 @@ export async function updateFavorites(userIds: string[]) {
     }
     const ownerId = session.user.id;
 
-    // userIdsの長さを最大5に制限
-    const selectedUserIds = userIds.slice(0, 5);
+    // 入力は最大5つまで
+    const rawInputs = inputs.slice(0, 5);
+    const validFavorites: { ownerId: string; slotIndex: number; selectedUserId: string }[] = [];
+
+    // 入力された値（ユーザー名 or ID）から、実際のユーザーIDを探す
+    for (let i = 0; i < rawInputs.length; i++) {
+      const input = rawInputs[i].trim();
+      if (!input) continue;
+
+      // 1. まずIDとして検索
+      let targetUser = await prisma.user.findUnique({
+        where: { id: input },
+      });
+
+      // 2. IDで見つからなければ、ユーザー名(username)として検索
+      if (!targetUser) {
+        targetUser = await prisma.user.findUnique({
+          where: { username: input },
+        });
+      }
+
+      // ユーザーが見つかり、かつ自分自身でなければリストに追加
+      if (targetUser && targetUser.id !== ownerId) {
+        validFavorites.push({
+          ownerId,
+          slotIndex: i,
+          selectedUserId: targetUser.id,
+        });
+      }
+    }
 
     await prisma.$transaction(async (tx) => {
-      // 既存のトップ5リストを全て削除
+      // 既存の設定を削除
       await tx.favorite.deleteMany({ where: { ownerId } });
       
-      // 新しいトップ5リストを作成
-      // 有効なIDだけをフィルタリングして保存
-      const newFavorites = selectedUserIds
-        .filter(userId => userId.trim() !== '')
-        .map((selectedUserId, index) => ({ 
-            ownerId, 
-            slotIndex: index, 
-            selectedUserId
-        }));
-
-      if (newFavorites.length > 0) {
-        await tx.favorite.createMany({ data: newFavorites });
+      // 新しい設定を保存
+      if (validFavorites.length > 0) {
+        await tx.favorite.createMany({ data: validFavorites });
       }
     });
 
-    // ダッシュボードのキャッシュをクリア
     revalidatePath('/dashboard');
     
     return { success: true };

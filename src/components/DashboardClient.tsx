@@ -94,47 +94,44 @@ export default function DashboardClient() {
 
   return (
     <div className="space-y-8">
-      {/* マイフィンガー (トップ5) */}
+      {/* マイフィンガー (Top 5) - シンプルなデザインに戻しました */}
       <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
-        <h3 className="text-lg font-bold mb-4 text-gray-800">マイフィンガー (Top 5)</h3>
+        <h3 className="text-lg font-bold mb-4 text-gray-800">マイフィンガー</h3>
         
         {isLoadingFavorites ? (
-          <div className="p-4 text-center text-gray-500">データを読み込んでいます...</div>
+          <div className="p-4 text-center text-gray-500">Reading...</div>
         ) : (
-          <div className="flex justify-between gap-2 pb-2 overflow-x-auto">
+          <div className="flex justify-between gap-2 overflow-x-auto pb-2">
             {top5Slots.every(slot => slot === null) ? (
                  <div className="w-full text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                    <p className="text-sm text-gray-500 mb-2">まだ誰も選抜されていません</p>
+                    <p className="text-sm text-gray-500 mb-2">未設定</p>
                     <Link href="/dashboard/favorites" className="text-indigo-600 font-bold text-sm hover:underline">
-                        設定画面で追加する
+                        設定する
                     </Link>
                  </div>
             ) : (
                 top5Slots.map((profile, index) => (
-                  <div key={index} className="flex-1 text-center min-w-[70px] max-w-[100px]">
+                  <div key={index} className="flex-1 text-center min-w-[60px] max-w-[80px]">
                     {profile ? (
                       <Link href={`/${profile.username}`} className="block group">
-                        <div className="relative mx-auto w-12 h-12 sm:w-16 sm:h-16 mb-2">
+                        {/* シンプルな円形アイコン */}
+                        <div className="mx-auto w-12 h-12 sm:w-14 sm:h-14 mb-2">
                             {profile.image ? (
-                              <img src={profile.image} alt={profile.name || ''} className="w-full h-full rounded-full object-cover border-2 border-transparent group-hover:border-indigo-400 transition-all shadow-sm" />
+                              <img src={profile.image} alt={profile.name || ''} className="w-full h-full rounded-full object-cover shadow-sm group-hover:opacity-80 transition-opacity" />
                             ) : (
-                              <div className="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-[10px] text-gray-500 group-hover:bg-gray-300 transition-colors">
+                              <div className="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-[10px] text-gray-500">
                                 No Img
                               </div>
                             )}
-                            <div className="absolute -bottom-1 -right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center shadow text-[10px] font-bold text-gray-400 border border-gray-100">
-                                {index + 1}
-                            </div>
                         </div>
-                        <p className="text-xs font-bold text-gray-700 truncate px-1 group-hover:text-indigo-600">{profile.name || profile.username}</p>
-                        <p className="text-[10px] text-gray-400 truncate px-1">{profile.title}</p> 
+                        <p className="text-[10px] font-bold text-gray-700 truncate px-1 group-hover:text-indigo-600">{profile.name || "NoName"}</p>
                       </Link>
                     ) : (
-                      <Link href="/dashboard/favorites" className="block group opacity-40 hover:opacity-100 transition-opacity">
-                        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-50 border-2 border-dashed border-gray-300 rounded-full mx-auto mb-2 flex items-center justify-center">
-                          <span className="text-gray-400 text-xl">+</span>
+                      <Link href="/dashboard/favorites" className="block group opacity-30 hover:opacity-100 transition-opacity">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gray-100 rounded-full mx-auto mb-2 flex items-center justify-center border border-gray-300">
+                          <span className="text-gray-400 text-lg">+</span>
                         </div>
-                        <p className="text-[10px] text-gray-400">未設定</p>
+                        <p className="text-[10px] text-gray-400">Add</p>
                       </Link>
                     )}
                   </div>
@@ -155,7 +152,7 @@ export default function DashboardClient() {
               <div className="w-24 h-24 bg-gray-100 rounded-full mx-auto mb-3 flex items-center justify-center text-gray-400">No Img</div>
             )}
             <p className="font-bold text-lg text-gray-800">{session.user.name || '名前未設定'}</p>
-            <p className="text-sm text-gray-500 mb-4">{(session.user as any).title || '役職未設定'}</p>
+            <p className="text-sm text-gray-500 mb-4">{(session.user as any).title || ''}</p>
             <Link href="/dashboard/profile" className="inline-block px-4 py-2 bg-gray-100 text-gray-700 text-sm font-bold rounded hover:bg-gray-200 transition-colors">
                 編集する
             </Link>
@@ -163,7 +160,7 @@ export default function DashboardClient() {
           
           {/* インサイト */}
           <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-bold mb-2 text-gray-800">総閲覧数</h3>
+            <h3 className="text-lg font-bold mb-2 text-gray-800">閲覧数</h3>
             <div className="text-center py-2">
                 <p className="text-4xl font-black text-indigo-600 tracking-tight">{viewCount}</p>
                 <p className="text-xs text-gray-400 mt-1">views</p>
