@@ -74,16 +74,7 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
           <div className="flex flex-wrap justify-center gap-3 mt-4 md:mt-6">
             <VCardButton user={{ name: user.name, title: user.title, email: user.email, website: user.website }} />
             
-            {/* --- 条件分岐のデバッグ表示 --- */}
-            
-            {/* パターンA: 本人の場合 */}
-            {isOwner && (
-                <div className="px-4 py-2 text-sm text-gray-500 bg-gray-100 rounded-lg border border-gray-200">
-                    あなた自身です
-                </div>
-            )}
-            
-            {/* パターンB: 他人 かつ ログイン済み -> フォローボタン表示 */}
+            {/* ログイン済み かつ 自分以外の場合のみフォローボタンを表示 */}
             {!isOwner && session?.user?.id && (
                 <FollowButton 
                     targetUserId={user.id} 
@@ -91,7 +82,7 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
                 />
             )}
             
-            {/* パターンC: 未ログイン -> ログインボタン表示 */}
+            {/* 未ログインユーザーへの案内 */}
             {!session?.user?.id && (
                 <a href="/login" className="inline-flex items-center px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 border border-indigo-200">
                     ログインしてフォロー
@@ -104,15 +95,6 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
             {user.twitter && <a href={user.twitter} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Twitter</a>}
             {user.instagram && <a href={user.instagram} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Instagram</a>}
           </div>
-
-          {/* --- 開発用デバッグ情報 (原因特定用) --- */}
-          <div className="mt-8 p-3 w-full bg-slate-100 rounded text-xs text-slate-500 text-left overflow-hidden">
-            <p className="font-bold border-b border-slate-300 mb-1 pb-1">デバッグ情報</p>
-            <p>あなたのID: {session?.user?.id || "未ログイン"}</p>
-            <p>相手のID: {user.id}</p>
-            <p>本人判定(isOwner): {isOwner ? "YES" : "NO"}</p>
-          </div>
-
         </div>
       </div>
     </div>
