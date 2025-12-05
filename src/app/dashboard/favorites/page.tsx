@@ -24,11 +24,10 @@ interface FavoritesData {
 const ITEMS_PER_PAGE = 10;
 
 export default function FavoritesPage() {
-    const { status } = useSession();
+    const { data: session, status } = useSession(); // sessionデータを取得
     const router = useRouter();
 
     const [followingList, setFollowingList] = useState<ProfileSummary[]>([]);
-    // テキストボックスへの入力値（ユーザー名 または ID）
     const [inputs, setInputs] = useState<string[]>(Array(5).fill(''));
     
     // ページネーション用
@@ -40,6 +39,8 @@ export default function FavoritesPage() {
     const [success, setSuccess] = useState("");
 
     const fetchFavorites = useCallback(async () => {
+        if (!session?.user) return; // セッションが無い場合は中断
+        
         setIsFetching(true);
         try {
             const response = await fetch('/api/favorites');
@@ -48,11 +49,15 @@ export default function FavoritesPage() {
             const data: FavoritesData = await response.json();
             setFollowingList(data.followingList || []);
             
-            // 既存の設定があれば、そのユーザー名(またはID)を初期値に入れる
-            const newInputs = Array(5).fill('');
+            // 自分のIDまたはユーザー名を取得
+            const myId = (session.user as any).username || session.user.id;
+
+            // 初期値を作成 (すべて自分のIDで埋める)
+            const newInputs = Array(5).fill(myId);
+
+            // 既に設定されているものがあれば、それで上書きする
             data.top5Slots.forEach((user, index) => {
                 if (user && index < 5) {
-                    // 優先的にユーザー名を表示、なければID
                     newInputs[index] = user.username || user.id;
                 }
             });
@@ -64,7 +69,7 @@ export default function FavoritesPage() {
         } finally {
             setIsFetching(false);
         }
-    }, []);
+    }, [session]); // sessionが変わったら再実行できるように依存配列に追加
 
     useEffect(() => {
         if (status === "authenticated") fetchFavorites();
@@ -103,10 +108,17 @@ export default function FavoritesPage() {
     );
 
     const copyToInput = (text: string) => {
-        // 空いている最初のスロットを探して入力するヘルパー機能
-        const emptyIndex = inputs.findIndex(val => val.trim() === '');
-        if (emptyIndex !== -1) {
-            handleInputChange(emptyIndex, text);
+        // 現在の自分のID以外で、かつ空いている場所を探す
+        // (全部自分のIDで埋まっている場合、一番上から上書きするなどのロジックも検討できますが、今回は単純に「空き」か「自分」の場所を探します)
+        
+        // 自分のIDを取得
+        const myId = (session?.user as any)?.username || session?.user?.id;
+
+        // 「空欄」または「自分のIDが入っている場所」の最初のインデックスを探す
+        const targetIndex = inputs.findIndex(val => val.trim() === '' || val === myId);
+
+        if (targetIndex !== -1) {
+            handleInputChange(targetIndex, text);
         } else {
             alert("空いている枠がありません。どれかを消してから追加してください。");
         }
@@ -126,7 +138,7 @@ export default function FavoritesPage() {
                 <h2 className="text-lg font-bold mb-4 text-gray-700">Top 5 登録</h2>
                 <p className="text-sm text-gray-500 mb-6">
                     マイフィンガーに登録したい人の「ユーザーID」または「ユーザー名」を入力してください。<br/>
-                    下のリストからコピー、またはボタンで追加できます。
+                    自分自身のIDも登録可能です。
                 </p>
 
                 <div className="space-y-4">

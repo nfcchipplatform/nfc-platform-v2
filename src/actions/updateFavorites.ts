@@ -21,7 +21,6 @@ export async function updateFavorites(inputs: string[]) {
     const rawInputs = inputs.slice(0, 5);
     const validFavorites: { ownerId: string; slotIndex: number; selectedUserId: string }[] = [];
 
-    // 入力された値（ユーザー名 or ID）から、実際のユーザーIDを探す
     for (let i = 0; i < rawInputs.length; i++) {
       const input = rawInputs[i].trim();
       if (!input) continue;
@@ -38,8 +37,8 @@ export async function updateFavorites(inputs: string[]) {
         });
       }
 
-      // ユーザーが見つかり、かつ自分自身でなければリストに追加
-      if (targetUser && targetUser.id !== ownerId) {
+      // ユーザーが見つかった場合 (自分自身でもOKにしました)
+      if (targetUser) {
         validFavorites.push({
           ownerId,
           slotIndex: i,
