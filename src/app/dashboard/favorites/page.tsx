@@ -24,10 +24,12 @@ interface FavoritesData {
 const ITEMS_PER_PAGE = 10;
 
 export default function FavoritesPage() {
-    const { data: session, status } = useSession(); // sessionデータを取得
+    const { data: session, status } = useSession();
     const router = useRouter();
 
     const [followingList, setFollowingList] = useState<ProfileSummary[]>([]);
+    
+    // 5つの入力欄の状態
     const [inputs, setInputs] = useState<string[]>(Array(5).fill(''));
     
     // ページネーション用
@@ -39,7 +41,7 @@ export default function FavoritesPage() {
     const [success, setSuccess] = useState("");
 
     const fetchFavorites = useCallback(async () => {
-        if (!session?.user) return; // セッションが無い場合は中断
+        if (!session?.user) return;
         
         setIsFetching(true);
         try {
@@ -49,18 +51,21 @@ export default function FavoritesPage() {
             const data: FavoritesData = await response.json();
             setFollowingList(data.followingList || []);
             
-            // 自分のIDまたはユーザー名を取得
+            // 自分のIDまたはユーザー名を取得 (これがデフォルト値になります)
             const myId = (session.user as any).username || session.user.id;
 
-            // 初期値を作成 (すべて自分のIDで埋める)
+            // --- 初期値の生成ロジック ---
+            // 1. まず「全て自分のID」で埋めた配列を作る
             const newInputs = Array(5).fill(myId);
 
-            // 既に設定されているものがあれば、それで上書きする
+            // 2. データベースに保存されている設定があれば、それで上書きする
+            //    (保存されていないスロットは、自分のIDのまま残る)
             data.top5Slots.forEach((user, index) => {
                 if (user && index < 5) {
                     newInputs[index] = user.username || user.id;
                 }
             });
+            
             setInputs(newInputs);
 
         } catch (err) {
@@ -69,15 +74,17 @@ export default function FavoritesPage() {
         } finally {
             setIsFetching(false);
         }
-    }, [session]); // sessionが変わったら再実行できるように依存配列に追加
+    }, [session]);
 
     useEffect(() => {
         if (status === "authenticated") fetchFavorites();
         if (status === "unauthenticated") router.push("/login");
     }, [status, router, fetchFavorites]);
 
+    // テキストボックスの変更ハンドラ
     const handleInputChange = (index: number, value: string) => {
         const newInputs = [...inputs];
+        // 入力された値をそのままセットする (空文字なら空欄になる)
         newInputs[index] = value;
         setInputs(newInputs);
         setSuccess("");
@@ -89,10 +96,13 @@ export default function FavoritesPage() {
         setError("");
         setSuccess("");
         
+        // 空欄のものは保存されず、次回読み込み時にまた「自分のID」が初期値として入ります
         const result = await updateFavorites(inputs);
 
         if (result.success) {
             setSuccess("マイフィンガーを更新しました！");
+            // 保存後はリストを更新するために再取得
+            // ※ここでfetchFavoritesを呼ぶと、空欄だった場所にはまた自分のIDが入ります（仕様通り）
             fetchFavorites(); 
         } else {
             setError(result.error || "保存に失敗しました。");
@@ -108,19 +118,16 @@ export default function FavoritesPage() {
     );
 
     const copyToInput = (text: string) => {
-        // 現在の自分のID以外で、かつ空いている場所を探す
-        // (全部自分のIDで埋まっている場合、一番上から上書きするなどのロジックも検討できますが、今回は単純に「空き」か「自分」の場所を探します)
-        
-        // 自分のIDを取得
+        // 現在の自分のIDを取得
         const myId = (session?.user as any)?.username || session?.user?.id;
 
-        // 「空欄」または「自分のIDが入っている場所」の最初のインデックスを探す
+        // 「空欄」または「自分のIDが入っている場所」の最初のインデックスを探して上書き
         const targetIndex = inputs.findIndex(val => val.trim() === '' || val === myId);
 
         if (targetIndex !== -1) {
             handleInputChange(targetIndex, text);
         } else {
-            alert("空いている枠がありません。どれかを消してから追加してください。");
+            alert("空いている枠がありません。自分のIDの場所か、不要な枠をクリアしてから追加してください。");
         }
     };
 
@@ -138,7 +145,7 @@ export default function FavoritesPage() {
                 <h2 className="text-lg font-bold mb-4 text-gray-700">Top 5 登録</h2>
                 <p className="text-sm text-gray-500 mb-6">
                     マイフィンガーに登録したい人の「ユーザーID」または「ユーザー名」を入力してください。<br/>
-                    自分自身のIDも登録可能です。
+                    未設定の場所には、自動的にあなたのIDが入っています。
                 </p>
 
                 <div className="space-y-4">
@@ -152,10 +159,11 @@ export default function FavoritesPage() {
                                 placeholder={`ユーザーID または ユーザー名を入力`}
                                 className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                             />
+                            {/* クリアボタン: これを押すと空欄になります */}
                             <button 
                                 type="button" 
                                 onClick={() => handleInputChange(index, '')}
-                                className="text-gray-400 hover:text-red-500 text-sm"
+                                className="text-gray-400 hover:text-red-500 text-sm whitespace-nowrap"
                             >
                                 クリア
                             </button>
