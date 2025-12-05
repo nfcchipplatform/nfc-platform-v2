@@ -28,11 +28,8 @@ export default function FavoritesPage() {
     const router = useRouter();
 
     const [followingList, setFollowingList] = useState<ProfileSummary[]>([]);
-    
-    // 5つの入力欄の状態
     const [inputs, setInputs] = useState<string[]>(Array(5).fill(''));
     
-    // ページネーション用
     const [currentPage, setCurrentPage] = useState(1);
     
     const [isFetching, setIsFetching] = useState(true);
@@ -51,15 +48,11 @@ export default function FavoritesPage() {
             const data: FavoritesData = await response.json();
             setFollowingList(data.followingList || []);
             
-            // 自分のIDまたはユーザー名を取得 (これがデフォルト値になります)
-            const myId = (session.user as any).username || session.user.id;
+            // --- 修正箇所: 初期値ロジック ---
+            // 「空欄」で初期化し、DBにあるデータだけを埋める。
+            // 勝手に自分のIDを入れる処理は削除しました。
+            const newInputs = Array(5).fill('');
 
-            // --- 初期値の生成ロジック ---
-            // 1. まず「全て自分のID」で埋めた配列を作る
-            const newInputs = Array(5).fill(myId);
-
-            // 2. データベースに保存されている設定があれば、それで上書きする
-            //    (保存されていないスロットは、自分のIDのまま残る)
             data.top5Slots.forEach((user, index) => {
                 if (user && index < 5) {
                     newInputs[index] = user.username || user.id;
@@ -81,13 +74,12 @@ export default function FavoritesPage() {
         if (status === "unauthenticated") router.push("/login");
     }, [status, router, fetchFavorites]);
 
-    // テキストボックスの変更ハンドラ
     const handleInputChange = (index: number, value: string) => {
         const newInputs = [...inputs];
-        // 入力された値をそのままセットする (空文字なら空欄になる)
         newInputs[index] = value;
         setInputs(newInputs);
         setSuccess("");
+        setError(""); // 入力を変えたらエラーを消す
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -96,21 +88,19 @@ export default function FavoritesPage() {
         setError("");
         setSuccess("");
         
-        // 空欄のものは保存されず、次回読み込み時にまた「自分のID」が初期値として入ります
         const result = await updateFavorites(inputs);
 
         if (result.success) {
             setSuccess("マイフィンガーを更新しました！");
-            // 保存後はリストを更新するために再取得
-            // ※ここでfetchFavoritesを呼ぶと、空欄だった場所にはまた自分のIDが入ります（仕様通り）
-            fetchFavorites(); 
+            fetchFavorites(); // 成功したらDBの状態を再取得
         } else {
+            // エラーの場合は再取得せず、エラーメッセージだけ出す（入力内容はそのまま残すため）
             setError(result.error || "保存に失敗しました。");
         }
         setIsSaving(false);
     };
 
-    // ページネーションの計算
+    // ページネーション計算
     const totalPages = Math.ceil(followingList.length / ITEMS_PER_PAGE);
     const currentList = followingList.slice(
         (currentPage - 1) * ITEMS_PER_PAGE,
@@ -118,16 +108,11 @@ export default function FavoritesPage() {
     );
 
     const copyToInput = (text: string) => {
-        // 現在の自分のIDを取得
-        const myId = (session?.user as any)?.username || session?.user?.id;
-
-        // 「空欄」または「自分のIDが入っている場所」の最初のインデックスを探して上書き
-        const targetIndex = inputs.findIndex(val => val.trim() === '' || val === myId);
-
+        const targetIndex = inputs.findIndex(val => val.trim() === '');
         if (targetIndex !== -1) {
             handleInputChange(targetIndex, text);
         } else {
-            alert("空いている枠がありません。自分のIDの場所か、不要な枠をクリアしてから追加してください。");
+            alert("空いている枠がありません。不要な枠をクリアしてから追加してください。");
         }
     };
 
@@ -137,15 +122,14 @@ export default function FavoritesPage() {
         <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
             <h1 className="text-2xl font-bold mb-6 text-gray-800">マイフィンガー設定</h1>
             
-            {error && <p className="mb-4 text-red-500 bg-red-50 p-3 rounded">{error}</p>}
-            {success && <p className="mb-4 text-green-700 bg-green-50 p-3 rounded">{success}</p>}
+            {error && <p className="mb-4 text-red-500 bg-red-50 p-3 rounded font-bold">{error}</p>}
+            {success && <p className="mb-4 text-green-700 bg-green-50 p-3 rounded font-bold">{success}</p>}
 
-            {/* --- 上部：入力フォーム (5つのテキストボックス) --- */}
             <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md mb-10">
                 <h2 className="text-lg font-bold mb-4 text-gray-700">Top 5 登録</h2>
                 <p className="text-sm text-gray-500 mb-6">
                     マイフィンガーに登録したい人の「ユーザーID」または「ユーザー名」を入力してください。<br/>
-                    未設定の場所には、自動的にあなたのIDが入っています。
+                    空欄にして保存すると削除されます。
                 </p>
 
                 <div className="space-y-4">
@@ -156,10 +140,9 @@ export default function FavoritesPage() {
                                 type="text"
                                 value={val}
                                 onChange={(e) => handleInputChange(index, e.target.value)}
-                                placeholder={`ユーザーID または ユーザー名を入力`}
+                                placeholder={`ユーザーID または ユーザー名`}
                                 className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                             />
-                            {/* クリアボタン: これを押すと空欄になります */}
                             <button 
                                 type="button" 
                                 onClick={() => handleInputChange(index, '')}
@@ -182,7 +165,6 @@ export default function FavoritesPage() {
                 </div>
             </form>
 
-            {/* --- 下部：フォロワー(フォロー中)リスト --- */}
             <div className="bg-white p-6 rounded-lg shadow-md">
                 <h2 className="text-lg font-bold mb-4 text-gray-700">フォロー中リスト ({followingList.length}人)</h2>
                 
@@ -196,7 +178,6 @@ export default function FavoritesPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {currentList.map((user) => (
                                 <div key={user.id} className="flex items-center p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition">
-                                    {/* サムネイル */}
                                     <Link href={`/${user.username || '#'}`} className="shrink-0 mr-3">
                                         {user.image ? (
                                             <img src={user.image} alt="" className="w-12 h-12 rounded-full object-cover border border-gray-200" />
@@ -205,7 +186,6 @@ export default function FavoritesPage() {
                                         )}
                                     </Link>
                                     
-                                    {/* 名前とID */}
                                     <div className="flex-1 min-w-0">
                                         <Link href={`/${user.username || '#'}`} className="block font-bold text-gray-800 truncate hover:text-indigo-600">
                                             {user.name || "名称未設定"}
@@ -215,7 +195,6 @@ export default function FavoritesPage() {
                                         </div>
                                     </div>
 
-                                    {/* 追加ボタン */}
                                     <button
                                         onClick={() => copyToInput(user.username || user.id)}
                                         className="ml-2 px-3 py-1 text-xs font-bold text-white bg-gray-500 hover:bg-indigo-600 rounded transition-colors"
@@ -226,7 +205,6 @@ export default function FavoritesPage() {
                             ))}
                         </div>
 
-                        {/* ページネーション */}
                         {totalPages > 1 && (
                             <div className="flex justify-center mt-6 gap-2">
                                 <button

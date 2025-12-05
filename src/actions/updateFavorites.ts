@@ -20,9 +20,13 @@ export async function updateFavorites(inputs: string[]) {
     // 入力は最大5つまで
     const rawInputs = inputs.slice(0, 5);
     const validFavorites: { ownerId: string; slotIndex: number; selectedUserId: string }[] = [];
+    const notFoundInputs: string[] = [];
 
+    // すべての入力値を検証
     for (let i = 0; i < rawInputs.length; i++) {
       const input = rawInputs[i].trim();
+      
+      // 空欄はスキップ（エラーにはしない）
       if (!input) continue;
 
       // 1. まずIDとして検索
@@ -37,16 +41,28 @@ export async function updateFavorites(inputs: string[]) {
         });
       }
 
-      // ユーザーが見つかった場合 (自分自身でもOKにしました)
       if (targetUser) {
+        // ユーザーが見つかった場合
         validFavorites.push({
           ownerId,
           slotIndex: i,
           selectedUserId: targetUser.id,
         });
+      } else {
+        // 見つからなかった場合、リストに記録
+        notFoundInputs.push(input);
       }
     }
 
+    // もし存在しないユーザーが一つでもあれば、保存せずにエラーを返す
+    if (notFoundInputs.length > 0) {
+      return { 
+        success: false, 
+        error: `次のユーザーが見つかりませんでした: ${notFoundInputs.join(", ")}` 
+      };
+    }
+
+    // 全て有効な場合のみ保存を実行
     await prisma.$transaction(async (tx) => {
       // 既存の設定を削除
       await tx.favorite.deleteMany({ where: { ownerId } });
