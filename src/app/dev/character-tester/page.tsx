@@ -1,5 +1,3 @@
-// src/app/dev/character-tester/page.tsx
-
 "use client";
 
 import React, { useState } from 'react';
@@ -7,13 +5,13 @@ import DynamicRabbitCharacter from '@/components/DynamicRabbitCharacter';
 
 export default function CharacterTesterPage() {
   // 新しいパラメーター (P1〜P7) の状態管理
-  const [thumbLength, setThumbLength] = useState<number>(5);  // P1: 親指
-  const [indexLength, setIndexLength] = useState<number>(5);  // P2: 人差し指
-  const [middleLength, setMiddleLength] = useState<number>(5);// P3: 中指
-  const [ringLength, setRingLength] = useState<number>(5);    // P4: 薬指
-  const [littleLength, setLittleLength] = useState<number>(5);// P5: 小指
-  const [bodySize, setBodySize] = useState<number>(5);        // P6: 胴体
-  const [emotionType, setEmotionType] = useState<number>(5);  // P7: 表情
+  const [thumbLength, setThumbLength] = useState<number>(3);  // P1: 親指 (初期値を3に変更)
+  const [indexLength, setIndexLength] = useState<number>(3);  // P2: 人差し指 (初期値を3に変更)
+  const [middleLength, setMiddleLength] = useState<number>(3);// P3: 中指 (初期値を3に変更)
+  const [ringLength, setRingLength] = useState<number>(3);    // P4: 薬指 (初期値を3に変更)
+  const [littleLength, setLittleLength] = useState<number>(3);// P5: 小指 (初期値を3に変更)
+  const [bodySize, setBodySize] = useState<number>(3);        // P6: 胴体 (初期値を3に変更)
+  const [emotionType, setEmotionType] = useState<number>(3);  // P7: 表情 (初期値を3に変更)
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -43,7 +41,7 @@ export default function CharacterTesterPage() {
               {/* P1: 親指 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  P1: 親指の長さ (thumbLength): <span className="text-blue-600 font-bold">{thumbLength}</span>
+                  P1: 親指の長さ (thumbLength): <span className="text-blue-600 font-bold">{thumbLength.toFixed(1)}</span>
                 </label>
                 <input 
                   type="range" min="1" max="5" step="0.1" 
@@ -56,7 +54,7 @@ export default function CharacterTesterPage() {
               {/* P2: 人差し指 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  P2: 人差し指の長さ (indexLength): <span className="text-blue-600 font-bold">{indexLength}</span>
+                  P2: 人差し指の長さ (indexLength): <span className="text-blue-600 font-bold">{indexLength.toFixed(1)}</span>
                 </label>
                 <input 
                   type="range" min="1" max="5" step="0.1" 
@@ -69,7 +67,7 @@ export default function CharacterTesterPage() {
               {/* P3: 中指 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  P3: 中指の長さ (middleLength): <span className="text-blue-600 font-bold">{middleLength}</span>
+                  P3: 中指の長さ (middleLength): <span className="text-blue-600 font-bold">{middleLength.toFixed(1)}</span>
                 </label>
                 <input 
                   type="range" min="1" max="5" step="0.1" 
@@ -82,7 +80,7 @@ export default function CharacterTesterPage() {
               {/* P4: 薬指 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  P4: 薬指の長さ (ringLength): <span className="text-blue-600 font-bold">{ringLength}</span>
+                  P4: 薬指の長さ (ringLength): <span className="text-blue-600 font-bold">{ringLength.toFixed(1)}</span>
                 </label>
                 <input 
                   type="range" min="1" max="5" step="0.1" 
@@ -95,7 +93,7 @@ export default function CharacterTesterPage() {
               {/* P5: 小指 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  P5: 小指の長さ (littleLength): <span className="text-blue-600 font-bold">{littleLength}</span>
+                  P5: 小指の長さ (littleLength): <span className="text-blue-600 font-bold">{littleLength.toFixed(1)}</span>
                 </label>
                 <input 
                   type="range" min="1" max="5" step="0.1" 
@@ -108,7 +106,7 @@ export default function CharacterTesterPage() {
               {/* P6: 胴体 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  P6: 胴体の大きさ (bodySize): <span className="text-blue-600 font-bold">{bodySize}</span>
+                  P6: 胴体の大きさ (bodySize): <span className="text-blue-600 font-bold">{bodySize.toFixed(1)}</span>
                 </label>
                 <input 
                   type="range" min="1" max="5" step="0.1" 
