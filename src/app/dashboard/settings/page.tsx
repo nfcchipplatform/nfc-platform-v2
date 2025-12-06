@@ -3,9 +3,9 @@
 "use client";
 
 import { useState } from "react";
-import { useSession, signOut } from "next-auth/react"; // signOutを追加
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Link from "next/link"; // Linkを追加
+import Link from "next/link";
 import { unlinkNfcCard } from "@/actions/unlinkNfcCard";
 
 export default function SettingsPage() {
@@ -15,6 +15,9 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  
+  // コピー完了メッセージ用のステート
+  const [copyStatus, setCopyStatus] = useState('');
 
   // NFCカードの紐付けを解除する処理
   const handleUnlink = async () => {
@@ -41,6 +44,20 @@ export default function SettingsPage() {
     if (confirm("ログアウトしますか？")) {
       signOut({ callbackUrl: "/login" });
     }
+  };
+
+  // ★ URLコピー処理
+  const handleCopyNfcUrl = () => {
+    const username = (session?.user as any)?.username;
+    if (!username) return;
+
+    // 指定されたURL形式を作成
+    const url = `https://app.ponnu.net/${username}`;
+    
+    navigator.clipboard.writeText(url).then(() => {
+      setCopyStatus('コピーしました！');
+      setTimeout(() => setCopyStatus(''), 2000);
+    });
   };
 
   if (status === "loading") {
@@ -70,11 +87,24 @@ export default function SettingsPage() {
                 <p className="text-gray-600 mb-2">
                   現在、あなたのアカウントには以下のNFCカードが紐付けられています。
                 </p>
-                <div className="flex items-center gap-4 mb-4">
+                <div className="flex flex-wrap items-center gap-4 mb-4">
                   <p className="text-gray-800 font-mono bg-gray-100 px-3 py-2 rounded">
                     {nfcCardId}
                   </p>
+                  
+                  {/* ★★★ コピーボタン ★★★ */}
+                  <button
+                    onClick={handleCopyNfcUrl}
+                    className="px-4 py-2 text-sm font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-md hover:bg-indigo-100 transition-colors"
+                  >
+                    {copyStatus || 'NFC用URLをコピー'}
+                  </button>
                 </div>
+                
+                <p className="text-xs text-gray-400 mb-6">
+                    ※「コピー」ボタンを押すと、NFCタグへの書き込み用URL（https://app.ponnu.net/ユーザー名）がコピーされます。
+                </p>
+
                 <button
                   onClick={handleUnlink}
                   disabled={isLoading}
