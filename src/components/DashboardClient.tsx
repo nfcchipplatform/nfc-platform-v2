@@ -2,10 +2,12 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
+import { useSearchParams, useRouter } from 'next/navigation'; // useSearchParams, useRouter を追加
 import Link from "next/link";
 import { getProfileViewCount } from "@/actions/trackView";
+import { linkNfcCard } from "@/actions/linkNfcCard"; // ★復活: 紐付けアクション
 import { QRCodeSVG } from 'qrcode.react';
 
 interface ProfileSummary {
@@ -17,9 +19,12 @@ interface ProfileSummary {
 }
 
 export default function DashboardClient() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   
-  // NFC関連の state や hooks は削除しました
+  // ★復活: URLパラメータ取得用
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const hasLinkedRef = useRef(false);
 
   const [top5Slots, setTop5Slots] = useState<(ProfileSummary | null)[]>([]);
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
@@ -53,18 +58,38 @@ export default function DashboardClient() {
       if (result.success) setViewCount(result.count || 0);
     };
 
-    // NFC関連のデータ取得処理は削除しました
+    // ★復活: ログイン直後の紐付け処理 (表示はしないが裏で動く)
+    const handleLinkCard = async () => {
+      const cardId = searchParams.get('cardId');
+      const shouldLink = searchParams.get('link');
+      
+      // パラメータがあり、まだ処理していない場合のみ実行
+      if (cardId && shouldLink === 'true' && !hasLinkedRef.current) {
+        hasLinkedRef.current = true; // 二重実行防止
+        
+        const result = await linkNfcCard(userId, cardId);
+        
+        if (result.success) {
+          alert('NFCカードをアカウントに紐付けました！');
+          await update(); // セッション情報の更新
+        } else {
+          alert(`エラー: ${result.error}`);
+        }
+        // URLからパラメータを消すためにリプレイス
+        router.replace('/dashboard', { scroll: false });
+      }
+    };
 
     fetchFavoritesData();
     fetchViewCountData();
+    handleLinkCard(); // ★実行
 
-  }, [status, session]);
+  }, [status, session, searchParams, router, update]);
 
   const profileUrl = (status === "authenticated" && origin) 
     ? `${origin}/${(session.user as any).username || ''}` 
     : "";
 
-  // プロフィールURLコピー
   const copyUrlToClipboard = () => {
     if (!profileUrl) return;
     navigator.clipboard.writeText(profileUrl).then(() => {
@@ -153,10 +178,6 @@ export default function DashboardClient() {
 
         {/* 右カラム */}
         <div className="md:col-span-2 space-y-8">
-            
-            {/* --- ここにあったNFCカード連携のブロックを削除しました --- */}
-
-            {/* 共有ツール */}
             <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-lg font-bold mb-4 text-gray-800">共有ツール</h3>
                 <div className="flex flex-col gap-8">
