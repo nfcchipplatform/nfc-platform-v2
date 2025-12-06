@@ -19,6 +19,9 @@ export default function SettingsPage() {
   // コピー完了メッセージ用のステート
   const [copyStatus, setCopyStatus] = useState('');
 
+  // NFCカードIDを取得
+  const nfcCardId = (session?.user as any)?.nfcCardId;
+
   // NFCカードの紐付けを解除する処理
   const handleUnlink = async () => {
     if (!confirm("本当にNFCカードとの紐付けを解除しますか？")) {
@@ -46,13 +49,12 @@ export default function SettingsPage() {
     }
   };
 
-  // ★ URLコピー処理
+  // ★ URLコピー処理 (修正版)
   const handleCopyNfcUrl = () => {
-    const username = (session?.user as any)?.username;
-    if (!username) return;
+    if (!nfcCardId) return;
 
-    // 指定されたURL形式を作成
-    const url = `https://app.ponnu.net/${username}`;
+    // カードIDを使った正しいリダイレクト用URLを作成
+    const url = `https://app.ponnu.net/card/${nfcCardId}`;
     
     navigator.clipboard.writeText(url).then(() => {
       setCopyStatus('コピーしました！');
@@ -67,8 +69,6 @@ export default function SettingsPage() {
     router.push("/login");
     return null;
   }
-  
-  const nfcCardId = (session?.user as any)?.nfcCardId;
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
@@ -89,7 +89,7 @@ export default function SettingsPage() {
                 </p>
                 <div className="flex flex-wrap items-center gap-4 mb-4">
                   <p className="text-gray-800 font-mono bg-gray-100 px-3 py-2 rounded">
-                    {nfcCardId}
+                    ID: {nfcCardId}
                   </p>
                   
                   {/* ★★★ コピーボタン ★★★ */}
@@ -101,8 +101,10 @@ export default function SettingsPage() {
                   </button>
                 </div>
                 
-                <p className="text-xs text-gray-400 mb-6">
-                    ※「コピー」ボタンを押すと、NFCタグへの書き込み用URL（https://app.ponnu.net/ユーザー名）がコピーされます。
+                <p className="text-xs text-gray-400 mb-6 bg-gray-50 p-3 rounded">
+                    <strong>NFCタグへの書き込み用URL:</strong><br/>
+                    https://app.ponnu.net/card/{nfcCardId}<br/>
+                    <span className="mt-1 block">※このURLをNFCタグに書き込むと、スマホをかざした人があなたのプロフィールに転送されます。</span>
                 </p>
 
                 <button
