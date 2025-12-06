@@ -4,7 +4,7 @@
 
 import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -16,10 +16,9 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   
-  // URLから cardId を取得 (例: /login?cardId=18)
+  // URLから cardId を取得
   const cardId = searchParams.get("cardId");
 
   const [email, setEmail] = useState("");
@@ -44,13 +43,12 @@ function LoginForm() {
         setIsLoading(false);
       } else {
         // --- 修正ポイント ---
-        // カードIDがある場合は、紐付けパラメータ付きでダッシュボードへ飛ばす
+        // router.push ではなく window.location.href を使用して確実に移動させる
         if (cardId) {
-            router.push(`/dashboard?cardId=${cardId}&link=true`);
+            window.location.href = `/dashboard?cardId=${cardId}&link=true`;
         } else {
-            router.push("/dashboard");
+            window.location.href = "/dashboard";
         }
-        router.refresh();
       }
     } catch (err) {
       setError("予期せぬエラーが発生しました");
