@@ -2,12 +2,10 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useSearchParams, useRouter } from 'next/navigation';
 import Link from "next/link";
 import { getProfileViewCount } from "@/actions/trackView";
-import { linkNfcCard, getNfcCardId } from "@/actions/linkNfcCard";
 import { QRCodeSVG } from 'qrcode.react';
 
 interface ProfileSummary {
@@ -19,18 +17,15 @@ interface ProfileSummary {
 }
 
 export default function DashboardClient() {
-  const { data: session, status, update } = useSession();
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const hasLinkedRef = useRef(false);
+  const { data: session, status } = useSession();
+  
+  // NFC関連の state や hooks は削除しました
 
   const [top5Slots, setTop5Slots] = useState<(ProfileSummary | null)[]>([]);
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
   const [viewCount, setViewCount] = useState(0);
-  const [nfcCardId, setNfcCardId] = useState<string | null>(null);
   
   const [copySuccess, setCopySuccess] = useState('');
-  const [nfcCopySuccess, setNfcCopySuccess] = useState('');
   const [origin, setOrigin] = useState('');
 
   useEffect(() => {
@@ -58,59 +53,23 @@ export default function DashboardClient() {
       if (result.success) setViewCount(result.count || 0);
     };
 
-    const fetchNfcData = async () => {
-        const id = await getNfcCardId();
-        setNfcCardId(id);
-    };
-
-    const handleLinkCard = async () => {
-      const cardId = searchParams.get('cardId');
-      const shouldLink = searchParams.get('link');
-      if (cardId && shouldLink === 'true' && !hasLinkedRef.current) {
-        hasLinkedRef.current = true;
-        const result = await linkNfcCard(userId, cardId);
-        if (result.success) {
-          alert('NFCカードをアカウントに紐付けました！');
-          setNfcCardId(cardId);
-          await update();
-        } else {
-          alert(`エラー: ${result.error}`);
-        }
-        router.replace('/dashboard', { scroll: false });
-      }
-    };
+    // NFC関連のデータ取得処理は削除しました
 
     fetchFavoritesData();
     fetchViewCountData();
-    fetchNfcData();
-    handleLinkCard();
 
-  }, [status, session, searchParams, router, update]);
+  }, [status, session]);
 
   const profileUrl = (status === "authenticated" && origin) 
     ? `${origin}/${(session.user as any).username || ''}` 
     : "";
 
-  // 1. プロフィールURLコピー
+  // プロフィールURLコピー
   const copyUrlToClipboard = () => {
     if (!profileUrl) return;
     navigator.clipboard.writeText(profileUrl).then(() => {
       setCopySuccess('完了');
       setTimeout(() => setCopySuccess(''), 2000);
-    });
-  };
-
-  // 2. NFC登録用URLコピー (修正: app.ponnu.net)
-  const copyNfcUrlToClipboard = () => {
-    const username = (session?.user as any)?.username;
-    if (!username) return;
-
-    // ドメインを .net に修正
-    const nfcUrl = `https://app.ponnu.net/${username}`;
-    
-    navigator.clipboard.writeText(nfcUrl).then(() => {
-        setNfcCopySuccess('コピー完了');
-        setTimeout(() => setNfcCopySuccess(''), 2000);
     });
   };
 
@@ -195,55 +154,7 @@ export default function DashboardClient() {
         {/* 右カラム */}
         <div className="md:col-span-2 space-y-8">
             
-            {/* NFCカード連携 */}
-            <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-bold mb-4 text-gray-800 flex items-center gap-2">
-                    <span className="bg-indigo-100 text-indigo-600 p-1 rounded">📶</span> NFCカード連携
-                </h3>
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    {nfcCardId ? (
-                        <div>
-                            <p className="text-sm text-green-600 font-bold mb-2 flex items-center">
-                                ✓ 連携済み
-                            </p>
-                            <div className="mb-4">
-                                <p className="text-xs text-gray-500 mb-1">カードID</p>
-                                <p className="font-mono text-gray-700 bg-white px-2 py-1 rounded border inline-block">
-                                    {nfcCardId}
-                                </p>
-                            </div>
-                            
-                            <div className="border-t pt-4">
-                                <p className="text-sm text-gray-700 font-bold mb-2">NFC書き込み用URL</p>
-                                <div className="flex items-center gap-2">
-                                    <input 
-                                        type="text" 
-                                        readOnly 
-                                        value={`https://app.ponnu.net/${(session.user as any).username}`} 
-                                        className="flex-1 p-2 text-sm border border-gray-300 rounded bg-white text-gray-600 font-mono"
-                                    />
-                                    <button 
-                                        onClick={copyNfcUrlToClipboard}
-                                        className="bg-indigo-600 text-white text-sm px-4 py-2 rounded hover:bg-indigo-700 font-bold transition-colors whitespace-nowrap"
-                                    >
-                                        {nfcCopySuccess || 'コピー'}
-                                    </button>
-                                </div>
-                                <p className="text-xs text-gray-400 mt-2">
-                                    このURLをNFCツールアプリ等を使ってカードに書き込んでください。
-                                </p>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="text-center py-4">
-                            <p className="text-sm text-gray-500 mb-2">まだNFCカードが連携されていません。</p>
-                            <p className="text-xs text-gray-400">
-                                新しいカードをスマホにかざして、表示される通知をタップすると連携が完了します。
-                            </p>
-                        </div>
-                    )}
-                </div>
-            </div>
+            {/* --- ここにあったNFCカード連携のブロックを削除しました --- */}
 
             {/* 共有ツール */}
             <div className="bg-white p-6 rounded-lg shadow">
