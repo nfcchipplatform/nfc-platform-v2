@@ -2,12 +2,14 @@
 
 import { PrismaClient } from "@prisma/client";
 import { trackProfileView } from "@/actions/trackView";
-import VCardButton from "@/components/VCardButton";
 import DirectLinkInterstitial from "@/components/DirectLinkInterstitial";
 import FollowButton from "@/components/FollowButton";
+import HamsaHand from "@/components/HamsaHand"; // ★追加
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { checkIsFollowing } from "@/actions/followActions";
+import Link from "next/link";
+import { getTheme } from "@/lib/themeConfig"; // ★追加
 
 const prisma = new PrismaClient();
 
@@ -22,81 +24,120 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
   const { username } = params;
   const session = await getServerSession(authOptions);
 
+  // ユーザー情報取得
   const user = await prisma.user.findUnique({
-    where: {
-      username: decodeURIComponent(username),
-    },
+    where: { username: decodeURIComponent(username) },
+    include: {
+        // お気に入り（五大元素スロット）も一緒に取得
+        favorites: {
+            include: {
+                selectedUser: true
+            },
+            orderBy: {
+                slotIndex: 'asc'
+            }
+        },
+        salon: {
+            include: {
+                theme: true // サロンのテーマ情報も取得
+            }
+        }
+    }
   });
 
   if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <h1 className="text-2xl font-bold">ユーザーが見つかりません</h1>
-      </div>
-    );
+    return <div className="flex items-center justify-center min-h-screen">ユーザーが見つかりません</div>;
   }
   
-  // ダイレクトリンクのロジック
+  // ダイレクトリンク処理
   const fromInterstitial = searchParams.from === 'interstitial';
   if (user.directLinkEnabled && user.directLinkUrl && !fromInterstitial) {
-    return (
-      <DirectLinkInterstitial 
-        redirectUrl={user.directLinkUrl}
-        profileUrl={`/${user.username}`}
-      />
-    );
+    return <DirectLinkInterstitial redirectUrl={user.directLinkUrl} profileUrl={`/${user.username}`} />;
   }
 
   // 閲覧記録
   await trackProfileView(user.id);
 
-  // 閲覧者が本人かどうか
+  // 本人確認 & フォロー状態
   const isOwner = session?.user?.id === user.id;
+  const isFollowing = session?.user?.id && !isOwner ? await checkIsFollowing(user.id) : false;
 
-  // フォロー状態の確認
-  const isFollowing = session?.user?.id && !isOwner 
-    ? await checkIsFollowing(user.id) 
-    : false;
+  // --- テーマ決定ロジック ---
+  // 1. URLパラメータ (?theme=cyber) があればそれを優先 (デモ用)
+  // 2. サロンが設定されていればサロンのテーマ
+  // 3. なければデフォルト
+  const queryTheme = typeof searchParams.theme === 'string' ? searchParams.theme : null;
+  const themeId = queryTheme || user.salon?.theme?.name.toLowerCase() || "default"; // ※仮: theme.nameをIDとして扱う
+  
+  const theme = getTheme(themeId);
+
+  // 五大元素スロットの整形 (0-4の配列にする)
+  const slots = Array(5).fill(null);
+  user.favorites.forEach(fav => {
+      if (fav.slotIndex >= 0 && fav.slotIndex < 5) {
+          slots[fav.slotIndex] = fav.selectedUser;
+      }
+  });
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="w-full max-w-sm bg-white border border-gray-200 rounded-lg shadow-md p-8">
-        <div className="flex flex-col items-center">
-          {user.image ? (
-            <img className="w-24 h-24 mb-3 rounded-full shadow-lg object-cover" src={user.image} alt={user.name || 'プロフィール写真'} />
-          ) : (
-            <div className="w-24 h-24 mb-3 rounded-full shadow-lg bg-gray-200 flex items-center justify-center text-gray-400">No Img</div>
-          )}
-          <h5 className="mb-1 text-xl font-medium text-gray-900">{user.name}</h5>
-          <span className="text-sm text-gray-500">{user.title}</span>
-          <p className="text-sm text-center text-gray-600 my-4 whitespace-pre-wrap">{user.bio}</p>
-          
-          <div className="flex flex-wrap justify-center gap-3 mt-4 md:mt-6">
-            <VCardButton user={{ name: user.name, title: user.title, email: user.email, website: user.website }} />
-            
-            {/* ログイン済み かつ 自分以外の場合のみフォローボタンを表示 */}
+    <div className={`min-h-screen flex flex-col items-center py-10 px-4 transition-colors duration-500 ${theme.bgClass} ${theme.textClass} ${theme.fontClass}`}>
+      
+      {/* ヘッダー情報 */}
+      <div className="text-center z-10 mb-6">
+        <div className="relative inline-block">
+            {user.image ? (
+                <img src={user.image} alt={user.name || ''} className="w-24 h-24 rounded-full object-cover border-4 shadow-xl" style={{ borderColor: theme.accentColor }} />
+            ) : (
+                <div className="w-24 h-24 rounded-full flex items-center justify-center border-4 shadow-xl bg-gray-200 text-gray-400" style={{ borderColor: theme.accentColor }}>No Img</div>
+            )}
+             {/* サロンバッジ (あれば) */}
+             {user.salon && (
+                 <span className="absolute -bottom-2 -right-2 px-2 py-1 text-[10px] font-bold text-white rounded-full shadow-md bg-black">
+                     {user.salon.name}
+                 </span>
+             )}
+        </div>
+
+        <h1 className="mt-4 text-2xl font-bold tracking-tight">{user.name}</h1>
+        <p className="opacity-70 text-sm">{user.title}</p>
+        
+        {/* フォローボタン等 */}
+        <div className="mt-4 flex gap-2 justify-center">
             {!isOwner && session?.user?.id && (
-                <FollowButton 
-                    targetUserId={user.id} 
-                    isFollowingInitial={isFollowing} 
-                />
+                <FollowButton targetUserId={user.id} isFollowingInitial={isFollowing} />
             )}
-            
-            {/* 未ログインユーザーへの案内 */}
-            {!session?.user?.id && (
-                <a href="/login" className="inline-flex items-center px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 border border-indigo-200">
-                    ログインしてフォロー
-                </a>
-            )}
-          </div>
-          
-          <div className="flex mt-6 space-x-4 text-sm">
-            {user.website && <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Website</a>}
-            {user.twitter && <a href={user.twitter} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Twitter</a>}
-            {user.instagram && <a href={user.instagram} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Instagram</a>}
-          </div>
+             {/* デモ用テーマ切り替えボタン (本番では隠す) */}
+             {isOwner && (
+                 <div className="flex gap-1">
+                     <Link href={`/${username}?theme=default`} className="px-2 py-1 text-[10px] bg-white border rounded">Default</Link>
+                     <Link href={`/${username}?theme=cyber`} className="px-2 py-1 text-[10px] bg-black text-green-400 border border-green-500 rounded">Cyber</Link>
+                     <Link href={`/${username}?theme=zen`} className="px-2 py-1 text-[10px] bg-[#F5F5F0] border border-stone-400 rounded">Zen</Link>
+                 </div>
+             )}
         </div>
       </div>
+
+      {/* --- メインコンテンツ: Digital Hamsa --- */}
+      <div className="w-full max-w-md z-10">
+          <HamsaHand slots={slots} themeId={theme.id} />
+      </div>
+
+      {/* 自己紹介など */}
+      <div className="mt-8 max-w-sm text-center z-10 opacity-80 text-sm leading-relaxed whitespace-pre-wrap">
+          {user.bio}
+      </div>
+
+      {/* フッターリンク */}
+      <div className="mt-10 flex gap-6 text-2xl z-10 opacity-60">
+        {user.website && <a href={user.website} target="_blank" className="hover:opacity-100 transition-opacity">🌐</a>}
+        {user.twitter && <a href={user.twitter} target="_blank" className="hover:opacity-100 transition-opacity">🐦</a>}
+        {user.instagram && <a href={user.instagram} target="_blank" className="hover:opacity-100 transition-opacity">📸</a>}
+      </div>
+
+      <div className="mt-12 text-[10px] opacity-40">
+          POWERED BY PONNU
+      </div>
+
     </div>
   );
 }
