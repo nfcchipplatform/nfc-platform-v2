@@ -24,23 +24,16 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
   const { username } = params;
   const session = await getServerSession(authOptions);
 
-  // ユーザー情報取得
+  // ユーザー情報取得（サロン・テーマ情報も含む）
   const user = await prisma.user.findUnique({
     where: { username: decodeURIComponent(username) },
     include: {
-        // お気に入り（五大元素スロット）も一緒に取得
         favorites: {
-            include: {
-                selectedUser: true
-            },
-            orderBy: {
-                slotIndex: 'asc'
-            }
+            include: { selectedUser: true },
+            orderBy: { slotIndex: 'asc' }
         },
         salon: {
-            include: {
-                theme: true // サロンのテーマ情報も取得
-            }
+            include: { theme: true }
         }
     }
   });
@@ -63,15 +56,16 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
   const isFollowing = session?.user?.id && !isOwner ? await checkIsFollowing(user.id) : false;
 
   // --- テーマ決定ロジック ---
-  // 1. URLパラメータ (?theme=cyber) があればそれを優先 (デモ用)
+  // 1. URLパラメータ (?theme=cyber) を優先 (デモ用)
   // 2. サロンが設定されていればサロンのテーマ
   // 3. なければデフォルト
   const queryTheme = typeof searchParams.theme === 'string' ? searchParams.theme : null;
-  const themeId = queryTheme || user.salon?.theme?.name.toLowerCase() || "default"; // ※仮: theme.nameをIDとして扱う
+  // ※本来は user.salon?.theme?.id などを使うが、今は簡易的にハードコードされたテーマIDを使用
+  const themeId = queryTheme || "default"; 
   
   const theme = getTheme(themeId);
 
-  // 五大元素スロットの整形 (0-4の配列にする)
+  // 五大元素スロットの整形
   const slots = Array(5).fill(null);
   user.favorites.forEach(fav => {
       if (fav.slotIndex >= 0 && fav.slotIndex < 5) {
@@ -101,17 +95,18 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
         <h1 className="mt-4 text-2xl font-bold tracking-tight">{user.name}</h1>
         <p className="opacity-70 text-sm">{user.title}</p>
         
-        {/* フォローボタン等 */}
+        {/* アクションボタン */}
         <div className="mt-4 flex gap-2 justify-center">
             {!isOwner && session?.user?.id && (
                 <FollowButton targetUserId={user.id} isFollowingInitial={isFollowing} />
             )}
-             {/* デモ用テーマ切り替えボタン (本番では隠す) */}
+             
+             {/* デモ用テーマ切り替えボタン (オーナーのみ表示) */}
              {isOwner && (
                  <div className="flex gap-1">
-                     <Link href={`/${username}?theme=default`} className="px-2 py-1 text-[10px] bg-white border rounded">Default</Link>
+                     <Link href={`/${username}?theme=default`} className="px-2 py-1 text-[10px] bg-white border rounded text-black">Default</Link>
                      <Link href={`/${username}?theme=cyber`} className="px-2 py-1 text-[10px] bg-black text-green-400 border border-green-500 rounded">Cyber</Link>
-                     <Link href={`/${username}?theme=zen`} className="px-2 py-1 text-[10px] bg-[#F5F5F0] border border-stone-400 rounded">Zen</Link>
+                     <Link href={`/${username}?theme=zen`} className="px-2 py-1 text-[10px] bg-[#F5F5F0] border border-stone-400 rounded text-stone-800">Zen</Link>
                  </div>
              )}
         </div>

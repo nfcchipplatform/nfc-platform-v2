@@ -28,6 +28,7 @@ const ELEMENT_LABELS = [
 ];
 
 export default function HamsaHand({ slots, isOwner = false, themeId = "default" }: HamsaHandProps) {
+  // テーマ情報を取得
   const theme = THEMES[themeId] || THEMES["default"];
 
   return (
@@ -55,7 +56,7 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default" 
             
             {/* サイバーテーマの場合のスキャンライン演出 */}
             {theme.id === 'cyber' && (
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-500/10 to-transparent animate-scan"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-500/10 to-transparent animate-pulse"></div>
             )}
         </div>
       </div>
@@ -85,10 +86,15 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default" 
                       {user.name?.[0] || "ID"}
                     </div>
                   )}
+                  {/* ホバー効果 */}
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[8px] text-white font-bold">OPEN</span>
+                  </div>
                 </Link>
               ) : (
                 <Link href={isOwner ? "/dashboard/favorites" : "#"} className="flex flex-col items-center justify-center w-full h-full opacity-50 hover:opacity-100 transition-opacity">
                   <span className="text-xl font-light">+</span>
+                  <span className="text-[8px]">ADD</span>
                 </Link>
               )}
             </div>
