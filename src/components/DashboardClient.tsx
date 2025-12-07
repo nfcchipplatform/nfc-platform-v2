@@ -4,11 +4,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { useSearchParams, useRouter } from 'next/navigation'; // useSearchParams, useRouter を追加
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from "next/link";
 import { getProfileViewCount } from "@/actions/trackView";
-import { linkNfcCard } from "@/actions/linkNfcCard"; // ★復活: 紐付けアクション
+import { linkNfcCard } from "@/actions/linkNfcCard";
 import { QRCodeSVG } from 'qrcode.react';
+import HamsaHand from "@/components/HamsaHand"; // ★新規追加
 
 interface ProfileSummary {
     id: string;
@@ -20,13 +21,12 @@ interface ProfileSummary {
 
 export default function DashboardClient() {
   const { data: session, status, update } = useSession();
-  
-  // ★復活: URLパラメータ取得用
   const searchParams = useSearchParams();
   const router = useRouter();
   const hasLinkedRef = useRef(false);
 
-  const [top5Slots, setTop5Slots] = useState<(ProfileSummary | null)[]>([]);
+  // スロットは必ず5つ分の配列にする
+  const [top5Slots, setTop5Slots] = useState<(ProfileSummary | null)[]>([null, null, null, null, null]);
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
   const [viewCount, setViewCount] = useState(0);
   
@@ -44,7 +44,8 @@ export default function DashboardClient() {
         const res = await fetch('/api/favorites');
         if (res.ok) {
           const data = await res.json();
-          setTop5Slots(data.top5Slots || []); 
+          // 取得したデータをセット
+          setTop5Slots(data.top5Slots || [null, null, null, null, null]); 
         }
       } catch (error) {
         console.error("Fetch error:", error);
@@ -58,31 +59,27 @@ export default function DashboardClient() {
       if (result.success) setViewCount(result.count || 0);
     };
 
-    // ★復活: ログイン直後の紐付け処理 (表示はしないが裏で動く)
+    // NFC紐付け処理 (裏で実行)
     const handleLinkCard = async () => {
       const cardId = searchParams.get('cardId');
       const shouldLink = searchParams.get('link');
       
-      // パラメータがあり、まだ処理していない場合のみ実行
       if (cardId && shouldLink === 'true' && !hasLinkedRef.current) {
-        hasLinkedRef.current = true; // 二重実行防止
-        
+        hasLinkedRef.current = true;
         const result = await linkNfcCard(userId, cardId);
-        
         if (result.success) {
           alert('NFCカードをアカウントに紐付けました！');
-          await update(); // セッション情報の更新
+          await update();
         } else {
           alert(`エラー: ${result.error}`);
         }
-        // URLからパラメータを消すためにリプレイス
         router.replace('/dashboard', { scroll: false });
       }
     };
 
     fetchFavoritesData();
     fetchViewCountData();
-    handleLinkCard(); // ★実行
+    handleLinkCard();
 
   }, [status, session, searchParams, router, update]);
 
@@ -98,120 +95,76 @@ export default function DashboardClient() {
     });
   };
 
-  if (status === "loading") return <p className="text-center mt-10">読み込み中...</p>;
+  if (status === "loading") return <p className="text-center mt-10 animate-pulse">読み込み中...</p>;
   if (status === "unauthenticated" || !session?.user) return <p className="text-center mt-10 text-red-500">アクセス権がありません。</p>;
 
   return (
-    <div className="space-y-8">
-      {/* マイフィンガー */}
-      <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
-        <h3 className="text-lg font-bold mb-4 text-gray-800">マイフィンガー</h3>
+    <div className="space-y-8 pb-20">
+      
+      {/* 1. メインビジュアル: Digital Hamsa Interface */}
+      <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 relative">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 via-purple-500 to-blue-500"></div>
         
-        {isLoadingFavorites ? (
-          <div className="p-4 text-center text-gray-500">Reading...</div>
-        ) : (
-          <div className="flex justify-between gap-2 overflow-x-auto pb-2">
-            {top5Slots.every(slot => slot === null) ? (
-                 <div className="w-full text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                    <p className="text-sm text-gray-500 mb-2">未設定</p>
-                    <Link href="/dashboard/favorites" className="text-indigo-600 font-bold text-sm hover:underline">
-                        設定する
-                    </Link>
-                 </div>
+        <div className="p-6 text-center">
+            <h3 className="text-xs font-black text-gray-400 tracking-[0.2em] uppercase mb-1">Digital Hamsa</h3>
+            <p className="text-[10px] text-gray-300 mb-4">Five Elements Protection</p>
+            
+            {isLoadingFavorites ? (
+            <div className="h-64 flex items-center justify-center text-gray-400 text-sm animate-pulse">Initializing System...</div>
             ) : (
-                top5Slots.map((profile, index) => (
-                  <div key={index} className="flex-1 text-center min-w-[60px] max-w-[80px]">
-                    {profile ? (
-                      <Link href={`/${profile.username}`} className="block group">
-                        <div className="mx-auto w-12 h-12 sm:w-14 sm:h-14 mb-2">
-                            {profile.image ? (
-                              <img src={profile.image} alt={profile.name || ''} className="w-full h-full rounded-full object-cover shadow-sm group-hover:opacity-80 transition-opacity" />
-                            ) : (
-                              <div className="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-[10px] text-gray-500">
-                                No Img
-                              </div>
-                            )}
-                        </div>
-                        <p className="text-[10px] font-bold text-gray-700 truncate px-1 group-hover:text-indigo-600">{profile.name || "NoName"}</p>
-                      </Link>
-                    ) : (
-                      <Link href="/dashboard/favorites" className="block group opacity-30 hover:opacity-100 transition-opacity">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gray-100 rounded-full mx-auto mb-2 flex items-center justify-center border border-gray-300">
-                          <span className="text-gray-400 text-lg">+</span>
-                        </div>
-                        <p className="text-[10px] text-gray-400">Add</p>
-                      </Link>
-                    )}
-                  </div>
-                ))
+            <HamsaHand slots={top5Slots} isOwner={true} />
             )}
-          </div>
-        )}
+
+            <div className="mt-8 mb-2">
+                <Link href="/dashboard/favorites" className="inline-flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 px-6 py-3 rounded-full hover:bg-indigo-100 transition-colors shadow-sm">
+                    <span>⚡</span> データを装備する (Edit Slots)
+                </Link>
+            </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-1 space-y-8">
-          {/* プロフィールプレビュー */}
-          <div className="bg-white p-6 rounded-lg shadow text-center">
-            <h3 className="text-lg font-bold mb-4 text-gray-800 text-left">あなた</h3>
-            {session.user.image ? (
-              <img src={session.user.image} alt="あなた" className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-3 object-cover border border-gray-200 shadow-sm" />
-            ) : (
-              <div className="w-24 h-24 bg-gray-100 rounded-full mx-auto mb-3 flex items-center justify-center text-gray-400">No Img</div>
-            )}
-            <p className="font-bold text-lg text-gray-800">{session.user.name || '名前未設定'}</p>
-            <p className="text-sm text-gray-500 mb-4">{(session.user as any).title || ''}</p>
-            <Link href="/dashboard/profile" className="inline-block px-4 py-2 bg-gray-100 text-gray-700 text-sm font-bold rounded hover:bg-gray-200 transition-colors">
-                編集する
-            </Link>
-          </div>
-          
-          {/* インサイト */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-bold mb-2 text-gray-800">閲覧数</h3>
-            <div className="text-center py-2">
-                <p className="text-4xl font-black text-indigo-600 tracking-tight">{viewCount}</p>
-                <p className="text-xs text-gray-400 mt-1">views</p>
+      {/* 2. 情報グリッド */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* プロフィールカード */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-5">
+            <div className="shrink-0 relative">
+                {session.user.image ? (
+                <img src={session.user.image} alt="You" className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-md" />
+                ) : (
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 font-bold">No Img</div>
+                )}
+                <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
-          </div>
+            <div className="flex-1 min-w-0">
+                <p className="font-bold text-lg text-gray-800 truncate">{session.user.name || 'No Name'}</p>
+                <p className="text-xs text-gray-500 mb-1 truncate">{(session.user as any).username ? `@${(session.user as any).username}` : ''}</p>
+                <Link href="/dashboard/profile" className="text-xs text-indigo-500 font-bold hover:underline">
+                    プロフィール編集 &gt;
+                </Link>
+            </div>
+            <div className="text-center pl-4 border-l border-gray-100">
+                <p className="text-2xl font-black text-gray-800">{viewCount}</p>
+                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wide">Views</p>
+            </div>
         </div>
 
-        {/* 右カラム */}
-        <div className="md:col-span-2 space-y-8">
-            <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-bold mb-4 text-gray-800">共有ツール</h3>
-                <div className="flex flex-col gap-8">
-                <div>
-                    <label className="text-sm font-bold text-gray-700 block mb-2">プロフィールURL</label>
-                    <div className="flex items-center">
-                        <input type="text" readOnly value={profileUrl} className="w-full p-3 border border-gray-300 rounded-l-md bg-gray-50 text-gray-700 font-mono text-sm focus:outline-none" />
-                        <button onClick={copyUrlToClipboard} className="bg-indigo-600 text-white px-6 py-3 rounded-r-md hover:bg-indigo-700 font-bold transition-colors min-w-[100px]">
-                            {copySuccess || 'コピー'}
-                        </button>
-                    </div>
-                </div>
-                
-                <div className="border-t pt-6 flex flex-col sm:flex-row gap-6">
-                    <div>
-                        <p className="text-sm font-bold text-gray-700 mb-3">QRコード</p>
-                        <div className="bg-white p-2 rounded-lg border border-gray-200 inline-block">
-                            {profileUrl ? (
-                            <QRCodeSVG value={profileUrl} size={120} level="H" includeMargin={true} />
-                            ) : (
-                            <div className="w-[120px] h-[120px] bg-gray-100 flex items-center justify-center text-xs text-gray-400">Loading...</div>
-                            )}
-                        </div>
-                    </div>
-                    <div className="flex-1 flex items-center">
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                            このQRコードやURLを相手に伝えて、アクセスしてもらいましょう。<br/>
-                            相手があなたをフォローすると、お互いのマイフィンガーに追加できるようになります。
-                        </p>
-                    </div>
-                </div>
-                </div>
+        {/* 共有ツール */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Share Profile</h4>
+            <div className="flex gap-2 mb-4">
+                <input type="text" readOnly value={profileUrl} className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-600 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+                <button onClick={copyUrlToClipboard} className="bg-gray-800 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-black transition-colors">
+                    {copySuccess || 'Copy'}
+                </button>
+            </div>
+            <div className="flex justify-center bg-gray-50 p-4 rounded-xl border border-gray-100">
+                 {profileUrl ? (
+                    <QRCodeSVG value={profileUrl} size={100} level="L" className="opacity-90" />
+                 ) : null}
             </div>
         </div>
+
       </div>
     </div>
   );
