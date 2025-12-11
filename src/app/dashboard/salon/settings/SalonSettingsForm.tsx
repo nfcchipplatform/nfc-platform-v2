@@ -50,7 +50,7 @@ export default function SalonSettingsForm({ salon }: { salon: any }) {
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1">Google Map URL</label>
-            <input name="mapUrl" defaultValue={salon.mapUrl || ""} className="w-full border rounded px-3 py-2 text-sm" placeholder="https://maps.google.com/..." />
+            <input name="mapUrl" defaultValue={salon.mapUrl || ""} className="w-full border rounded px-3 py-2 text-sm" placeholder="https://goo.gl/maps/..." />
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1">Webサイト URL</label>

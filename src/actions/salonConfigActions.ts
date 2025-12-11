@@ -43,7 +43,6 @@ export async function updateSalonSettings(formData: FormData) {
     });
 
     revalidatePath("/dashboard/salon/settings");
-    // プロフィールページも更新されるようにキャッシュ破棄（全てのパスは無理なので代表的なもののみ、基本は時間経過で更新）
     return { success: true, message: "店舗設定を保存しました" };
   } catch (e) {
     console.error(e);
