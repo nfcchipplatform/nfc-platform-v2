@@ -18,7 +18,7 @@ export default function DashboardLayout({
 
   const isActive = (path: string) => pathname === path;
 
-  // 基本メニュー
+  // 基本メニュー (全ユーザー)
   const menuItems = [
     { name: "ダッシュボード", path: "/dashboard" },
     { name: "プロフィール編集", path: "/dashboard/profile" },
@@ -31,6 +31,7 @@ export default function DashboardLayout({
   const superAdminItems = [
     { name: "🏢 全店舗管理 (Super)", path: "/dashboard/admin/salons" },
     { name: "👥 全ユーザー管理 (Super)", path: "/dashboard/admin/users" },
+    { name: "🎫 カード発行 (CSV)", path: "/dashboard/admin/cards" }, // [NEW] 次回実装: UUID一括生成
   ];
 
   // 店舗管理者用メニュー
@@ -38,6 +39,7 @@ export default function DashboardLayout({
     { name: "🏠 自店舗管理", path: "/dashboard/salon" },
     { name: "👥 顧客管理", path: "/dashboard/salon/customers" },
     { name: "⚙ 店舗設定", path: "/dashboard/salon/settings" },
+    // 「カード在庫管理」は削除しました
   ];
 
   const role = (session?.user as any)?.role;
@@ -68,6 +70,7 @@ export default function DashboardLayout({
       {isMenuOpen && (
         <div className="md:hidden bg-gray-800 text-white w-full sticky top-16 z-40 shadow-lg">
           <nav className="flex flex-col p-4 space-y-2">
+            
             {/* 一般 */}
             <p className="text-xs text-gray-500 font-bold uppercase pt-2">Personal</p>
             {menuItems.map((item) => (
