@@ -1,5 +1,6 @@
 // src/lib/auth.ts
 
+// ... (importsは変更なし)
 import { AuthOptions } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
@@ -42,17 +43,26 @@ export const authOptions: AuthOptions = {
     async jwt({ token, user, trigger, session }) {
       if (user) {
         token.sub = user.id;
+        // ▼ ログイン初期処理：DBから値をとってトークンに入れる
+        token.role = (user as any).role; 
+        token.salonId = (user as any).salonId;
       }
+      
+      // ▼ セッション更新時（update()を呼んだ時）の再取得処理
       if (trigger === "update" && token.sub) {
         const dbUser = await prisma.user.findUnique({ where: { id: token.sub as string } });
         if (dbUser) {
           token.nfcCardId = dbUser.nfcCardId;
+          token.role = dbUser.role;     // [NEW]
+          token.salonId = dbUser.salonId; // [NEW]
         }
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user && token.sub) {
+        // ▼ DBアクセスを減らすため、基本はtokenから値をセットする形でもOKですが、
+        // 確実性を重視して再度DBを見る実装のままとします（既存コード維持）
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },
         });
@@ -69,6 +79,9 @@ export const authOptions: AuthOptions = {
           (session.user as any).twitter = dbUser.twitter;
           (session.user as any).instagram = dbUser.instagram;
           (session.user as any).nfcCardId = dbUser.nfcCardId;
+          // ▼▼▼ 以下を追加 ▼▼▼
+          (session.user as any).role = dbUser.role;
+          (session.user as any).salonId = dbUser.salonId;
         }
       }
       return session;
