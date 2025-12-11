@@ -5,7 +5,7 @@ import { trackProfileView } from "@/actions/trackView";
 import DirectLinkInterstitial from "@/components/DirectLinkInterstitial";
 import FollowButton from "@/components/FollowButton";
 import HamsaHand from "@/components/HamsaHand";
-import SalonFooter from "@/components/SalonFooter"; // [NEW] 追加
+import SalonFooter from "@/components/SalonFooter"; // [NEW] 店舗情報フッター
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { checkIsFollowing } from "@/actions/followActions";
@@ -25,7 +25,8 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
   const { username } = params;
   const session = await getServerSession(authOptions);
 
-  // ユーザー情報取得（サロン情報に location, mapUrl, websiteUrl, logoUrl, primaryColor を追加で取得）
+  // ユーザー情報取得
+  // salon情報 (theme, config含む) と favorites (五大元素) を取得
   const user = await prisma.user.findUnique({
     where: { username: decodeURIComponent(username) },
     include: {
@@ -56,10 +57,21 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
   const isOwner = session?.user?.id === user.id;
   const isFollowing = session?.user?.id && !isOwner ? await checkIsFollowing(user.id) : false;
 
-  // テーマ決定ロジック
+  // --- テーマ決定ロジック ---
+  // 1. URLパラメータ (?theme=cyber) を優先 (デモ確認用)
+  // 2. サロンが設定しているテーマ (user.salon.theme.id)
+  // 3. デフォルト
   const queryTheme = typeof searchParams.theme === 'string' ? searchParams.theme : null;
-  const themeId = queryTheme || "default"; 
+  const salonThemeId = user.salon?.theme?.id;
+  const themeId = queryTheme || salonThemeId || "default"; 
+  
   const theme = getTheme(themeId);
+
+  // --- カラー決定ロジック ---
+  // 店舗設定でアクセントカラーが指定されていれば、テーマのデフォルト色を上書きする
+  const salonAccentColor = user.salon?.accentColor;
+  // 実際に表示に使うアクセントカラー
+  const displayAccentColor = salonAccentColor || theme.accentColor;
 
   // 五大元素スロットの整形
   const slots = Array(5).fill(null);
@@ -76,11 +88,20 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
       <div className="text-center z-10 mb-6">
         <div className="relative inline-block">
             {user.image ? (
-                <img src={user.image} alt={user.name || ''} className="w-24 h-24 rounded-full object-cover border-4 shadow-xl" style={{ borderColor: theme.accentColor }} />
+                <img 
+                  src={user.image} 
+                  alt={user.name || ''} 
+                  className="w-24 h-24 rounded-full object-cover border-4 shadow-xl" 
+                  style={{ borderColor: displayAccentColor }} 
+                />
             ) : (
-                <div className="w-24 h-24 rounded-full flex items-center justify-center border-4 shadow-xl bg-gray-200 text-gray-400" style={{ borderColor: theme.accentColor }}>No Img</div>
+                <div 
+                  className="w-24 h-24 rounded-full flex items-center justify-center border-4 shadow-xl bg-gray-200 text-gray-400" 
+                  style={{ borderColor: displayAccentColor }}
+                >
+                  No Img
+                </div>
             )}
-             {/* サロンバッジはFooterに移動するため削除、または小さく残す */}
         </div>
 
         <h1 className="mt-4 text-2xl font-bold tracking-tight">{user.name}</h1>
