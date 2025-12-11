@@ -1,3 +1,5 @@
+// prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,17 +9,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Userモデル (Digital Hamsa拡張版)
+// 権限管理用のEnum
+enum Role {
+  USER
+  SALON_ADMIN
+  SUPER_ADMIN
+}
+
+// Userモデル
 model User {
-  id                String    @id @default(cuid())
-  username          String?   @unique
-  name              String?
-  email             String?   @unique
-  emailVerified     DateTime?
-  hashedPassword    String?
-  image             String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  username      String?   @unique
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  hashedPassword String?
+  image         String?
+  role          Role      @default(USER) // 権限
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   
   // プロフィール情報
   title             String?
@@ -31,61 +42,87 @@ model User {
   directLinkEnabled Boolean   @default(false)
   directLinkUrl     String?
 
-  // --- [NEW] サロン・テーマ連携 ---
-  // ユーザーが所属する（施術を受けた）サロン
+  // --- サロン連携 ---
+  // ユーザーが所属する（顧客として紐づく）サロン
   salonId           String?
-  salon             Salon?    @relation(fields: [salonId], references: [id])
+  salon             Salon?    @relation("SalonCustomers", fields: [salonId], references: [id])
+
+  // このユーザーが管理者として所有するサロン（店舗管理者の場合）
+  managedSalon      Salon?    @relation("SalonOwner")
 
   // リレーション
   accounts          Account[]
   sessions          Session[]
   profileViews      ProfileView[]
-
-  // 五大元素データ (Slot 0=火/親, 1=風/人, 2=空/中, 3=地/薬, 4=水/小)
   favorites         Favorite[] @relation("FavoriteOwner")
   favoritedBy       Favorite[] @relation("FavoriteSelectedUser")
-
-  // フォロー機能
   followers         Follow[]   @relation("FollowerRelation")
   following         Follow[]   @relation("FollowingRelation")
 }
 
-// [NEW] Salonモデル (加盟店)
+// Salonモデル (加盟店)
 model Salon {
   id            String    @id @default(cuid())
-  name          String    // サロン名 (例: "Cyber Nail Akishima")
+  name          String    // 店舗名
   slug          String    @unique // URL用ID (例: cyber-nail)
-  logoUrl       String?   // サロンロゴ画像のURL
+  salonCode     String?   @unique // [NEW] ユーザー登録時に入力するコード (例: 1234)
   
-  // ブランドカラー (Hamsaのベースカラー)
+  // [NEW] 店舗情報表示用
+  location      String?   // 地域・住所表示 (例: 東京都昭島市)
+  mapUrl        String?   // Google Map等のURL
+  websiteUrl    String?   // 店舗公式サイトURL
+  logoUrl       String?   // 店舗アイコン/ロゴ画像
+  
+  // デザイン設定
   primaryColor  String    @default("#000000") 
   accentColor   String    @default("#FFD700")
-
-  // テーマ設定 (このサロンのネイルをした人のスマホ画面デザイン)
   themeId       String?
   theme         Theme?    @relation(fields: [themeId], references: [id])
 
+  // オーナー（店舗管理者）
+  ownerId       String?   @unique
+  owner         User?     @relation("SalonOwner", fields: [ownerId], references: [id])
+
   // 顧客リスト
-  users         User[]
+  users         User[]    @relation("SalonCustomers")
+
+  // [NEW] カード在庫管理
+  nfcCards      NfcCard[]
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
 
-// [NEW] Themeモデル (デザインプリセット)
+// [NEW] NfcCardモデル (在庫管理用)
+model NfcCard {
+  id        String   @id // カードの固有ID (nfcCardIdと同じ)
+  
+  // どのサロンに卸したか
+  salonId   String
+  salon     Salon    @relation(fields: [salonId], references: [id])
+  
+  // 状態管理 (在庫、使用中、無効など)
+  isActive  Boolean  @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([salonId])
+}
+
+// Themeモデル (デザインプリセット)
 model Theme {
   id            String    @id @default(cuid())
-  name          String    // テーマ名 (例: "Mandala", "Cyber", "Zen")
-  className     String    // CSSクラスや識別子 (Tailwindの設定などで使用)
-  
+  name          String    
+  className     String    
   salons        Salon[]
 }
 
-// Favoriteモデル (五大元素スロットとして利用)
+// Favoriteモデル
 model Favorite {
   id             String    @id @default(cuid())
   ownerId        String    
-  slotIndex      Int       // 0:親指(火), 1:人差(風), 2:中指(空), 3:薬指(地), 4:小指(水)
+  slotIndex      Int       
   selectedUserId String    
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -97,31 +134,30 @@ model Favorite {
   @@index([selectedUserId])
 }
 
-// --- 以下、既存のNextAuth用モデル ---
-
+// --- NextAuth用モデル (変更なし) ---
 model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String? @db.Text
+  access_token       String? @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String? @db.Text
+  session_state      String?
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([provider, providerAccountId])
 }
 
 model Session {
-  id           String    @id @default(cuid())
-  sessionToken String    @unique
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
   userId       String
   expires      DateTime
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
@@ -132,12 +168,12 @@ model VerificationToken {
 }
 
 model Follow {
-  id            String    @id @default(cuid())
-  followerId    String    
-  followingId   String    
-  createdAt     DateTime  @default(now())
-  follower      User      @relation("FollowingRelation", fields: [followerId], references: [id], onDelete: Cascade)
-  following     User      @relation("FollowerRelation", fields: [followingId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  followerId  String    
+  followingId String    
+  createdAt   DateTime  @default(now())
+  follower    User      @relation("FollowingRelation", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User      @relation("FollowerRelation", fields: [followingId], references: [id], onDelete: Cascade)
   @@unique([followerId, followingId])
   @@index([followingId])
 }

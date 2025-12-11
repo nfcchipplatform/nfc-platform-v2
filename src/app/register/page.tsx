@@ -2,7 +2,6 @@
 
 import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-// ▼▼▼ この行が必要です！これが抜けていたのがエラーの原因です ▼▼▼
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 
@@ -19,14 +18,20 @@ function RegisterForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [salonCode, setSalonCode] = useState(''); // [NEW] 店舗コード用state
   
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   
   const searchParams = useSearchParams();
-  const router = useRouter();
   const cardId = searchParams.get('cardId');
+  
+  // URLパラメータに salonCode があれば自動入力 (例: ?salonCode=1234)
+  const initialSalonCode = searchParams.get('salonCode');
+  if (initialSalonCode && !salonCode) {
+      setSalonCode(initialSalonCode);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +51,7 @@ function RegisterForm() {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, username }),
+        body: JSON.stringify({ name, email, password, username, salonCode }), // salonCodeを送信
       });
 
       const rawText = await res.text();
@@ -59,7 +64,6 @@ function RegisterForm() {
 
       if (res.ok) {
         // 登録成功後、自動ログイン
-        console.log("登録成功。自動ログインを試みます。");
         setStatusMessage('登録完了！ 自動ログイン中...');
 
         const loginResult = await signIn('credentials', {
@@ -69,7 +73,6 @@ function RegisterForm() {
         });
 
         if (loginResult?.ok) {
-          console.log("自動ログイン成功。ダッシュボードへ移動します。");
           setStatusMessage('ログイン成功！ ダッシュボードへ移動します...');
           
           const targetUrl = cardId 
@@ -78,7 +81,6 @@ function RegisterForm() {
           
           window.location.href = targetUrl;
         } else {
-          console.error("自動ログイン失敗");
           window.location.href = '/login';
         }
 
@@ -133,9 +135,25 @@ function RegisterForm() {
             <label className="block text-gray-700 text-sm font-bold mb-2">メールアドレス</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="shadow border rounded w-full py-2 px-3" required disabled={isLoading} />
           </div>
-          <div className="mb-6">
+          <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2">パスワード</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="shadow border rounded w-full py-2 px-3" required disabled={isLoading} />
+          </div>
+
+          {/* [NEW] 店舗コード入力欄 */}
+          <div className="mb-6 pt-4 border-t border-gray-100">
+            <label className="block text-gray-600 text-sm font-bold mb-2 flex justify-between">
+                <span>店舗コード (任意)</span>
+                <span className="text-xs font-normal text-gray-400">店舗から案内がある場合</span>
+            </label>
+            <input 
+                type="text" 
+                value={salonCode} 
+                onChange={(e) => setSalonCode(e.target.value)} 
+                className="shadow border rounded w-full py-2 px-3 bg-gray-50 placeholder-gray-300" 
+                placeholder="例: 1234"
+                disabled={isLoading} 
+            />
           </div>
           
           <button 
@@ -151,7 +169,6 @@ function RegisterForm() {
           </button>
 
           <div className="text-center mt-6 border-t pt-6">
-             {/* ここで Link を使っているため、importが必要です */}
              <Link href={cardId ? `/login?cardId=${cardId}` : "/login"} className="text-blue-600 font-bold hover:underline">
                ログイン画面
              </Link>
@@ -160,22 +177,8 @@ function RegisterForm() {
       </div>
 
       <div className="mt-8 flex items-center justify-center gap-6 text-xs text-gray-500">
-        <a 
-          href="https://ponnu.net/privacy-policy.pdf" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="hover:text-gray-800 hover:underline transition-colors"
-        >
-          プライバシーポリシー
-        </a>
-        <a 
-          href="https://ponnu.net/terms-of-service.pdf" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="hover:text-gray-800 hover:underline transition-colors"
-        >
-          利用規約
-        </a>
+        <a href="https://ponnu.net/privacy-policy.pdf" target="_blank" rel="noopener noreferrer" className="hover:text-gray-800 hover:underline">プライバシーポリシー</a>
+        <a href="https://ponnu.net/terms-of-service.pdf" target="_blank" rel="noopener noreferrer" className="hover:text-gray-800 hover:underline">利用規約</a>
       </div>
     </div>
   );

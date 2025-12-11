@@ -4,12 +4,13 @@ import { PrismaClient } from "@prisma/client";
 import { trackProfileView } from "@/actions/trackView";
 import DirectLinkInterstitial from "@/components/DirectLinkInterstitial";
 import FollowButton from "@/components/FollowButton";
-import HamsaHand from "@/components/HamsaHand"; // ★追加
+import HamsaHand from "@/components/HamsaHand";
+import SalonFooter from "@/components/SalonFooter"; // [NEW] 追加
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { checkIsFollowing } from "@/actions/followActions";
 import Link from "next/link";
-import { getTheme } from "@/lib/themeConfig"; // ★追加
+import { getTheme } from "@/lib/themeConfig";
 
 const prisma = new PrismaClient();
 
@@ -24,7 +25,7 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
   const { username } = params;
   const session = await getServerSession(authOptions);
 
-  // ユーザー情報取得（サロン・テーマ情報も含む）
+  // ユーザー情報取得（サロン情報に location, mapUrl, websiteUrl, logoUrl, primaryColor を追加で取得）
   const user = await prisma.user.findUnique({
     where: { username: decodeURIComponent(username) },
     include: {
@@ -55,14 +56,9 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
   const isOwner = session?.user?.id === user.id;
   const isFollowing = session?.user?.id && !isOwner ? await checkIsFollowing(user.id) : false;
 
-  // --- テーマ決定ロジック ---
-  // 1. URLパラメータ (?theme=cyber) を優先 (デモ用)
-  // 2. サロンが設定されていればサロンのテーマ
-  // 3. なければデフォルト
+  // テーマ決定ロジック
   const queryTheme = typeof searchParams.theme === 'string' ? searchParams.theme : null;
-  // ※本来は user.salon?.theme?.id などを使うが、今は簡易的にハードコードされたテーマIDを使用
   const themeId = queryTheme || "default"; 
-  
   const theme = getTheme(themeId);
 
   // 五大元素スロットの整形
@@ -84,12 +80,7 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
             ) : (
                 <div className="w-24 h-24 rounded-full flex items-center justify-center border-4 shadow-xl bg-gray-200 text-gray-400" style={{ borderColor: theme.accentColor }}>No Img</div>
             )}
-             {/* サロンバッジ (あれば) */}
-             {user.salon && (
-                 <span className="absolute -bottom-2 -right-2 px-2 py-1 text-[10px] font-bold text-white rounded-full shadow-md bg-black">
-                     {user.salon.name}
-                 </span>
-             )}
+             {/* サロンバッジはFooterに移動するため削除、または小さく残す */}
         </div>
 
         <h1 className="mt-4 text-2xl font-bold tracking-tight">{user.name}</h1>
@@ -100,7 +91,7 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
             {!isOwner && session?.user?.id && (
                 <FollowButton targetUserId={user.id} isFollowingInitial={isFollowing} />
             )}
-             
+            
              {/* デモ用テーマ切り替えボタン (オーナーのみ表示) */}
              {isOwner && (
                  <div className="flex gap-1">
@@ -129,7 +120,12 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
         {user.instagram && <a href={user.instagram} target="_blank" className="hover:opacity-100 transition-opacity">📸</a>}
       </div>
 
-      <div className="mt-12 text-[10px] opacity-40">
+      {/* [NEW] 店舗情報Footer */}
+      {user.salon && (
+        <SalonFooter salon={user.salon} />
+      )}
+
+      <div className="mt-8 text-[10px] opacity-40">
           POWERED BY PONNU
       </div>
 
