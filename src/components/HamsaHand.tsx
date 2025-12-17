@@ -17,6 +17,8 @@ interface HamsaHandProps {
   slots: (ProfileSummary | null)[]; 
   isOwner?: boolean;
   themeId?: string; // テーマIDを受け取る
+  profileImage?: string | null; // プロフィール画像
+  accentColor?: string; // アクセントカラー
 }
 
 const ELEMENT_LABELS = [
@@ -27,9 +29,10 @@ const ELEMENT_LABELS = [
   { name: "小指", label: "水 (Water)",  pos: "bottom-0 -right-2" },
 ];
 
-export default function HamsaHand({ slots, isOwner = false, themeId = "default" }: HamsaHandProps) {
+export default function HamsaHand({ slots, isOwner = false, themeId = "default", profileImage = null, accentColor }: HamsaHandProps) {
   // テーマ情報を取得
   const theme = THEMES[themeId] || THEMES["default"];
+  const displayAccentColor = accentColor || theme.accentColor;
 
   return (
     <div className={`relative w-full max-w-[280px] sm:max-w-[320px] mx-auto aspect-square my-10 ${theme.fontClass}`}>
@@ -37,22 +40,31 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default" 
       {/* --- 背景パターン (テーマによって切り替え) --- */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
          {theme.pattern === 'mandala' && (
-             <div className="w-[120%] h-[120%] border-[1px] border-dashed border-current rounded-full animate-[spin_60s_linear_infinite]" style={{ color: theme.accentColor }}></div>
+             <div className="w-[120%] h-[120%] border-[1px] border-dashed border-current rounded-full animate-[spin_60s_linear_infinite]" style={{ color: displayAccentColor }}></div>
          )}
          {theme.pattern === 'grid' && (
              <div className="w-full h-full bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
          )}
-         <div className="absolute w-[80%] h-[80%] border-[1px] border-current rounded-full opacity-30" style={{ color: theme.accentColor }}></div>
+         <div className="absolute w-[80%] h-[80%] border-[1px] border-current rounded-full opacity-30" style={{ color: displayAccentColor }}></div>
       </div>
 
-      {/* --- 中心の「目」 (The Eye) --- */}
+      {/* --- 中心のプロフィールアイコン --- */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
         <div 
-          className="relative w-24 h-24 rounded-full shadow-2xl flex flex-col items-center justify-center border-4 z-20 transition-transform hover:scale-105 overflow-hidden bg-white"
-          style={{ borderColor: theme.accentColor }}
+          className="relative w-24 h-24 rounded-full shadow-2xl border-4 z-20 transition-transform hover:scale-105 overflow-hidden bg-white"
+          style={{ borderColor: displayAccentColor }}
         >
-            <div className="text-3xl mb-1">EYE</div>
-            <p className="text-[8px] font-bold tracking-widest uppercase" style={{ color: theme.accentColor }}>HAMSA</p>
+          {profileImage ? (
+            <img 
+              src={profileImage} 
+              alt="Profile" 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
+              <span className="text-xs">No Img</span>
+            </div>
+          )}
             
             {/* サイバーテーマの場合のスキャンライン演出 */}
             {theme.id === 'cyber' && (

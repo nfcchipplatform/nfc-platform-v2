@@ -103,8 +103,8 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
   return (
     <div className={`min-h-screen flex flex-col items-center py-10 px-4 transition-colors duration-500 ${theme.bgClass} ${theme.textClass} ${theme.fontClass}`}>
       
-      {/* ヘッダー情報 */}
-      <div className="text-center z-10 mb-6">
+      {/* ヘッダー情報（PC版のみ表示） */}
+      <div className="text-center z-10 mb-6 hidden sm:block">
         <div className="relative inline-block">
             {user.image ? (
                 <img 
@@ -131,21 +131,25 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
             {!isOwner && session?.user?.id && (
                 <FollowButton targetUserId={user.id} isFollowingInitial={isFollowing} />
             )}
-            
-             {/* デモ用テーマ切り替えボタン (オーナーのみ表示) */}
-             {isOwner && (
-                 <div className="flex gap-1">
-                     <Link href={`/${username}?theme=default`} className="px-2 py-1 text-[10px] bg-white border rounded text-black">Default</Link>
-                     <Link href={`/${username}?theme=cyber`} className="px-2 py-1 text-[10px] bg-black text-green-400 border border-green-500 rounded">Cyber</Link>
-                     <Link href={`/${username}?theme=zen`} className="px-2 py-1 text-[10px] bg-[#F5F5F0] border border-stone-400 rounded text-stone-800">Zen</Link>
-                 </div>
-             )}
         </div>
       </div>
 
-      {/* --- メインコンテンツ: Digital Hamsa --- */}
+      {/* --- メインコンテンツ: Digital Hamsa (一番上に表示) --- */}
       <div className="w-full max-w-md z-10">
-          <HamsaHand slots={slots} themeId={theme.id} />
+          <HamsaHand slots={slots} themeId={theme.id} profileImage={user.image} accentColor={displayAccentColor} />
+      </div>
+
+      {/* 名前と肩書（HamsaHandの下に表示） */}
+      <div className="text-center z-10 mt-4">
+        <h1 className="text-2xl font-bold tracking-tight">{user.name}</h1>
+        <p className="opacity-70 text-sm mt-1">{user.title}</p>
+        
+        {/* アクションボタン */}
+        <div className="mt-4 flex gap-2 justify-center">
+            {!isOwner && session?.user?.id && (
+                <FollowButton targetUserId={user.id} isFollowingInitial={isFollowing} />
+            )}
+        </div>
       </div>
 
       {/* 自己紹介など */}
@@ -171,6 +175,15 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
           </a>
         )}
       </div>
+
+      {/* デモ用テーマ切り替えボタン (オーナーのみ表示、下に移動) */}
+      {isOwner && (
+        <div className="mt-6 flex gap-1 z-10">
+          <Link href={`/${username}?theme=default`} className="px-2 py-1 text-[10px] bg-white border rounded text-black">Default</Link>
+          <Link href={`/${username}?theme=cyber`} className="px-2 py-1 text-[10px] bg-black text-green-400 border border-green-500 rounded">Cyber</Link>
+          <Link href={`/${username}?theme=zen`} className="px-2 py-1 text-[10px] bg-[#F5F5F0] border border-stone-400 rounded text-stone-800">Zen</Link>
+        </div>
+      )}
 
       {/* [NEW] 店舗情報Footer */}
       {user.salon && (
