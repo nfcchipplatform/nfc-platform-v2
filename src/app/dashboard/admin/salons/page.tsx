@@ -35,6 +35,11 @@ async function createSalon(formData: FormData) {
 async function updateSalon(formData: FormData) {
   "use server";
   
+  const session = await getServerSession(authOptions);
+  if ((session?.user as any)?.role !== 'SUPER_ADMIN') {
+    return;
+  }
+  
   const id = formData.get("id") as string;
   const name = formData.get("name") as string;
   const slug = formData.get("slug") as string;
@@ -46,7 +51,7 @@ async function updateSalon(formData: FormData) {
   try {
       await prisma.salon.update({
           where: { id },
-          data: { name, slug, salonCode, location }
+          data: { name, slug, salonCode, location: location || null }
       });
       revalidatePath('/dashboard/admin/salons');
   } catch (e) {
@@ -57,6 +62,11 @@ async function updateSalon(formData: FormData) {
 // 店舗削除アクション
 async function deleteSalon(formData: FormData) {
   "use server";
+  
+  const session = await getServerSession(authOptions);
+  if ((session?.user as any)?.role !== 'SUPER_ADMIN') {
+    return;
+  }
   
   const id = formData.get("id") as string;
   if (!id) return;
@@ -133,7 +143,7 @@ export default async function AdminSalonsPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                   {salons.map((salon) => (
-                      <SalonRow key={salon.id} salon={salon} />
+                      <SalonRow key={salon.id} salon={salon} updateSalon={updateSalon} deleteSalon={deleteSalon} />
                   ))}
               </tbody>
           </table>

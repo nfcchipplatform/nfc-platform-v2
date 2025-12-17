@@ -14,9 +14,11 @@ interface Salon {
 
 interface SalonRowProps {
   salon: Salon;
+  updateSalon: (formData: FormData) => Promise<void>;
+  deleteSalon: (formData: FormData) => Promise<void>;
 }
 
-export default function SalonRow({ salon }: SalonRowProps) {
+export default function SalonRow({ salon, updateSalon, deleteSalon }: SalonRowProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
@@ -49,13 +51,8 @@ export default function SalonRow({ salon }: SalonRowProps) {
     formData.append("id", salon.id);
     
     try {
-      const response = await fetch("/dashboard/admin/salons", {
-        method: "DELETE",
-        body: formData,
-      });
-      if (response.ok) {
-        window.location.reload();
-      }
+      await deleteSalon(formData);
+      window.location.reload();
     } catch (error) {
       alert("削除に失敗しました");
     }
@@ -68,13 +65,8 @@ export default function SalonRow({ salon }: SalonRowProps) {
           <form
             action={async (formData: FormData) => {
               formData.append("id", salon.id);
-              const response = await fetch("/dashboard/admin/salons", {
-                method: "PATCH",
-                body: formData,
-              });
-              if (response.ok) {
-                window.location.reload();
-              }
+              await updateSalon(formData);
+              window.location.reload();
             }}
             className="flex flex-wrap gap-4 items-end"
           >
