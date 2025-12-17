@@ -14,6 +14,9 @@ import { getTheme } from "@/lib/themeConfig";
 
 const prisma = new PrismaClient();
 
+// キャッシュ設定: 60秒間キャッシュ（プロフィール更新頻度に応じて調整可能）
+export const revalidate = 60;
+
 interface UserProfilePageProps {
   params: {
     username: string;
@@ -31,7 +34,17 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
     where: { username: decodeURIComponent(username) },
     include: {
         favorites: {
-            include: { selectedUser: true },
+            include: { 
+              selectedUser: {
+                select: {
+                  id: true,
+                  username: true,
+                  name: true,
+                  image: true,
+                  title: true,
+                }
+              }
+            },
             orderBy: { slotIndex: 'asc' }
         },
         salon: {
@@ -50,12 +63,18 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
     return <DirectLinkInterstitial redirectUrl={user.directLinkUrl} profileUrl={`/${user.username}`} />;
   }
 
-  // 閲覧記録
-  await trackProfileView(user.id);
-
-  // 本人確認 & フォロー状態
+  // 本人確認
   const isOwner = session?.user?.id === user.id;
-  const isFollowing = session?.user?.id && !isOwner ? await checkIsFollowing(user.id) : false;
+  
+  // 閲覧記録とフォロー状態チェックを並列実行（非ブロッキング）
+  const [_, isFollowing] = await Promise.all([
+    // 閲覧記録は非同期で実行（エラーが発生しても表示をブロックしない）
+    trackProfileView(user.id).catch(err => {
+      console.error("Failed to track view:", err);
+    }),
+    // フォロー状態チェック（本人の場合はスキップ）
+    session?.user?.id && !isOwner ? checkIsFollowing(user.id) : Promise.resolve(false)
+  ]);
 
   // --- テーマ決定ロジック ---
   // 1. URLパラメータ (?theme=cyber) を優先 (デモ確認用)
