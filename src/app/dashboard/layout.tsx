@@ -31,7 +31,6 @@ export default function DashboardLayout({
   const superAdminItems = [
     { name: "全店舗管理 (Super)", path: "/dashboard/admin/salons" },
     { name: "全ユーザー管理 (Super)", path: "/dashboard/admin/users" },
-    { name: "カード発行 (CSV)", path: "/dashboard/admin/cards" }, // [NEW] 次回実装: UUID一括生成
   ];
 
   // 店舗管理者用メニュー

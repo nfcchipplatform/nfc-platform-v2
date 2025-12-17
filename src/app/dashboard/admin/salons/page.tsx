@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import SalonRow from "./SalonRow";
 
 const prisma = new PrismaClient();
 
@@ -27,6 +28,46 @@ async function createSalon(formData: FormData) {
   } catch (e) {
       console.error(e);
       // エラーハンドリングは簡易的に
+  }
+}
+
+// 店舗更新アクション
+async function updateSalon(formData: FormData) {
+  "use server";
+  
+  const id = formData.get("id") as string;
+  const name = formData.get("name") as string;
+  const slug = formData.get("slug") as string;
+  const salonCode = formData.get("salonCode") as string;
+  const location = formData.get("location") as string;
+
+  if (!id || !name || !slug || !salonCode) return;
+
+  try {
+      await prisma.salon.update({
+          where: { id },
+          data: { name, slug, salonCode, location }
+      });
+      revalidatePath('/dashboard/admin/salons');
+  } catch (e) {
+      console.error(e);
+  }
+}
+
+// 店舗削除アクション
+async function deleteSalon(formData: FormData) {
+  "use server";
+  
+  const id = formData.get("id") as string;
+  if (!id) return;
+
+  try {
+      await prisma.salon.delete({
+          where: { id }
+      });
+      revalidatePath('/dashboard/admin/salons');
+  } catch (e) {
+      console.error(e);
   }
 }
 
@@ -87,26 +128,12 @@ export default async function AdminSalonsPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">コード / ID</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">顧客数</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">登録日</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                   </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                   {salons.map((salon) => (
-                      <tr key={salon.id}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-900">{salon.name}</div>
-                              <div className="text-xs text-gray-500">{salon.location || '-'}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900 font-mono bg-gray-100 inline-block px-2 py-0.5 rounded">{salon.salonCode}</div>
-                              <div className="text-xs text-gray-500 mt-1">{salon.slug}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {salon._count.users} 名
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {new Date(salon.createdAt).toLocaleDateString()}
-                          </td>
-                      </tr>
+                      <SalonRow key={salon.id} salon={salon} />
                   ))}
               </tbody>
           </table>
