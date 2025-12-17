@@ -165,9 +165,12 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
         <SalonFooter salon={user.salon} />
       )}
 
-      <div className="mt-8 text-[10px] opacity-40">
-          POWERED BY PONNU
-      </div>
+      <Link
+        href="https://app.ponnu.net/"
+        className="mt-8 text-[10px] opacity-40 hover:opacity-80 transition-opacity"
+      >
+        POWERED BY PONNU
+      </Link>
 
     </div>
   );
