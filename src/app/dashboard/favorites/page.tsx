@@ -136,12 +136,12 @@ export default function FavoritesPage() {
                     
                     {/* 5つのスロットカード */}
                     {SLOT_CONFIG.map((slot) => (
-                        <div key={slot.id} className={`relative p-5 rounded-xl border-2 bg-white shadow-sm transition-shadow hover:shadow-md ${slot.color}`}>
+                        <div key={slot.id} className={`relative p-5 rounded-xl border-2 bg-white shadow-sm transition-shadow hover:shadow-md ${slot.color} min-h-[180px] flex flex-col`}>
                             <div className={`absolute top-0 right-0 px-3 py-1 rounded-bl-lg rounded-tr-lg text-[10px] font-bold uppercase tracking-wider ${slot.bg} ${slot.text}`}>
                                 {slot.element}
                             </div>
                             
-                            <div className="flex items-center gap-2 mb-3">
+                            <div className="flex items-center gap-2 mb-3 mt-2">
                                 <span className="text-2xl">{slot.icon}</span>
                                 <div>
                                     <h3 className="font-bold text-gray-800">{slot.name}</h3>
@@ -149,7 +149,7 @@ export default function FavoritesPage() {
                                 </div>
                             </div>
 
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 mt-auto">
                                 <input
                                     type="text"
                                     value={inputs[slot.id]}
@@ -180,17 +180,18 @@ export default function FavoritesPage() {
                     ))}
 
                     {/* 保存ボタン */}
-                    <div className="md:col-span-2 lg:col-span-1 flex items-end">
+                    <div className="flex items-stretch">
                         <button 
                             type="submit" 
                             disabled={isSaving} 
-                            className="w-full h-[120px] rounded-xl bg-gray-900 text-white font-bold text-lg shadow-lg hover:bg-black transition-transform active:scale-95 disabled:bg-gray-400 flex flex-col items-center justify-center gap-2"
+                            className="w-full rounded-xl bg-gray-900 text-white font-bold text-lg shadow-lg hover:bg-black transition-transform active:scale-95 disabled:bg-gray-400 flex flex-col items-center justify-center gap-2 min-h-[180px]"
                         >
                             {isSaving ? (
                                 <span>保存中...</span>
                             ) : (
                                 <>
-                                    <span>⚡ 装備完了</span>
+                                    <span className="text-2xl">⚡</span>
+                                    <span>装備完了</span>
                                     <span className="text-xs font-normal opacity-70">変更を保存する</span>
                                 </>
                             )}
