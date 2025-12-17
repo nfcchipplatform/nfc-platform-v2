@@ -4,9 +4,41 @@ import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import UserTable from "./UserTable";
 
 const prisma = new PrismaClient();
+
+// ユーザー更新アクション
+async function updateUser(formData: FormData) {
+  "use server";
+  
+  const session = await getServerSession(authOptions);
+  if ((session?.user as any)?.role !== 'SUPER_ADMIN') {
+    return;
+  }
+  
+  const id = formData.get("id") as string;
+  const name = formData.get("name") as string;
+  const username = formData.get("username") as string;
+  const email = formData.get("email") as string;
+
+  if (!id || !name || !username || !email) return;
+
+  try {
+      await prisma.user.update({
+          where: { id },
+          data: { 
+            name: name || null,
+            username: username || null,
+            email: email || null,
+          }
+      });
+      revalidatePath('/dashboard/admin/users');
+  } catch (e) {
+      console.error(e);
+  }
+}
 
 export default async function AdminUsersPage({
   searchParams,
@@ -68,7 +100,7 @@ export default async function AdminUsersPage({
       </div>
 
       {/* ユーザー一覧テーブル (Client Component) */}
-      <UserTable users={users as any} salons={salons} />
+      <UserTable users={users as any} salons={salons} updateUser={updateUser} />
       
       <p className="text-right text-xs text-gray-400">
           全 {users.length} 件のユーザーを表示中
