@@ -37,10 +37,10 @@ export default function Home() {
             <div className="flex flex-col gap-3">
               {/* ▼ 変更: 緑から青へ（メインアクション） */}
               <Link 
-                href={(session.user as any)?.username ? `/${(session.user as any).username}` : '#'}
+                href="/dashboard"
                 className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors"
               >
-                プロフィール画面
+                ダッシュボード
               </Link>
               
               {/* ▼ 変更: 赤からグレーへ（サブアクション） */}
