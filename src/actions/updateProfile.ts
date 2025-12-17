@@ -31,7 +31,7 @@ export async function updateProfile(data: ProfileData) {
       where: { id: session.user.id },
       data: data,
     });
-    console.log("🎉 データベースの更新コマンドは成功しました");
+    console.log("データベースの更新コマンドは成功しました");
 
     revalidatePath('/dashboard/profile');
     if (updatedUser.username) {
@@ -41,7 +41,7 @@ export async function updateProfile(data: ProfileData) {
     return { success: true, user: updatedUser };
 
   } catch (error) {
-    console.error("❌ PROFILE_UPDATE_ERROR:", error);
+    console.error("PROFILE_UPDATE_ERROR:", error);
     return { success: false, error: "プロフィールの更新に失敗しました。" };
   }
 }

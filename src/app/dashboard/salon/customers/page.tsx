@@ -33,7 +33,7 @@ export default async function SalonCustomersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">👥 顧客管理</h1>
+      <h1 className="text-2xl font-bold text-gray-800">顧客管理</h1>
       <p className="text-sm text-gray-500">
           あなたの店舗 ({user.salonId}) に所属しているユーザーの一覧です。
       </p>

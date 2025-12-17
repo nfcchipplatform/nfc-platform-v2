@@ -57,8 +57,7 @@ export default function SalonFooter({ salon }: SalonFooterProps) {
                     
                     {/* 地域 (クリックでMapへ) */}
                     {salon.location && (
-                        <p className="text-xs text-gray-500 truncate flex items-center gap-1">
-                            <span>📍</span>
+                    <p className="text-xs text-gray-500 truncate flex items-center gap-1">
                             {salon.mapUrl ? (
                                 <a 
                                     href={salon.mapUrl} 

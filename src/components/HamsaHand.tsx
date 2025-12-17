@@ -51,7 +51,7 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default" 
           className="relative w-24 h-24 rounded-full shadow-2xl flex flex-col items-center justify-center border-4 z-20 transition-transform hover:scale-105 overflow-hidden bg-white"
           style={{ borderColor: theme.accentColor }}
         >
-            <div className="text-3xl mb-1">👁️</div>
+            <div className="text-3xl mb-1">EYE</div>
             <p className="text-[8px] font-bold tracking-widest uppercase" style={{ color: theme.accentColor }}>HAMSA</p>
             
             {/* サイバーテーマの場合のスキャンライン演出 */}

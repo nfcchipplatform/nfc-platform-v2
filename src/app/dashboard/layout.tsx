@@ -29,16 +29,16 @@ export default function DashboardLayout({
 
   // スーパー管理者用メニュー
   const superAdminItems = [
-    { name: "🏢 全店舗管理 (Super)", path: "/dashboard/admin/salons" },
-    { name: "👥 全ユーザー管理 (Super)", path: "/dashboard/admin/users" },
-    { name: "🎫 カード発行 (CSV)", path: "/dashboard/admin/cards" }, // [NEW] 次回実装: UUID一括生成
+    { name: "全店舗管理 (Super)", path: "/dashboard/admin/salons" },
+    { name: "全ユーザー管理 (Super)", path: "/dashboard/admin/users" },
+    { name: "カード発行 (CSV)", path: "/dashboard/admin/cards" }, // [NEW] 次回実装: UUID一括生成
   ];
 
   // 店舗管理者用メニュー
   const salonAdminItems = [
-    { name: "🏠 自店舗管理", path: "/dashboard/salon" },
-    { name: "👥 顧客管理", path: "/dashboard/salon/customers" },
-    { name: "⚙ 店舗設定", path: "/dashboard/salon/settings" },
+    { name: "自店舗管理", path: "/dashboard/salon" },
+    { name: "顧客管理", path: "/dashboard/salon/customers" },
+    { name: "店舗設定", path: "/dashboard/salon/settings" },
     // 「カード在庫管理」は削除しました
   ];
 

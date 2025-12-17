@@ -154,10 +154,22 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
       </div>
 
       {/* フッターリンク */}
-      <div className="mt-10 flex gap-6 text-2xl z-10 opacity-60">
-        {user.website && <a href={user.website} target="_blank" className="hover:opacity-100 transition-opacity">🌐</a>}
-        {user.twitter && <a href={user.twitter} target="_blank" className="hover:opacity-100 transition-opacity">🐦</a>}
-        {user.instagram && <a href={user.instagram} target="_blank" className="hover:opacity-100 transition-opacity">📸</a>}
+      <div className="mt-10 flex gap-6 text-sm z-10 opacity-60">
+        {user.website && (
+          <a href={user.website} target="_blank" className="hover:opacity-100 transition-opacity">
+            Website
+          </a>
+        )}
+        {user.twitter && (
+          <a href={user.twitter} target="_blank" className="hover:opacity-100 transition-opacity">
+            Twitter
+          </a>
+        )}
+        {user.instagram && (
+          <a href={user.instagram} target="_blank" className="hover:opacity-100 transition-opacity">
+            Instagram
+          </a>
+        )}
       </div>
 
       {/* [NEW] 店舗情報Footer */}

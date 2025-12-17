@@ -112,13 +112,13 @@ function RegisterForm() {
 
         {statusMessage && (
           <div className="mb-6 p-4 bg-blue-100 border border-blue-400 text-blue-800 rounded-lg text-center font-bold animate-pulse">
-            ⏳ {statusMessage}
+            {statusMessage}
           </div>
         )}
 
         {error && (
           <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg text-center font-bold">
-            ⚠️ {error}
+            {error}
           </div>
         )}
         

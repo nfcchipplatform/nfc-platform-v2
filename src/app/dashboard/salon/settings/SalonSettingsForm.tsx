@@ -38,7 +38,7 @@ export default function SalonSettingsForm({ salon }: { salon: any }) {
       
       {/* 1. 基本情報 */}
       <div>
-        <h3 className="font-bold text-gray-700 border-b pb-2 mb-4">📍 基本情報</h3>
+        <h3 className="font-bold text-gray-700 border-b pb-2 mb-4">基本情報</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1">店舗名</label>
@@ -61,7 +61,7 @@ export default function SalonSettingsForm({ salon }: { salon: any }) {
 
       {/* 2. デザイン設定 */}
       <div>
-        <h3 className="font-bold text-gray-700 border-b pb-2 mb-4">🎨 デザイン・カラー</h3>
+        <h3 className="font-bold text-gray-700 border-b pb-2 mb-4">デザイン・カラー</h3>
         <p className="text-xs text-gray-400 mb-4">
             ここで設定した色は、あなたの店舗に所属する全ユーザーのプロフィール画面（フッターやアイコン枠など）に適用されます。
         </p>
@@ -85,7 +85,7 @@ export default function SalonSettingsForm({ salon }: { salon: any }) {
 
       {/* 3. ロゴ画像 */}
       <div>
-        <h3 className="font-bold text-gray-700 border-b pb-2 mb-4">🖼 店舗ロゴ</h3>
+        <h3 className="font-bold text-gray-700 border-b pb-2 mb-4">店舗ロゴ</h3>
         <div className="flex items-center gap-6">
             <div className="shrink-0">
                 {logoUrl ? (

@@ -32,7 +32,7 @@ export default async function SalonDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-gray-800">🏠 店舗管理ダッシュボード</h1>
+      <h1 className="text-2xl font-bold text-gray-800">店舗管理ダッシュボード</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         

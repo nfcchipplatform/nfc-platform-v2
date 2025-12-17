@@ -49,7 +49,7 @@ export default async function AdminSalonsPage() {
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">🏢 全店舗管理</h1>
+        <h1 className="text-2xl font-bold text-gray-800">全店舗管理</h1>
       </div>
 
       {/* 新規作成フォーム */}

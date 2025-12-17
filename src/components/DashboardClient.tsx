@@ -116,8 +116,11 @@ export default function DashboardClient() {
             )}
 
             <div className="mt-8 mb-2">
-                <Link href="/dashboard/favorites" className="inline-flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 px-6 py-3 rounded-full hover:bg-indigo-100 transition-colors shadow-sm">
-                    <span>⚡</span> データを装備する (Edit Slots)
+                <Link
+                  href="/dashboard/favorites"
+                  className="inline-flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 px-6 py-3 rounded-full hover:bg-indigo-100 transition-colors shadow-sm"
+                >
+                    データを装備する (Edit Slots)
                 </Link>
             </div>
         </div>
