@@ -136,28 +136,28 @@ export default function FavoritesPage() {
                     
                     {/* 5つのスロットカード */}
                     {SLOT_CONFIG.map((slot) => (
-                        <div key={slot.id} className={`relative p-5 rounded-xl border-2 bg-white shadow-sm transition-shadow hover:shadow-md ${slot.color} min-h-[180px] flex flex-col`}>
-                            <div className={`absolute top-0 right-0 px-3 py-1 rounded-bl-lg rounded-tr-lg text-[10px] font-bold uppercase tracking-wider ${slot.bg} ${slot.text}`}>
+                        <div key={slot.id} className={`relative p-4 sm:p-5 rounded-xl border-2 bg-white shadow-sm transition-shadow hover:shadow-md ${slot.color} min-h-[180px] flex flex-col overflow-hidden`}>
+                            <div className={`absolute top-0 right-0 px-2 sm:px-3 py-1 rounded-bl-lg rounded-tr-lg text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${slot.bg} ${slot.text}`}>
                                 {slot.element}
                             </div>
                             
-                            <div className="mb-3 mt-2">
-                                <h3 className="font-bold text-gray-800">{slot.name}</h3>
+                            <div className="mb-3 mt-2 pr-2">
+                                <h3 className="font-bold text-gray-800 text-sm sm:text-base">{slot.name}</h3>
                                 <p className="text-[10px] text-gray-400">{slot.desc}</p>
                             </div>
 
-                            <div className="flex gap-2 mt-auto">
+                            <div className="flex flex-col sm:flex-row gap-2 mt-auto">
                                 <input
                                     type="text"
                                     value={inputs[slot.id]}
                                     onChange={(e) => handleInputChange(slot.id, e.target.value)}
                                     placeholder="ユーザーIDを入力"
-                                    className="flex-1 bg-gray-50 border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                                    className="flex-1 min-w-0 bg-gray-50 border border-gray-200 rounded px-2 sm:px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
                                 />
                                 <button 
                                     type="button"
                                     onClick={() => openSelectionModal(slot.id)}
-                                    className="bg-gray-100 text-gray-600 px-3 py-2 rounded hover:bg-gray-200 transition-colors text-xs whitespace-nowrap"
+                                    className="bg-gray-100 text-gray-600 px-3 sm:px-4 py-2 rounded hover:bg-gray-200 transition-colors text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
                                     title="検索"
                                 >
                                     検索
