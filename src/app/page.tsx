@@ -40,7 +40,7 @@ export default function Home() {
                 href="/dashboard"
                 className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors"
               >
-                ダッシュボード
+                ログイン
               </Link>
               
               {/* ▼ 変更: 赤からグレーへ（サブアクション） */}

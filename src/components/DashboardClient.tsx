@@ -140,7 +140,7 @@ export default function DashboardClient() {
                 <p className="font-bold text-lg text-gray-800 truncate">{session.user.name || 'No Name'}</p>
                 <p className="text-xs text-gray-500 mb-1 truncate">{(session.user as any).username ? `@${(session.user as any).username}` : ''}</p>
                 <Link href="/dashboard" className="text-xs text-indigo-500 font-bold hover:underline">
-                    ダッシュボード &gt;
+                    ログイン &gt;
                 </Link>
             </div>
             <div className="text-center pl-4 border-l border-gray-100">
