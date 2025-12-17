@@ -23,11 +23,11 @@ interface FavoritesData {
 
 // 五大元素の定義 (設定画面用)
 const SLOT_CONFIG = [
-  { id: 0, name: "親指", element: "火 (Fire)",   desc: "認証・ID・自己証明", color: "border-red-500",    bg: "bg-red-50",    text: "text-red-700", icon: "🔥" },
-  { id: 1, name: "人差", element: "風 (Wind)",   desc: "伝達・SNS・拡散",   color: "border-emerald-500", bg: "bg-emerald-50", text: "text-emerald-700", icon: "🍃" },
-  { id: 2, name: "中指", element: "空 (Void)",   desc: "秘密・削除・虚空",   color: "border-violet-500",  bg: "bg-violet-50",  text: "text-violet-700", icon: "🌌" },
-  { id: 3, name: "薬指", element: "地 (Earth)",  desc: "資産・決済・所有",   color: "border-amber-500",   bg: "bg-amber-50",   text: "text-amber-700", icon: "⛰️" },
-  { id: 4, name: "小指", element: "水 (Water)",  desc: "感情・治癒・連絡",   color: "border-cyan-500",    bg: "bg-cyan-50",    text: "text-cyan-700", icon: "💧" },
+  { id: 0, name: "親指", element: "火 (Fire)",   desc: "認証・ID・自己証明", color: "border-red-500",    bg: "bg-red-50",    text: "text-red-700" },
+  { id: 1, name: "人差", element: "風 (Wind)",   desc: "伝達・SNS・拡散",   color: "border-emerald-500", bg: "bg-emerald-50", text: "text-emerald-700" },
+  { id: 2, name: "中指", element: "空 (Void)",   desc: "秘密・削除・虚空",   color: "border-violet-500",  bg: "bg-violet-50",  text: "text-violet-700" },
+  { id: 3, name: "薬指", element: "地 (Earth)",  desc: "資産・決済・所有",   color: "border-amber-500",   bg: "bg-amber-50",   text: "text-amber-700" },
+  { id: 4, name: "小指", element: "水 (Water)",  desc: "感情・治癒・連絡",   color: "border-cyan-500",    bg: "bg-cyan-50",    text: "text-cyan-700" },
 ];
 
 export default function FavoritesPage() {
@@ -141,12 +141,9 @@ export default function FavoritesPage() {
                                 {slot.element}
                             </div>
                             
-                            <div className="flex items-center gap-2 mb-3 mt-2">
-                                <span className="text-2xl">{slot.icon}</span>
-                                <div>
-                                    <h3 className="font-bold text-gray-800">{slot.name}</h3>
-                                    <p className="text-[10px] text-gray-400">{slot.desc}</p>
-                                </div>
+                            <div className="mb-3 mt-2">
+                                <h3 className="font-bold text-gray-800">{slot.name}</h3>
+                                <p className="text-[10px] text-gray-400">{slot.desc}</p>
                             </div>
 
                             <div className="flex gap-2 mt-auto">
@@ -160,9 +157,10 @@ export default function FavoritesPage() {
                                 <button 
                                     type="button"
                                     onClick={() => openSelectionModal(slot.id)}
-                                    className="bg-gray-100 text-gray-600 px-3 py-2 rounded hover:bg-gray-200 transition-colors"
+                                    className="bg-gray-100 text-gray-600 px-3 py-2 rounded hover:bg-gray-200 transition-colors text-xs whitespace-nowrap"
+                                    title="検索"
                                 >
-                                    🔍
+                                    検索
                                 </button>
                             </div>
                             
@@ -190,7 +188,6 @@ export default function FavoritesPage() {
                                 <span>保存中...</span>
                             ) : (
                                 <>
-                                    <span className="text-2xl">⚡</span>
                                     <span>装備完了</span>
                                     <span className="text-xs font-normal opacity-70">変更を保存する</span>
                                 </>
@@ -207,7 +204,7 @@ export default function FavoritesPage() {
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
                         <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                             <h3 className="font-bold text-gray-700">リストから選択</h3>
-                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 px-2 py-1">閉じる</button>
                         </div>
                         
                         <div className="overflow-y-auto p-4 space-y-2 flex-1">
