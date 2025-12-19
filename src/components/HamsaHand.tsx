@@ -90,10 +90,11 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
 
             {/* アイコン本体 - ネイルチップの形（上部が尖り、下部が丸い縦長の楕円形） */}
             <div 
-              className={`relative w-16 h-20 border-2 shadow-lg overflow-hidden transition-transform hover:scale-110 active:scale-95 ${colorClass}`}
+              className={`relative w-16 h-20 border-2 overflow-hidden transition-transform hover:scale-110 active:scale-95 ${colorClass}`}
               style={{
-                clipPath: 'polygon(50% 0%, 100% 20%, 100% 80%, 50% 100%, 0% 80%, 0% 20%)',
-                borderRadius: '50% 50% 50% 50% / 40% 40% 60% 60%'
+                clipPath: 'ellipse(47% 50% at 50% 52%)',
+                borderRadius: '50% 50% 50% 50% / 25% 25% 70% 70%',
+                boxShadow: '2px 2px 6px rgba(0, 0, 0, 0.12)'
               }}
             >
               {user ? (
