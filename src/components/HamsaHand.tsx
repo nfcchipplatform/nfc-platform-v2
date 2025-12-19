@@ -114,7 +114,7 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                     }}
                   />
                   
-                  {/* レイヤー2: プロフィール画像を70%透過で重ねる（blanknailbk.pngの形状にクリップ） */}
+                  {/* レイヤー2: プロフィール画像を重ねる（blanknailbk.pngの形状にクリップ） */}
                   {user.image && (
                     <div
                       className="absolute inset-0 w-full h-full z-10"
@@ -123,7 +123,11 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         backgroundRepeat: 'no-repeat',
-                        opacity: 0.7, // 70%透過（20%濃く）
+                        // 透過度設定（後で調整可能）
+                        // opacity: 1.0, // 100%不透明（デフォルト）
+                        // opacity: 0.8, // 80%不透明
+                        // opacity: 0.7, // 70%不透明
+                        // opacity: 0.5, // 50%不透明
                         // blanknailbk.pngの透明部分（ネイル形状）に合わせてクリップ
                         WebkitMaskImage: 'url(/blanknailbk.png)',
                         maskImage: 'url(/blanknailbk.png)',
