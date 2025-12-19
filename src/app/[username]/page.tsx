@@ -107,8 +107,8 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
   return (
     <div className={`min-h-screen flex flex-col items-center py-10 px-4 transition-colors duration-500 ${theme.bgClass} ${theme.textClass} ${theme.fontClass}`}>
       
-      {/* ヘッダー情報（PC版のみ表示） */}
-      <div className="text-center z-10 mb-6 hidden sm:block">
+      {/* [一時的に無効化] ヘッダー情報（PC版のみ表示） - PCでもスマホ同様に非表示 */}
+      {/* <div className="text-center z-10 mb-6 hidden sm:block">
         <div className="relative inline-block">
             {user.image ? (
                 <img 
@@ -130,13 +130,12 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
         <h1 className="mt-4 text-2xl font-bold tracking-tight">{user.name}</h1>
         <p className="opacity-70 text-sm">{user.title}</p>
         
-        {/* アクションボタン */}
         <div className="mt-4 flex gap-2 justify-center">
             {!isOwner && session?.user?.id && (
                 <FollowButton targetUserId={user.id} isFollowingInitial={isFollowing} />
             )}
         </div>
-      </div>
+      </div> */}
 
       {/* --- メインコンテンツ: Digital Hamsa (一番上に表示) --- */}
       <div className="w-full max-w-md z-10">
