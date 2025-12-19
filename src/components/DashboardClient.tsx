@@ -142,7 +142,7 @@ export default function DashboardClient() {
       
       {/* 1. メインビジュアル: Digital Hamsa Interface */}
       <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 relative">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 via-purple-500 to-blue-500"></div>
+        {/* カラフルなグラデーションラインを削除 */}
         
         <div className="p-6 text-center">
             <h3 className="text-xs font-black text-gray-400 tracking-[0.2em] uppercase mb-1">Digital Hamsa</h3>
