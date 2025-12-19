@@ -126,7 +126,7 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                         // 透過度設定（後で調整可能）
                         // opacity: 1.0, // 100%不透明（デフォルト）
                         // opacity: 0.8, // 80%不透明
-                        // opacity: 0.7, // 70%不透明
+                        opacity: 0.7, // 70%不透明
                         // opacity: 0.5, // 50%不透明
                         // blanknail.pngを使用：ネイル部分（不透明）を表示、背景（透明）を非表示
                         WebkitMaskImage: 'url(/blanknail.png)',
