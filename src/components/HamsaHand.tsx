@@ -95,7 +95,7 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
 
             {/* アイコン本体 - blanknail.pngを使用したマイネイル表示 */}
             <div 
-              className={`relative ${fingerShape.width} ${fingerShape.height} transition-transform hover:scale-110 active:scale-95`}
+              className={`relative ${fingerShape.width} ${fingerShape.height} transition-transform hover:scale-110 active:scale-95 overflow-hidden`}
               style={{
                 border: 'none',
                 boxShadow: 'none',
@@ -103,20 +103,26 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
             >
               {user ? (
                 <Link href={`/${user.username}`} className="block w-full h-full relative group">
-                  {/* blanknail.pngを背景として配置（光沢や形状を含む） */}
-                  <img 
-                    src="/blanknail.png" 
-                    alt="Nail base" 
-                    className="absolute inset-0 w-full h-full object-contain"
+                  {/* blanknail.pngをベースとして配置（光沢や質感を含む） */}
+                  <div 
+                    className="absolute inset-0 w-full h-full"
+                    style={{
+                      backgroundImage: 'url(/blanknail.png)',
+                      backgroundSize: 'contain',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat',
+                    }}
                   />
                   
-                  {/* プロフィール画像をblanknail.pngの形状に合わせて重ねる */}
+                  {/* プロフィール画像をblanknail.pngの形状に合わせてテクスチャのように重ねる */}
                   {user.image && (
-                    <img 
-                      src={user.image} 
-                      alt={user.name || ""} 
-                      className="absolute inset-0 w-full h-full object-cover"
+                    <div
+                      className="absolute inset-0 w-full h-full"
                       style={{
+                        backgroundImage: `url(${user.image})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat',
                         WebkitMaskImage: 'url(/blanknail.png)',
                         maskImage: 'url(/blanknail.png)',
                         WebkitMaskSize: 'contain',
@@ -125,6 +131,8 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                         maskPosition: 'center',
                         WebkitMaskRepeat: 'no-repeat',
                         maskRepeat: 'no-repeat',
+                        mixBlendMode: 'multiply', // ネイルの光沢を保持しつつ画像を重ねる
+                        opacity: 0.9, // 少し透明度を加えてベースが見えるように
                       }}
                     />
                   )}
@@ -137,10 +145,14 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
               ) : (
                 <Link href={isOwner ? "/dashboard/favorites" : "#"} className="flex flex-col items-center justify-center w-full h-full opacity-50 hover:opacity-100 transition-opacity relative">
                   {/* 未登録時はblanknail.pngのみ表示 */}
-                  <img 
-                    src="/blanknail.png" 
-                    alt="Blank nail" 
-                    className="absolute inset-0 w-full h-full object-contain"
+                  <div 
+                    className="absolute inset-0 w-full h-full"
+                    style={{
+                      backgroundImage: 'url(/blanknail.png)',
+                      backgroundSize: 'contain',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat',
+                    }}
                   />
                   <div className="relative z-10 flex flex-col items-center justify-center">
                     <span className="text-xl font-light">+</span>
