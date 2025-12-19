@@ -38,7 +38,8 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
     <div className={`relative w-full max-w-[280px] sm:max-w-[320px] mx-auto aspect-square my-10 ${theme.fontClass}`}>
       
       {/* --- 背景パターン (テーマによって切り替え) --- */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+      {/* [一時的に無効化] 5つのマイフィンガーの丸同士をつなぐ点線を削除 */}
+      {/* <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
          {theme.pattern === 'mandala' && (
              <div className="w-[120%] h-[120%] border-[1px] border-dashed border-current rounded-full animate-[spin_60s_linear_infinite]" style={{ color: displayAccentColor }}></div>
          )}
@@ -46,7 +47,7 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
              <div className="w-full h-full bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
          )}
          <div className="absolute w-[80%] h-[80%] border-[1px] border-current rounded-full opacity-30" style={{ color: displayAccentColor }}></div>
-      </div>
+      </div> */}
 
       {/* --- 中心のプロフィールアイコン --- */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
