@@ -59,8 +59,8 @@ export default function SalonSettingsForm({ salon }: { salon: any }) {
         </div>
       </div>
 
-      {/* 2. デザイン設定 */}
-      <div>
+      {/* [一時的に無効化] 2. デザイン設定 */}
+      {/* <div>
         <h3 className="font-bold text-gray-700 border-b pb-2 mb-4">デザイン・カラー</h3>
         <p className="text-xs text-gray-400 mb-4">
             ここで設定した色は、あなたの店舗に所属する全ユーザーのプロフィール画面（フッターやアイコン枠など）に適用されます。
@@ -81,7 +81,7 @@ export default function SalonSettingsForm({ salon }: { salon: any }) {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* 3. ロゴ画像 */}
       <div>

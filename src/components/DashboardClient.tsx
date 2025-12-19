@@ -155,7 +155,7 @@ export default function DashboardClient() {
               slots={top5Slots} 
               isOwner={true} 
               profileImage={session.user.image || null}
-              accentColor="#4F46E5"
+              // accentColor="#4F46E5" // [一時的に無効化] デフォルトテーマのアクセントカラーを使用
             />
             )}
 
