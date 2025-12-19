@@ -92,9 +92,9 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
             <div 
               className={`relative w-16 h-20 border-2 overflow-hidden transition-transform hover:scale-110 active:scale-95 ${colorClass}`}
               style={{
-                clipPath: 'ellipse(47% 50% at 50% 52%)',
-                borderRadius: '50% 50% 50% 50% / 25% 25% 70% 70%',
-                boxShadow: '2px 2px 6px rgba(0, 0, 0, 0.12)'
+                clipPath: 'ellipse(48% 50% at 50% 42%)',
+                borderRadius: '50% 50% 50% 50% / 15% 15% 80% 80%',
+                boxShadow: '1px 2px 5px rgba(0, 0, 0, 0.15)'
               }}
             >
               {user ? (
