@@ -103,9 +103,9 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
             >
               {user ? (
                 <Link href={`/${user.username}`} className="block w-full h-full relative group">
-                  {/* blanknail.pngをベースとして配置（光沢や質感を含む） */}
+                  {/* レイヤー1: blanknail.pngをベースとして配置（光沢や質感を含む） */}
                   <div 
-                    className="absolute inset-0 w-full h-full"
+                    className="absolute inset-0 w-full h-full z-0"
                     style={{
                       backgroundImage: 'url(/blanknail.png)',
                       backgroundSize: 'contain',
@@ -114,31 +114,33 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                     }}
                   />
                   
-                  {/* プロフィール画像をblanknailbk.pngのマスクでネイル形状にクリップ */}
+                  {/* レイヤー2: プロフィール画像を50%透過で重ねる */}
                   {user.image && (
                     <div
-                      className="absolute inset-0 w-full h-full"
+                      className="absolute inset-0 w-full h-full z-10"
                       style={{
                         backgroundImage: `url(${user.image})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         backgroundRepeat: 'no-repeat',
-                        WebkitMaskImage: 'url(/blanknailbk.png)',
-                        maskImage: 'url(/blanknailbk.png)',
-                        WebkitMaskSize: 'contain',
-                        maskSize: 'contain',
-                        WebkitMaskPosition: 'center',
-                        maskPosition: 'center',
-                        WebkitMaskRepeat: 'no-repeat',
-                        maskRepeat: 'no-repeat',
-                        mixBlendMode: 'multiply', // ネイルの光沢を保持しつつ画像を重ねる
-                        opacity: 0.9, // 少し透明度を加えてベースが見えるように
+                        opacity: 0.5, // 50%透過
                       }}
                     />
                   )}
                   
+                  {/* レイヤー3: blanknailbk.pngを重ねる（透明部分から下のレイヤーが見え、白い部分が下のレイヤーを隠す） */}
+                  <div 
+                    className="absolute inset-0 w-full h-full z-20"
+                    style={{
+                      backgroundImage: 'url(/blanknailbk.png)',
+                      backgroundSize: 'contain',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat',
+                    }}
+                  />
+                  
                   {/* ホバー効果 */}
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30">
                       <span className="text-[8px] text-white font-bold">OPEN</span>
                   </div>
                 </Link>
