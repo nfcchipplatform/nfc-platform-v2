@@ -103,18 +103,7 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
             >
               {user ? (
                 <Link href={`/${user.username}`} className="block w-full h-full relative group">
-                  {/* レイヤー1: blanknail.pngをベースとして配置（光沢や質感を含む） */}
-                  <div 
-                    className="absolute inset-0 w-full h-full z-0"
-                    style={{
-                      backgroundImage: 'url(/blanknail.png)',
-                      backgroundSize: 'contain',
-                      backgroundPosition: 'center',
-                      backgroundRepeat: 'no-repeat',
-                    }}
-                  />
-                  
-                  {/* レイヤー2: プロフィール画像を重ねる（blanknail.pngの形状にクリップ） */}
+                  {/* レイヤー1: プロフィール画像（透過なし、blanknailbk.pngの形状にクリップ） */}
                   {user.image && (
                     <div
                       className="absolute inset-0 w-full h-full z-10"
@@ -123,14 +112,10 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         backgroundRepeat: 'no-repeat',
-                        // 透過度設定（後で調整可能）
-                        // opacity: 1.0, // 100%不透明（デフォルト）
-                        // opacity: 0.8, // 80%不透明
-                        opacity: 0.7, // 70%不透明
-                        // opacity: 0.5, // 50%不透明
-                        // blanknail.pngを使用：ネイル部分（不透明）を表示、背景（透明）を非表示
-                        WebkitMaskImage: 'url(/blanknail.png)',
-                        maskImage: 'url(/blanknail.png)',
+                        // 透過なし（100%不透明）
+                        // blanknailbk.pngの透明部分（ネイル形状）に合わせてクリップ
+                        WebkitMaskImage: 'url(/blanknailbk.png)',
+                        maskImage: 'url(/blanknailbk.png)',
                         WebkitMaskSize: 'contain',
                         maskSize: 'contain',
                         WebkitMaskPosition: 'center',
@@ -141,7 +126,7 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                     />
                   )}
                   
-                  {/* レイヤー3: blanknailbk.pngを重ねる（透明部分から下のレイヤーが見え、白い部分が下のレイヤーを隠す） */}
+                  {/* レイヤー2: blanknailbk.pngを重ねる（透明部分から下のレイヤーが見え、白い部分が下のレイヤーを隠す） */}
                   <div 
                     className="absolute inset-0 w-full h-full z-20"
                     style={{
