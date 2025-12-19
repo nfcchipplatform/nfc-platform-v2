@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { ThemeConfig, THEMES } from "@/lib/themeConfig";
+import { getFingerShape } from "@/lib/fingerShapeConfig";
 
 interface ProfileSummary {
   id: string;
@@ -19,6 +20,7 @@ interface HamsaHandProps {
   themeId?: string; // テーマIDを受け取る
   profileImage?: string | null; // プロフィール画像
   accentColor?: string; // アクセントカラー
+  fingerShapeId?: string; // マイフィンガーの形状ID（デフォルト: "circle"）
 }
 
 const ELEMENT_LABELS = [
@@ -29,10 +31,13 @@ const ELEMENT_LABELS = [
   { name: "小指", label: "水 (Water)",  pos: "bottom-0 -right-2" },
 ];
 
-export default function HamsaHand({ slots, isOwner = false, themeId = "default", profileImage = null, accentColor }: HamsaHandProps) {
+export default function HamsaHand({ slots, isOwner = false, themeId = "default", profileImage = null, accentColor, fingerShapeId = "circle" }: HamsaHandProps) {
   // テーマ情報を取得
   const theme = THEMES[themeId] || THEMES["default"];
   const displayAccentColor = accentColor || theme.accentColor;
+  
+  // マイフィンガーの形状設定を取得
+  const fingerShape = getFingerShape(fingerShapeId);
 
   return (
     <div className={`relative w-full max-w-[280px] sm:max-w-[320px] mx-auto aspect-square my-10 ${theme.fontClass}`}>
@@ -88,8 +93,11 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
               {el.label}
             </span>
 
-            {/* アイコン本体 - 元の丸い形状に戻す（ネイルチップ形状は後で実装） */}
-            <div className={`relative w-16 h-16 rounded-full border-2 shadow-lg overflow-hidden transition-transform hover:scale-110 active:scale-95 ${colorClass}`}>
+            {/* アイコン本体 - 形状設定ファイルから取得 */}
+            <div 
+              className={`relative ${fingerShape.width} ${fingerShape.height} ${fingerShape.className} border-2 shadow-lg overflow-hidden transition-transform hover:scale-110 active:scale-95 ${colorClass}`}
+              style={fingerShape.style}
+            >
               {user ? (
                 <Link href={`/${user.username}`} className="block w-full h-full relative group">
                   {user.image ? (
