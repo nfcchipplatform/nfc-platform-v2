@@ -114,7 +114,7 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                     }}
                   />
                   
-                  {/* プロフィール画像をblanknail.pngの形状に合わせてテクスチャのように重ねる */}
+                  {/* プロフィール画像をblanknailbk.pngのマスクでネイル形状にクリップ */}
                   {user.image && (
                     <div
                       className="absolute inset-0 w-full h-full"
@@ -123,8 +123,8 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         backgroundRepeat: 'no-repeat',
-                        WebkitMaskImage: 'url(/blanknail.png)',
-                        maskImage: 'url(/blanknail.png)',
+                        WebkitMaskImage: 'url(/blanknailbk.png)',
+                        maskImage: 'url(/blanknailbk.png)',
                         WebkitMaskSize: 'contain',
                         maskSize: 'contain',
                         WebkitMaskPosition: 'center',
