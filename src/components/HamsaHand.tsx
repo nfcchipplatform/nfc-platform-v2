@@ -93,29 +93,59 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
               {el.label}
             </span>
 
-            {/* アイコン本体 - 形状設定ファイルから取得 */}
+            {/* アイコン本体 - blanknail.pngを使用したマイネイル表示 */}
             <div 
-              className={`relative ${fingerShape.width} ${fingerShape.height} ${fingerShape.className} border-2 shadow-lg overflow-hidden transition-transform hover:scale-110 active:scale-95 ${colorClass}`}
-              style={fingerShape.style}
+              className={`relative ${fingerShape.width} ${fingerShape.height} transition-transform hover:scale-110 active:scale-95`}
+              style={{
+                border: 'none',
+                boxShadow: 'none',
+              }}
             >
               {user ? (
                 <Link href={`/${user.username}`} className="block w-full h-full relative group">
-                  {user.image ? (
-                    <img src={user.image} alt={user.name || ""} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center opacity-70 text-xs font-bold">
-                      {user.name?.[0] || "ID"}
-                    </div>
+                  {/* blanknail.pngを背景として配置（光沢や形状を含む） */}
+                  <img 
+                    src="/blanknail.png" 
+                    alt="Nail base" 
+                    className="absolute inset-0 w-full h-full object-contain"
+                  />
+                  
+                  {/* プロフィール画像をblanknail.pngの形状に合わせて重ねる */}
+                  {user.image && (
+                    <img 
+                      src={user.image} 
+                      alt={user.name || ""} 
+                      className="absolute inset-0 w-full h-full object-cover"
+                      style={{
+                        WebkitMaskImage: 'url(/blanknail.png)',
+                        maskImage: 'url(/blanknail.png)',
+                        WebkitMaskSize: 'contain',
+                        maskSize: 'contain',
+                        WebkitMaskPosition: 'center',
+                        maskPosition: 'center',
+                        WebkitMaskRepeat: 'no-repeat',
+                        maskRepeat: 'no-repeat',
+                      }}
+                    />
                   )}
+                  
                   {/* ホバー効果 */}
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       <span className="text-[8px] text-white font-bold">OPEN</span>
                   </div>
                 </Link>
               ) : (
-                <Link href={isOwner ? "/dashboard/favorites" : "#"} className="flex flex-col items-center justify-center w-full h-full opacity-50 hover:opacity-100 transition-opacity">
-                  <span className="text-xl font-light">+</span>
-                  <span className="text-[8px]">ADD</span>
+                <Link href={isOwner ? "/dashboard/favorites" : "#"} className="flex flex-col items-center justify-center w-full h-full opacity-50 hover:opacity-100 transition-opacity relative">
+                  {/* 未登録時はblanknail.pngのみ表示 */}
+                  <img 
+                    src="/blanknail.png" 
+                    alt="Blank nail" 
+                    className="absolute inset-0 w-full h-full object-contain"
+                  />
+                  <div className="relative z-10 flex flex-col items-center justify-center">
+                    <span className="text-xl font-light">+</span>
+                    <span className="text-[8px]">ADD</span>
+                  </div>
                 </Link>
               )}
             </div>
