@@ -88,8 +88,14 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
               {el.label}
             </span>
 
-            {/* アイコン本体 */}
-            <div className={`relative w-16 h-16 rounded-full border-2 shadow-lg overflow-hidden transition-transform hover:scale-110 active:scale-95 ${colorClass}`}>
+            {/* アイコン本体 - ネイルチップの形（上部が尖り、下部が丸い縦長の楕円形） */}
+            <div 
+              className={`relative w-16 h-20 border-2 shadow-lg overflow-hidden transition-transform hover:scale-110 active:scale-95 ${colorClass}`}
+              style={{
+                clipPath: 'polygon(50% 0%, 100% 20%, 100% 80%, 50% 100%, 0% 80%, 0% 20%)',
+                borderRadius: '50% 50% 50% 50% / 40% 40% 60% 60%'
+              }}
+            >
               {user ? (
                 <Link href={`/${user.username}`} className="block w-full h-full relative group">
                   {user.image ? (
