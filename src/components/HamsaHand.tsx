@@ -88,15 +88,8 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
               {el.label}
             </span>
 
-            {/* アイコン本体 - ネイルチップの形（上部が尖り、下部が丸い縦長の楕円形） */}
-            <div 
-              className={`relative w-16 h-20 border-2 overflow-hidden transition-transform hover:scale-110 active:scale-95 ${colorClass}`}
-              style={{
-                clipPath: 'ellipse(48% 50% at 50% 42%)',
-                borderRadius: '50% 50% 50% 50% / 15% 15% 80% 80%',
-                boxShadow: '1px 2px 5px rgba(0, 0, 0, 0.15)'
-              }}
-            >
+            {/* アイコン本体 - 元の丸い形状に戻す（ネイルチップ形状は後で実装） */}
+            <div className={`relative w-16 h-16 rounded-full border-2 shadow-lg overflow-hidden transition-transform hover:scale-110 active:scale-95 ${colorClass}`}>
               {user ? (
                 <Link href={`/${user.username}`} className="block w-full h-full relative group">
                   {user.image ? (
