@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
-// --- 1. 型定義の修正 (image_aed228.png のエラー対応) ---
 interface ProfileSummary {
   id: string;
   username: string | null;
@@ -15,7 +14,6 @@ interface InteractiveHandProps {
   slots: (ProfileSummary | null)[];
 }
 
-// --- 2. 定数とライブラリの定義 ---
 const POINT_COUNT = 100;
 const AURA_COLORS = ["#22d3ee", "#6366f1", "#f43f5e", "#f59e0b", "#10b981"];
 
@@ -57,11 +55,9 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
   const [auraColor, setAuraColor] = useState(AURA_COLORS[0]);
   const pointsRef = useRef(Array.from({ length: POINT_COUNT }, () => ({ x: 0.5, y: 0.5, vx: 0, vy: 0 })));
 
-  // 最新の phase を参照するための Ref
   const phaseRef = useRef(phase);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
-  // 3. アセットのプリロード
   useEffect(() => {
     const images = ["/handclose.png", "/handgoo.png", ...slots.filter(s => s?.image).map(s => s!.image as string)];
     const preload = async () => {
@@ -73,97 +69,79 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
     preload();
   }, [slots]);
 
-  // 4. 自動変身サイクル (10秒ごと)
   useEffect(() => {
     if (phase !== "STANDBY") return;
-
     const cycle = setInterval(() => {
       if (phaseRef.current !== "STANDBY") return;
-
       const keys = Object.keys(SHAPE_LIBRARY);
       const nextShape = keys[Math.floor(Math.random() * keys.length)];
       setTargetType(nextShape);
       setAuraColor(AURA_COLORS[Math.floor(Math.random() * AURA_COLORS.length)]);
-
-      // 5秒後にBASEに戻る
-      setTimeout(() => {
-        if (phaseRef.current !== "PRESSED") {
-          setTargetType("BASE");
-        }
-      }, 5000);
+      setTimeout(() => { if (phaseRef.current !== "PRESSED") setTargetType("BASE"); }, 5000);
     }, 10000);
-
     return () => clearInterval(cycle);
   }, [phase]);
 
-  // 親指が押されたら即座にBASEへ戻す
   useEffect(() => {
     if (phase === "PRESSED") setTargetType("BASE");
   }, [phase]);
 
-  // 5. 描画エンジン
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || phase === "LOADING") return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
-    let time = 0;
-    let animationFrameId: number;
+    let time = 0; let animationFrameId: number;
 
     const render = () => {
       time += 0.04;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const pts = pointsRef.current;
-
       pts.forEach((p, i) => {
         const t = i / POINT_COUNT;
         let tx, ty;
-        
         if (targetType === "BASE") {
-          // チューニング済みのBASE値
           let r = 0.14; 
           for (let j = 1; j <= 4; j++) r += Math.sin(t * Math.PI * (38 * j * 0.5) + time * j) * (0.05 / j);
           tx = 0.5 + Math.cos(t * Math.PI * 2 - Math.PI / 2) * r;
           ty = 0.52 + Math.sin(t * Math.PI * 2 - Math.PI / 2) * r;
         } else {
-          // 図形時のうねり固定値 (15)
           const base = SHAPE_LIBRARY[targetType](t);
           const wave = Math.sin(t * Math.PI * 12 + time * 1.5) * (15 / 600);
-          tx = base.x + (base.x - 0.5) * wave;
-          ty = base.y + (base.y - 0.5) * wave;
+          tx = base.x + (base.x - 0.5) * wave; ty = base.y + (base.y - 0.5) * wave;
         }
-
-        p.vx += (tx - p.x) * 0.08;
-        p.vy += (ty - p.y) * 0.08;
-        p.vx *= 0.8; p.vy *= 0.8;
-        p.x += p.vx; p.y += p.vy;
+        p.vx += (tx - p.x) * 0.08; p.vy += (ty - p.y) * 0.08;
+        p.vx *= 0.8; p.vy *= 0.8; p.x += p.vx; p.y += p.vy;
       });
 
-      ctx.beginPath();
-      ctx.strokeStyle = auraColor;
-      ctx.lineWidth = 2.5;
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = auraColor;
-
+      ctx.beginPath(); ctx.strokeStyle = auraColor; ctx.lineWidth = 2.5;
+      ctx.shadowBlur = 15; ctx.shadowColor = auraColor;
       for (let i = 0; i <= pts.length; i++) {
         const p0 = pts[i % pts.length], p1 = pts[(i + 1) % pts.length];
-        const xc = (p0.x + p1.x) / 2 * canvas.width;
-        const yc = (p0.y + p1.y) / 2 * canvas.height;
-        if (i === 0) ctx.moveTo(xc, yc);
-        else ctx.quadraticCurveTo(p0.x * canvas.width, p0.y * canvas.height, xc, yc);
+        const xc = (p0.x + p1.x) / 2 * canvas.width, yc = (p0.y + p1.y) / 2 * canvas.height;
+        if (i === 0) ctx.moveTo(xc, yc); else ctx.quadraticCurveTo(p0.x * canvas.width, p0.y * canvas.height, xc, yc);
       }
       ctx.stroke();
-
       animationFrameId = requestAnimationFrame(render);
     };
-
     render();
     return () => cancelAnimationFrame(animationFrameId);
   }, [targetType, auraColor, phase]);
 
   return (
-    <div className="relative w-full max-w-[450px] mx-auto overflow-hidden aspect-[3/4] select-none touch-none bg-transparent" onContextMenu={(e) => e.preventDefault()}>
+    <div 
+      className="relative w-full max-w-[450px] mx-auto overflow-hidden aspect-[3/4] select-none touch-none bg-transparent"
+      style={{
+        // 1. 全体への選択防止CSSを再適用
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        KhtmlUserSelect: 'none',
+        MozUserSelect: 'none',
+        msUserSelect: 'none',
+        userSelect: 'none',
+      }}
+      onContextMenu={(e) => e.preventDefault()} // 2. 全域での右クリック/長押しメニュー禁止
+    >
       
       {/* 背景イラスト */}
       <div 
@@ -174,13 +152,8 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
         onPointerLeave={() => setPhase("STANDBY")}
       />
 
-      {/* 魂（モヤモヤ） */}
-      <canvas 
-        ref={canvasRef} 
-        width={400} 
-        height={400} 
-        className="absolute left-1/2 top-[62%] -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-80" 
-      />
+      {/* 魂（モヤモヤ）: pointer-events-none でタッチイベントを透過させる */}
+      <canvas ref={canvasRef} width={400} height={400} className="absolute left-1/2 top-[62%] -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-80" />
 
       {/* ネイルチップ */}
       {NAIL_CONFIG.map((config, index) => {
@@ -202,9 +175,10 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
               zIndex: config.id === "thumb" ? 50 : 40, 
               borderRadius: config.br, 
               backgroundImage: `url(${user.image})`, 
+              // 3. リンク（画像）への長押しメニュー防止
               WebkitTouchCallout: 'none' 
             }}
-            onContextMenu={(e) => e.preventDefault()}
+            onContextMenu={(e) => e.preventDefault()} // 4. 個別リンクでの長押し禁止
           >
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
           </Link>
