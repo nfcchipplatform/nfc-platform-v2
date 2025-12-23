@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
+// --- 1. 型定義 ---
 interface ProfileSummary {
   id: string;
   username: string | null;
@@ -14,6 +15,7 @@ interface InteractiveHandProps {
   slots: (ProfileSummary | null)[];
 }
 
+// --- 2. 定数・ライブラリ設定 ---
 const POINT_COUNT = 100;
 const AURA_COLORS = ["#22d3ee", "#6366f1", "#f43f5e", "#f59e0b", "#10b981"];
 
@@ -28,22 +30,22 @@ const NAIL_CONFIG = [
 const SHAPE_LIBRARY: Record<string, (t: number) => { x: number, y: number }> = {
   CIRCLE: (t) => {
     const a = t * Math.PI * 2 - Math.PI / 2;
-    return { x: 0.5 + Math.cos(a) * 0.25, y: 0.55 + Math.sin(a) * 0.25 };
+    return { x: 0.5 + Math.cos(a) * 0.25, y: 0.5 + Math.sin(a) * 0.25 };
   },
   TRIANGLE: (t) => {
     const s = Math.floor(t * 3); const lt = (t * 3) % 1;
-    const v = [[0.5, 0.35], [0.72, 0.68], [0.28, 0.68], [0.5, 0.35]];
+    const v = [[0.5, 0.3], [0.75, 0.7], [0.25, 0.7], [0.5, 0.3]];
     return { x: v[s][0] + (v[s+1][0] - v[s][0]) * lt, y: v[s][1] + (v[s+1][1] - v[s][1]) * lt };
   },
   SQUARE: (t) => {
     const s = Math.floor(t * 4); const lt = (t * 4) % 1;
-    const v = [[0.35, 0.42], [0.65, 0.42], [0.65, 0.72], [0.35, 0.72], [0.35, 0.42]];
+    const v = [[0.3, 0.3], [0.7, 0.3], [0.7, 0.7], [0.3, 0.7], [0.3, 0.3]];
     return { x: v[s][0] + (v[s+1][0] - v[s][0]) * lt, y: v[s][1] + (v[s+1][1] - v[s][1]) * lt };
   },
   STAR: (t) => {
     const a = t * Math.PI * 2 - Math.PI / 2;
-    const r = (Math.floor(t * 10) % 2 === 0) ? 0.28 : 0.12;
-    return { x: 0.5 + Math.cos(a) * r, y: 0.57 + Math.sin(a) * r };
+    const r = (Math.floor(t * 10) % 2 === 0) ? 0.3 : 0.12;
+    return { x: 0.5 + Math.cos(a) * r, y: 0.5 + Math.sin(a) * r };
   }
 };
 
@@ -55,11 +57,13 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
   const [auraColor, setAuraColor] = useState(AURA_COLORS[0]);
   const pointsRef = useRef(Array.from({ length: POINT_COUNT }, () => ({ x: 0.5, y: 0.5, vx: 0, vy: 0 })));
 
+  // 最新の phase を参照するための Ref (TypeScriptエラー防止用)
   const phaseRef = useRef(phase);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
+  // 1. 画像のプリロード
   useEffect(() => {
-    const images = ["/handclose.png", "/handgoo.png", ...slots.filter(s => s?.image).map(s => s!.image as string)];
+    const images = ["/handclose.png", "/handgoo.png", "/handopen.png", ...slots.filter(s => s?.image).map(s => s!.image as string)];
     const preload = async () => {
       await Promise.all(images.map(src => new Promise<void>((res) => {
         const img = new Image(); img.src = src; img.onload = () => res(); img.onerror = () => res();
@@ -69,6 +73,7 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
     preload();
   }, [slots]);
 
+  // 2. 10秒ごとの自動変身サイクル
   useEffect(() => {
     if (phase !== "STANDBY") return;
     const cycle = setInterval(() => {
@@ -82,32 +87,31 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
     return () => clearInterval(cycle);
   }, [phase]);
 
-  useEffect(() => {
-    if (phase === "PRESSED") setTargetType("BASE");
-  }, [phase]);
+  // 親指を畳んでいる間はBASEへ強制リセット
+  useEffect(() => { if (phase === "PRESSED") setTargetType("BASE"); }, [phase]);
 
+  // 3. 魂の描画エンジン
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || phase === "LOADING") return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const ctx = canvas.getContext("2d"); if (!ctx) return;
     let time = 0; let animationFrameId: number;
 
     const render = () => {
-      time += 0.04;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      time += 0.04; ctx.clearRect(0, 0, canvas.width, canvas.height);
       const pts = pointsRef.current;
       pts.forEach((p, i) => {
         const t = i / POINT_COUNT;
         let tx, ty;
         if (targetType === "BASE") {
+          // チューニング済みBASE値: Core:0.14, Comp:4, Freq:38, Jitter:0.05
           let r = 0.14; 
           for (let j = 1; j <= 4; j++) r += Math.sin(t * Math.PI * (38 * j * 0.5) + time * j) * (0.05 / j);
           tx = 0.5 + Math.cos(t * Math.PI * 2 - Math.PI / 2) * r;
-          ty = 0.52 + Math.sin(t * Math.PI * 2 - Math.PI / 2) * r;
+          ty = 0.5 + Math.sin(t * Math.PI * 2 - Math.PI / 2) * r;
         } else {
           const base = SHAPE_LIBRARY[targetType](t);
-          const wave = Math.sin(t * Math.PI * 12 + time * 1.5) * (15 / 600);
+          const wave = Math.sin(t * Math.PI * 12 + time * 1.5) * (15 / 600); // 形状時のうねりは15で固定
           tx = base.x + (base.x - 0.5) * wave; ty = base.y + (base.y - 0.5) * wave;
         }
         p.vx += (tx - p.x) * 0.08; p.vy += (ty - p.y) * 0.08;
@@ -132,18 +136,14 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
     <div 
       className="relative w-full max-w-[450px] mx-auto overflow-hidden aspect-[3/4] select-none touch-none bg-transparent"
       style={{
-        // 1. 全体への選択防止CSSを再適用
         WebkitTouchCallout: 'none',
         WebkitUserSelect: 'none',
-        KhtmlUserSelect: 'none',
-        MozUserSelect: 'none',
-        msUserSelect: 'none',
         userSelect: 'none',
       }}
-      onContextMenu={(e) => e.preventDefault()} // 2. 全域での右クリック/長押しメニュー禁止
+      onContextMenu={(e) => e.preventDefault()}
     >
       
-      {/* 背景イラスト */}
+      {/* 背景イラスト層 */}
       <div 
         className={`absolute inset-0 transition-opacity duration-700 bg-contain bg-center bg-no-repeat ${isAssetsReady ? "opacity-100" : "opacity-90"}`}
         style={{ backgroundImage: `url(${phase === "PRESSED" ? "/handgoo.png" : phase === "LOADING" ? "/handopen.png" : "/handclose.png"})` }}
@@ -152,33 +152,34 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
         onPointerLeave={() => setPhase("STANDBY")}
       />
 
-      {/* 魂（モヤモヤ）: pointer-events-none でタッチイベントを透過させる */}
-      <canvas ref={canvasRef} width={400} height={400} className="absolute left-1/2 top-[62%] -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-80" />
+      {/* 魂（モヤモヤ）層: サイズを2/3にし、指定座標へ配置 */}
+      <canvas 
+        ref={canvasRef} 
+        width={400} 
+        height={400} 
+        className="absolute pointer-events-none opacity-80 scale-[0.67]" 
+        style={{
+          left: "43.61%",
+          top: "68.05%",
+          transform: "translate(-50%, -50%)"
+        }}
+      />
 
-      {/* ネイルチップ */}
+      {/* ネイル層 */}
       {NAIL_CONFIG.map((config, index) => {
         const user = slots[index];
         const isVisible = phase !== "LOADING" && (config.id !== "thumb" || phase === "PRESSED");
         if (!user) return null;
-
         return (
-          <Link 
-            key={config.id} 
-            href={`/${user.username}`}
+          <Link key={config.id} href={`/${user.username}`}
             className={`absolute block border-2 border-black overflow-hidden bg-cover bg-center group active:scale-95 transition-all duration-400 ${isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}
             style={{ 
-              left: `${config.x}%`, 
-              top: `${config.y}%`, 
-              width: `${config.w}%`, 
-              height: `${config.h}%`, 
+              left: `${config.x}%`, top: `${config.y}%`, width: `${config.w}%`, height: `${config.h}%`, 
               transform: `translate(-50%, -50%) rotate(${config.r}deg)`, 
               zIndex: config.id === "thumb" ? 50 : 40, 
-              borderRadius: config.br, 
-              backgroundImage: `url(${user.image})`, 
-              // 3. リンク（画像）への長押しメニュー防止
-              WebkitTouchCallout: 'none' 
+              borderRadius: config.br, backgroundImage: `url(${user.image})`, WebkitTouchCallout: 'none' 
             }}
-            onContextMenu={(e) => e.preventDefault()} // 4. 個別リンクでの長押し禁止
+            onContextMenu={(e) => e.preventDefault()}
           >
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
           </Link>
