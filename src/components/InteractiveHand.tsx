@@ -57,7 +57,6 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
   const [auraColor, setAuraColor] = useState(AURA_COLORS[0]);
   const pointsRef = useRef(Array.from({ length: POINT_COUNT }, () => ({ x: 0.5, y: 0.5, vx: 0, vy: 0 })));
 
-  // 最新の phase を参照するための Ref
   const phaseRef = useRef(phase);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
@@ -87,10 +86,18 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
     return () => clearInterval(cycle);
   }, [phase]);
 
-  // 親指を畳んでいる間はBASEへ強制リセット
-  useEffect(() => { if (phase === "PRESSED") setTargetType("BASE"); }, [phase]);
+  // 3. 親指アクション（PRESSED時）の挙動
+  useEffect(() => {
+    if (phase === "PRESSED") {
+      // BASEへ強制リセット
+      setTargetType("BASE");
+      // 色をランダムに変更
+      const nextColor = AURA_COLORS[Math.floor(Math.random() * AURA_COLORS.length)];
+      setAuraColor(nextColor);
+    }
+  }, [phase]);
 
-  // 3. 魂の描画エンジン
+  // 4. 魂の描画エンジン
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || phase === "LOADING") return;
@@ -151,16 +158,18 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
         onPointerLeave={() => setPhase("STANDBY")}
       />
 
-      {/* 魂（モヤモヤ）層: 最新の座標 (45.59, 67.22) へ配置 */}
+      {/* 魂（モヤモヤ）層: 状態に応じて scale を 0.5(BASE) と 0.67(SHAPE) で切り替え */}
       <canvas 
         ref={canvasRef} 
         width={400} 
         height={400} 
-        className="absolute pointer-events-none opacity-80 scale-[0.67]" 
+        className={`absolute pointer-events-none opacity-80 transition-transform duration-700 ease-in-out ${
+          targetType === "BASE" ? "scale-[0.5]" : "scale-[0.67]"
+        }`} 
         style={{
           left: "45.59%",
           top: "67.22%",
-          transform: "translate(-50%, -50%)"
+          transform: `translate(-50%, -50%) ${targetType === "BASE" ? "scale(0.5)" : "scale(0.67)"}`
         }}
       />
 
