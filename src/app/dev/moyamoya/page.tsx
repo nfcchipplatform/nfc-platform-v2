@@ -2,17 +2,20 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const POINT_COUNT = 100; // 密度を上げて複雑な絡まりを表現
+const POINT_COUNT = 120; // さらに密度を上げ、複雑な重なりを表現可能に
 const CANVAS_SIZE = 600;
-const FIXED_WAVE_AMP = 15; // 形状時の固定された「うねりの強さ」
+const FIXED_WAVE_AMP = 15; // 形状時は固定
 
 export default function MoyamoyaSoulSandbox() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [targetType, setTargetType] = useState<string>("BASE");
-  const [isPressed, setIsPressed] = useState(false);
   
-  // ユーザー調整用（主にBASEの質感や全体の色）
-  const [metabolism, setMetabolism] = useState(0.04);
+  // --- BASE専用のチューニングパラメーター ---
+  const [baseRadius, setBaseRadius] = useState(0.2);     // 基本の大きさ
+  const [baseComplexity, setBaseComplexity] = useState(3); // 重ねる波の数
+  const [baseFreq, setBaseFreq] = useState(10);           // 線のうねり回数
+  const [baseJitter, setBaseJitter] = useState(0.08);     // 線の乱れ（重なり具合）
+  const [metabolism, setMetabolism] = useState(0.03);    // 全体の動く速さ
   const [color, setColor] = useState("#22d3ee");
 
   const pointsRef = useRef(Array.from({ length: POINT_COUNT }, () => ({
@@ -23,17 +26,20 @@ export default function MoyamoyaSoulSandbox() {
   const getBaseTarget = (type: string, t: number, time: number) => {
     const angle = t * Math.PI * 2 - Math.PI / 2;
     
-    // --- BASE: 複雑な絡まりのアルゴリズム ---
+    // --- BASE: 手動チューニングアルゴリズム ---
     if (type === "BASE") {
-      // 複数のサイン波を組み合わせて、複雑な半径の変動を作る
-      const r1 = 0.2 + Math.sin(t * Math.PI * 4 + time * 0.5) * 0.05;
-      const r2 = Math.cos(t * Math.PI * 10 - time) * 0.1;
-      const r3 = Math.sin(t * Math.PI * 2 + time * 2) * 0.02;
-      const radius = r1 + r2 + r3;
-      return { x: 0.5 + Math.cos(angle) * radius, y: 0.5 + Math.sin(angle) * radius };
+      let r = baseRadius;
+      // 指定したComplexityの分だけ異なる波を重ねる
+      for (let j = 1; j <= baseComplexity; j++) {
+        const freqMult = baseFreq * (j * 0.5);
+        const ampMult = baseJitter / j;
+        r += Math.sin(t * Math.PI * freqMult + time * j) * ampMult;
+        r += Math.cos(t * Math.PI * (freqMult * 0.7) - time * 0.5) * (ampMult * 0.5);
+      }
+      return { x: 0.5 + Math.cos(angle) * r, y: 0.5 + Math.sin(angle) * r };
     }
 
-    // --- 各形状 ---
+    // --- 各形状（アルゴリズム固定） ---
     if (type === "CIRCLE") return { x: 0.5 + Math.cos(angle) * 0.3, y: 0.5 + Math.sin(angle) * 0.3 };
     if (type === "TRIANGLE") {
       const side = Math.floor(t * 3);
@@ -72,16 +78,15 @@ export default function MoyamoyaSoulSandbox() {
         const t = i / POINT_COUNT;
         const base = getBaseTarget(targetType, t, time);
         
-        // --- うねり(WAVE)の適用 ---
-        // BASE時は複雑な座標に含まれているため波は弱く、形状時は指定の強さ(15)で固定
-        const currentWaveAmp = targetType === "BASE" ? 5 : FIXED_WAVE_AMP;
+        // --- 形状時の固定うねり ---
+        const currentWaveAmp = targetType === "BASE" ? 0 : FIXED_WAVE_AMP;
         const wave = Math.sin(t * Math.PI * 12 + time * 1.5) * (currentWaveAmp / CANVAS_SIZE);
         
         const finalTargetX = base.x + (base.x - 0.5) * wave;
         const finalTargetY = base.y + (base.y - 0.5) * wave;
 
-        // 親指アクション(Interaction)時の反応
-        const spring = isPressed ? 0.25 : 0.08;
+        // 引力（常に一定の滑らかさ）
+        const spring = 0.08;
         p.vx += (finalTargetX - p.x) * spring;
         p.vy += (finalTargetY - p.y) * spring;
 
@@ -91,7 +96,7 @@ export default function MoyamoyaSoulSandbox() {
         p.y += p.vy;
       });
 
-      // 描画：常に丸みを帯びた一筆書き
+      // 描画
       ctx.beginPath();
       ctx.strokeStyle = color;
       ctx.lineWidth = 2.5;
@@ -113,42 +118,56 @@ export default function MoyamoyaSoulSandbox() {
 
     render();
     return () => cancelAnimationFrame(animationFrameId);
-  }, [targetType, isPressed, metabolism, color]);
+  }, [targetType, metabolism, baseRadius, baseComplexity, baseFreq, baseJitter, color]);
 
   return (
-    <div className="p-8 bg-slate-950 min-h-screen text-white flex flex-col items-center">
+    <div className="p-8 bg-slate-950 min-h-screen text-white flex flex-col items-center font-sans">
       <div className="flex flex-col lg:flex-row gap-16 items-center">
-        <canvas ref={canvasRef} width={CANVAS_SIZE} height={CANVAS_SIZE} className="bg-transparent" />
+        <canvas ref={canvasRef} width={CANVAS_SIZE} height={CANVAS_SIZE} />
 
-        <div className="w-72 space-y-8">
+        <div className="w-80 space-y-8">
           <section className="space-y-4">
-            <p className="text-[10px] tracking-widest text-cyan-500 font-bold uppercase">Target Phase</p>
+            <p className="text-[10px] tracking-widest text-cyan-500 font-bold uppercase underline">Phase Select</p>
             <div className="grid grid-cols-2 gap-2 text-[10px]">
               {["BASE", "CIRCLE", "TRIANGLE", "SQUARE", "STAR"].map(f => (
-                <button key={f} onClick={() => setTargetType(f)} className={`py-2 rounded border transition-colors ${targetType === f ? "bg-cyan-500 text-black font-bold" : "border-white/20 text-white/50 hover:border-white/40"}`}>
-                  {f === "BASE" ? "COMPLEX BASE" : f}
+                <button key={f} onClick={() => setTargetType(f)} className={`py-2 rounded border transition-colors ${targetType === f ? "bg-cyan-500 text-black font-bold" : "border-white/20 text-white/50"}`}>
+                  {f === "BASE" ? "TUNING BASE" : f}
                 </button>
               ))}
             </div>
-            <p className="text-[9px] text-gray-500 leading-tight">
-              ※BASE時は複雑な魂の形になります。図形選択時はうねりが「15」に固定されます。
-            </p>
           </section>
 
-          <section className="space-y-4">
-            <p className="text-[10px] tracking-widest text-red-500 font-bold uppercase">Interaction</p>
-            <button 
-              onPointerDown={() => setIsPressed(true)} 
-              onPointerUp={() => setIsPressed(false)}
-              className={`w-full py-4 rounded-xl border-2 transition-all font-black ${isPressed ? "bg-red-500 border-red-400 scale-95 shadow-[0_0_20px_rgba(239,68,68,0.4)]" : "border-red-900/30 text-red-900"}`}>
-              PRESS THUMB
-            </button>
-          </section>
+          {/* BASE専用のチューニングコントロールパネル */}
+          {targetType === "BASE" && (
+            <section className="space-y-6 p-6 bg-cyan-950/20 border border-cyan-500/30 rounded-2xl">
+              <p className="text-[10px] tracking-widest text-cyan-400 font-black uppercase">Base Tuning Options</p>
+              
+              <div className="space-y-1">
+                <label className="flex justify-between text-[9px] uppercase text-white/40">Core Radius <span>{baseRadius.toFixed(2)}</span></label>
+                <input type="range" min="0.05" max="0.4" step="0.01" value={baseRadius} onChange={e => setBaseRadius(parseFloat(e.target.value))} className="w-full accent-cyan-500" />
+              </div>
 
-          <section className="space-y-6 pt-6 border-t border-white/10">
+              <div className="space-y-1">
+                <label className="flex justify-between text-[9px] uppercase text-white/40">Complexity (波の重なり) <span>{baseComplexity}</span></label>
+                <input type="range" min="1" max="10" step="1" value={baseComplexity} onChange={e => setBaseComplexity(parseInt(e.target.value))} className="w-full accent-cyan-500" />
+              </div>
+
+              <div className="space-y-1">
+                <label className="flex justify-between text-[9px] uppercase text-white/40">Tangle Freq (絡まり具合) <span>{baseFreq}</span></label>
+                <input type="range" min="1" max="50" step="1" value={baseFreq} onChange={e => setBaseFreq(parseInt(e.target.value))} className="w-full accent-cyan-500" />
+              </div>
+
+              <div className="space-y-1">
+                <label className="flex justify-between text-[9px] uppercase text-white/40">Jitter (乱れ/重なり) <span>{baseJitter.toFixed(2)}</span></label>
+                <input type="range" min="0" max="0.3" step="0.01" value={baseJitter} onChange={e => setBaseJitter(parseFloat(e.target.value))} className="w-full accent-cyan-500" />
+              </div>
+            </section>
+          )}
+
+          <section className="space-y-4 pt-6 border-t border-white/10">
             <div>
-              <label className="block text-[9px] uppercase text-white/40 mb-2">Metabolism (生命の速度)</label>
-              <input type="range" min="0.01" max="0.1" step="0.01" value={metabolism} onChange={e => setMetabolism(parseFloat(e.target.value))} className="w-full accent-cyan-500" />
+              <label className="block text-[9px] uppercase text-white/40 mb-2">Soul Metabolism (速さ)</label>
+              <input type="range" min="0.01" max="0.1" step="0.01" value={metabolism} onChange={e => setMetabolism(parseFloat(e.target.value))} className="w-full" />
             </div>
             <div>
               <label className="block text-[9px] uppercase text-white/40 mb-2">Aura Color</label>
