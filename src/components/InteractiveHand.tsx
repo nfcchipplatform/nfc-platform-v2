@@ -14,6 +14,7 @@ interface InteractiveHandProps {
   slots: (ProfileSummary | null)[];
 }
 
+// 形状データ（変更なし）
 const NAIL_CONFIG = [
   { id: "thumb",  x: 54.06, y: 63.36, w: 7.7, h: 12.4, r: -124, br: "45% 45% 20% 20%" },
   { id: "index",  x: 56.27, y: 51.23, w: 7.6, h: 9.7,  r: 161,  br: "45% 45% 20% 20%" },
@@ -90,50 +91,42 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
         }}
       />
 
-      {/* ネイル（スロット）層 */}
+      {/* ネイル（スロット）層 - 構造をシンプル化 */}
       {NAIL_CONFIG.map((config, index) => {
         const user = slots[index];
         const isThumb = config.id === "thumb";
         const isVisible = phase !== "LOADING" && (!isThumb || phase === "PRESSED");
 
+        // ユーザー画像がない場合は何も表示しない
+        if (!user) return null;
+
         return (
-          <div
+          <Link
             key={config.id}
-            className={`absolute transition-all duration-400 ease-out ${
+            href={`/${user.username}`}
+            // Link自体にすべてのスタイルを集約
+            className={`absolute block border-2 border-black overflow-hidden bg-cover bg-center group active:scale-95 transition-all duration-400 ease-out ${
               isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
             }`}
             style={{
+              // 位置、サイズ、回転
               left: `${config.x}%`,
               top: `${config.y}%`,
               width: `${config.w}%`,
               height: `${config.h}%`,
               transform: `translate(-50%, -50%) rotate(${config.r}deg)`,
               zIndex: isThumb ? 50 : 40,
+              // 形状と画像
               borderRadius: config.br,
+              backgroundImage: `url(${user.image})`,
+              // スマホでの長押しメニュー防止
+              WebkitTouchCallout: 'none', 
             }}
+            onContextMenu={(e) => e.preventDefault()}
           >
-            {user && (
-              <Link 
-                href={`/${user.username}`} 
-                className="block w-full h-full group active:scale-95 transition-transform"
-                onContextMenu={(e) => e.preventDefault()}
-                style={{ borderRadius: 'inherit' }}
-              >
-                {/* 修正箇所: shadow-md を削除し、border-white を border-black に変更 */}
-                <div 
-                  className="w-full h-full border-2 border-black overflow-hidden bg-gray-200"
-                  style={{ 
-                    borderRadius: 'inherit',
-                    backgroundImage: `url(${user.image})`, 
-                    backgroundSize: 'cover', 
-                    backgroundPosition: 'center' 
-                  }}
-                >
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
-                </div>
-              </Link>
-            )}
-          </div>
+            {/* ホバー時の黒い膜（これだけは層として残すが、親の形に完全に追従する） */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+          </Link>
         );
       })}
 
