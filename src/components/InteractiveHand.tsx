@@ -12,9 +12,9 @@ interface ProfileSummary {
 
 interface InteractiveHandProps {
   slots: (ProfileSummary | null)[];
-  profileImage?: string | null;
 }
 
+// ユーザーから提供された座標・角度データ
 const NAIL_CONFIG = [
   { id: "thumb",  x: 54.06, y: 63.36, deg: -124 },
   { id: "index",  x: 56.27, y: 51.23, deg: 161 },
@@ -24,36 +24,31 @@ const NAIL_CONFIG = [
 ];
 
 export default function InteractiveHand({ slots }: InteractiveHandProps) {
-  // 状態管理を LOADING から開始
   const [phase, setPhase] = useState<"LOADING" | "STANDBY" | "PRESSED">("LOADING");
   const [isAssetsReady, setIsAssetsReady] = useState(false);
 
   useEffect(() => {
-    // 1. プリロード対象の画像リストを作成
+    // プリロード対象のリスト
     const imagesToPreload = [
       "/handclose.png",
       "/handgoo.png",
-      // スロットにあるユーザーの画像URLを追加（null以外）
       ...slots.filter(s => s?.image).map(s => s!.image as string)
     ];
 
     const preloadAll = async () => {
       const startTime = Date.now();
-
-      // 画像読み込みプロミスの作成
       const promises = imagesToPreload.map((src) => {
         return new Promise((resolve) => {
           const img = new Image();
           img.src = src;
           img.onload = resolve;
-          img.onerror = resolve; // エラー時も進行を止めない
+          img.onerror = resolve; // エラー時も停止させない
         });
       });
 
-      // すべての画像読み込み完了を待つ
       await Promise.all(promises);
-
-      // 最低限の演出時間（2秒）を確保するための計算
+      
+      // 最低2秒間の演出時間を確保
       const elapsedTime = Date.now() - startTime;
       const delay = Math.max(0, 2000 - elapsedTime);
 
@@ -73,40 +68,43 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
   };
 
   return (
-    <div className="relative w-full max-w-[400px] mx-auto aspect-[3/4] select-none touch-none">
+    <div 
+      className="relative w-full overflow-hidden aspect-[3/4] select-none touch-none bg-transparent"
+      style={{
+        // スマホでの長押しメニューと選択を徹底的に無効化
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none',
+      }}
+      // 右クリック（長押し）メニューを無効化
+      onContextMenu={(e) => e.preventDefault()}
+    >
       
-      {/* 背景イラスト層 */}
+      {/* 背景イラスト層: imgタグではなく背景画像として扱うことで選択を防止 */}
       <div 
-        className={`absolute inset-0 transition-opacity duration-700 ${isAssetsReady ? "opacity-100" : "opacity-90"}`}
-        onPointerDown={() => phase === "STANDBY" && setPhase("PRESSED")}
-        onPointerUp={() => phase === "PRESSED" && setPhase("STANDBY")}
-        onPointerLeave={() => phase === "PRESSED" && setPhase("STANDBY")}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img 
-          src={getBgImage()} 
-          alt="Interactive Hand" 
-          className="w-full h-full object-contain pointer-events-none"
-        />
-        
-        {/* ローディング中のインジケーター（任意：handopenの上に薄く出すなど） */}
-        {phase === "LOADING" && (
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2">
-            <div className="flex gap-1">
-              <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-              <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-              <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-            </div>
-          </div>
-        )}
-      </div>
+        className={`absolute inset-0 transition-opacity duration-700 bg-contain bg-center bg-no-repeat ${isAssetsReady ? "opacity-100" : "opacity-90"}`}
+        style={{ 
+          backgroundImage: `url(${getBgImage()})`,
+          WebkitTouchCallout: 'none'
+        }}
+        onPointerDown={(e) => {
+          // デフォルトのブラウザ挙動を抑制
+          if (phase === "STANDBY") setPhase("PRESSED");
+        }}
+        onPointerUp={() => {
+          if (phase === "PRESSED") setPhase("STANDBY");
+        }}
+        onPointerLeave={() => {
+          if (phase === "PRESSED") setPhase("STANDBY");
+        }}
+      />
 
       {/* ネイル（スロット）層 */}
       {NAIL_CONFIG.map((config, index) => {
         const user = slots[index];
         const isThumb = config.id === "thumb";
         
-        // 読み込み完了後、かつフェーズに合わせた表示
+        // OPENフェーズは表示しない / STANDBYは親指以外 / PRESSEDは全部
         const isVisible = phase !== "LOADING" && (!isThumb || phase === "PRESSED");
 
         return (
@@ -118,18 +116,28 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
             style={{
               left: `${config.x}%`,
               top: `${config.y}%`,
-              width: "12%",
-              height: "16%",
+              width: "12.5%", // 爪の横幅を微調整
+              height: "16.5%", // 爪の縦幅を微調整
               transform: `translate(-50%, -50%) rotate(${config.deg}deg)`,
               zIndex: isThumb ? 50 : 40,
+              WebkitTouchCallout: 'none',
             }}
           >
             {user && (
-              <Link href={`/${user.username}`} className="block w-full h-full group">
+              <Link 
+                href={`/${user.username}`} 
+                className="block w-full h-full group active:scale-95 transition-transform"
+                onContextMenu={(e) => e.preventDefault()} // リンクの長押しメニューも防止
+              >
                 <div 
                   className="w-full h-full rounded-[45%_45%_20%_20%] border-2 border-white shadow-md overflow-hidden bg-gray-200"
-                  style={{ backgroundImage: `url(${user.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                  style={{ 
+                    backgroundImage: `url(${user.image})`, 
+                    backgroundSize: 'cover', 
+                    backgroundPosition: 'center' 
+                  }}
                 >
+                  {/* ホバー/タップ時のオーバーレイ */}
                   <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
                 </div>
               </Link>
@@ -137,6 +145,15 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
           </div>
         );
       })}
+
+      {/* ローディング演出 (handopen表示中のみ) */}
+      {phase === "LOADING" && (
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-none">
+          <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+          <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '200ms' }}></span>
+          <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '400ms' }}></span>
+        </div>
+      )}
     </div>
   );
 }
