@@ -1,12 +1,10 @@
 // src/app/[username]/page.tsx
 
-// src/app/[username]/page.tsx
-
 import { PrismaClient } from "@prisma/client";
 import { trackProfileView } from "@/actions/trackView";
 import DirectLinkInterstitial from "@/components/DirectLinkInterstitial";
 import FollowButton from "@/components/FollowButton";
-// HamsaHand を InteractiveHand に変更
+// HamsaHand から InteractiveHand に変更
 import InteractiveHand from "@/components/InteractiveHand";
 import SalonFooter from "@/components/SalonFooter";
 import { getServerSession } from "next-auth";
@@ -79,7 +77,6 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
   // --- テーマ決定ロジック (常にデフォルトを使用) ---
   const themeId = "default";
   const theme = getTheme(themeId);
-  const displayAccentColor = theme.accentColor;
 
   // 五大元素スロットの整形
   const slots = Array(5).fill(null);
@@ -90,62 +87,64 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
   });
 
   return (
-    <div className={`min-h-screen flex flex-col items-center py-10 px-4 transition-colors duration-500 ${theme.bgClass} ${theme.textClass} ${theme.fontClass}`}>
+    /* py-0 px-0 に変更して画面端まで使用 */
+    <div className={`min-h-screen flex flex-col items-center py-0 px-0 transition-colors duration-500 ${theme.bgClass} ${theme.textClass} ${theme.fontClass}`}>
       
-      {/* --- メインコンテンツ: Interactive Hand (差し替え箇所) --- */}
-      <div className="w-full max-w-md z-10">
-          <InteractiveHand slots={slots} profileImage={user.image} />
+      {/* --- メインコンテンツ: Interactive Hand (画面幅いっぱい) --- */}
+      <div className="w-full z-10">
+          <InteractiveHand slots={slots} />
       </div>
 
-      {/* 名前と肩書（手のひらの下に表示） */}
-      <div className="text-center z-10 mt-4">
-        <h1 className="text-2xl font-bold tracking-tight">{user.name}</h1>
-        <p className="opacity-70 text-sm mt-1">{user.title}</p>
-        
-        {/* アクションボタン */}
-        <div className="mt-4 flex gap-2 justify-center">
-            {!isOwner && session?.user?.id && (
-                <FollowButton targetUserId={user.id} isFollowingInitial={isFollowing} />
-            )}
+      {/* 名前以降のコンテンツは左右余白を持たせるための div で囲う */}
+      <div className="w-full px-4 flex flex-col items-center">
+        <div className="text-center z-10 mt-4">
+          <h1 className="text-2xl font-bold tracking-tight">{user.name}</h1>
+          <p className="opacity-70 text-sm mt-1">{user.title}</p>
+          
+          {/* アクションボタン */}
+          <div className="mt-4 flex gap-2 justify-center">
+              {!isOwner && session?.user?.id && (
+                  <FollowButton targetUserId={user.id} isFollowingInitial={isFollowing} />
+              )}
+          </div>
         </div>
-      </div>
 
-      {/* 自己紹介 */}
-      <div className="mt-8 max-w-sm text-center z-10 opacity-80 text-sm leading-relaxed whitespace-pre-wrap">
-          {user.bio}
-      </div>
+        {/* 自己紹介 */}
+        <div className="mt-8 max-w-sm text-center z-10 opacity-80 text-sm leading-relaxed whitespace-pre-wrap">
+            {user.bio}
+        </div>
 
-      {/* フッターリンク */}
-      <div className="mt-10 flex gap-6 text-sm z-10 opacity-60">
-        {user.website && (
-          <a href={user.website} target="_blank" className="hover:opacity-100 transition-opacity">
-            Website
-          </a>
+        {/* フッターリンク */}
+        <div className="mt-10 flex gap-6 text-sm z-10 opacity-60">
+          {user.website && (
+            <a href={user.website} target="_blank" className="hover:opacity-100 transition-opacity">
+              Website
+            </a>
+          )}
+          {user.twitter && (
+            <a href={user.twitter} target="_blank" className="hover:opacity-100 transition-opacity">
+              Twitter
+            </a>
+          )}
+          {user.instagram && (
+            <a href={user.instagram} target="_blank" className="hover:opacity-100 transition-opacity">
+              Instagram
+            </a>
+          )}
+        </div>
+
+        {/* 店舗情報Footer */}
+        {user.salon && (
+          <SalonFooter salon={user.salon as any} />
         )}
-        {user.twitter && (
-          <a href={user.twitter} target="_blank" className="hover:opacity-100 transition-opacity">
-            Twitter
-          </a>
-        )}
-        {user.instagram && (
-          <a href={user.instagram} target="_blank" className="hover:opacity-100 transition-opacity">
-            Instagram
-          </a>
-        )}
+
+        <Link
+          href="https://app.ponnu.net/"
+          className="mt-8 mb-10 text-[10px] opacity-40 hover:opacity-80 transition-opacity"
+        >
+          POWERED BY PONNU
+        </Link>
       </div>
-
-      {/* 店舗情報Footer */}
-      {user.salon && (
-        <SalonFooter salon={user.salon as any} />
-      )}
-
-      <Link
-        href="https://app.ponnu.net/"
-        className="mt-8 text-[10px] opacity-40 hover:opacity-80 transition-opacity"
-      >
-        POWERED BY PONNU
-      </Link>
-
     </div>
   );
 }
