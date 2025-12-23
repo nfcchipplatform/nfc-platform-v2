@@ -57,7 +57,7 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
   const [auraColor, setAuraColor] = useState(AURA_COLORS[0]);
   const pointsRef = useRef(Array.from({ length: POINT_COUNT }, () => ({ x: 0.5, y: 0.5, vx: 0, vy: 0 })));
 
-  // 最新の phase を参照するための Ref (TypeScriptエラー防止用)
+  // 最新の phase を参照するための Ref
   const phaseRef = useRef(phase);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
@@ -104,14 +104,13 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
         const t = i / POINT_COUNT;
         let tx, ty;
         if (targetType === "BASE") {
-          // チューニング済みBASE値: Core:0.14, Comp:4, Freq:38, Jitter:0.05
           let r = 0.14; 
           for (let j = 1; j <= 4; j++) r += Math.sin(t * Math.PI * (38 * j * 0.5) + time * j) * (0.05 / j);
           tx = 0.5 + Math.cos(t * Math.PI * 2 - Math.PI / 2) * r;
           ty = 0.5 + Math.sin(t * Math.PI * 2 - Math.PI / 2) * r;
         } else {
           const base = SHAPE_LIBRARY[targetType](t);
-          const wave = Math.sin(t * Math.PI * 12 + time * 1.5) * (15 / 600); // 形状時のうねりは15で固定
+          const wave = Math.sin(t * Math.PI * 12 + time * 1.5) * (15 / 600);
           tx = base.x + (base.x - 0.5) * wave; ty = base.y + (base.y - 0.5) * wave;
         }
         p.vx += (tx - p.x) * 0.08; p.vy += (ty - p.y) * 0.08;
@@ -152,15 +151,15 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
         onPointerLeave={() => setPhase("STANDBY")}
       />
 
-      {/* 魂（モヤモヤ）層: サイズを2/3にし、指定座標へ配置 */}
+      {/* 魂（モヤモヤ）層: 最新の座標 (45.59, 67.22) へ配置 */}
       <canvas 
         ref={canvasRef} 
         width={400} 
         height={400} 
         className="absolute pointer-events-none opacity-80 scale-[0.67]" 
         style={{
-          left: "43.61%",
-          top: "68.05%",
+          left: "45.59%",
+          top: "67.22%",
           transform: "translate(-50%, -50%)"
         }}
       />
