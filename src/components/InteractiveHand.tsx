@@ -14,13 +14,13 @@ interface InteractiveHandProps {
   slots: (ProfileSummary | null)[];
 }
 
-// ユーザーから提供された座標・角度データ
+// 頂いた最新の形状データを反映
 const NAIL_CONFIG = [
-  { id: "thumb",  x: 54.06, y: 63.36, deg: -124 },
-  { id: "index",  x: 56.27, y: 51.23, deg: 161 },
-  { id: "middle", x: 44.79, y: 53.38, deg: 167 },
-  { id: "ring",   x: 33.76, y: 55.04, deg: 167 },
-  { id: "pinky",  x: 25.15, y: 54.71, deg: 159 },
+  { id: "thumb",  x: 54.06, y: 63.36, w: 7.7, h: 12.4, r: -124, br: "45% 45% 20% 20%" },
+  { id: "index",  x: 56.27, y: 51.23, w: 7.6, h: 9.7,  r: 161,  br: "45% 45% 20% 20%" },
+  { id: "middle", x: 44.79, y: 53.38, w: 8.0, h: 10.1, r: 164,  br: "45% 45% 20% 20%" },
+  { id: "ring",   x: 33.76, y: 55.04, w: 7.7, h: 10.0, r: 167,  br: "45% 45% 20% 20%" },
+  { id: "pinky",  x: 25.15, y: 54.71, w: 6.3, h: 9.0,  r: 159,  br: "45% 45% 20% 20%" },
 ];
 
 export default function InteractiveHand({ slots }: InteractiveHandProps) {
@@ -28,7 +28,7 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
   const [isAssetsReady, setIsAssetsReady] = useState(false);
 
   useEffect(() => {
-    // プリロード対象のリスト
+    // プリロード対象の画像リスト
     const imagesToPreload = [
       "/handclose.png",
       "/handgoo.png",
@@ -42,7 +42,7 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
           const img = new Image();
           img.src = src;
           img.onload = resolve;
-          img.onerror = resolve; // エラー時も停止させない
+          img.onerror = resolve;
         });
       });
 
@@ -71,24 +71,20 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
     <div 
       className="relative w-full overflow-hidden aspect-[3/4] select-none touch-none bg-transparent"
       style={{
-        // スマホでの長押しメニューと選択を徹底的に無効化
         WebkitTouchCallout: 'none',
         WebkitUserSelect: 'none',
         userSelect: 'none',
       }}
-      // 右クリック（長押し）メニューを無効化
       onContextMenu={(e) => e.preventDefault()}
     >
       
-      {/* 背景イラスト層: imgタグではなく背景画像として扱うことで選択を防止 */}
+      {/* 背景イラスト層 */}
       <div 
         className={`absolute inset-0 transition-opacity duration-700 bg-contain bg-center bg-no-repeat ${isAssetsReady ? "opacity-100" : "opacity-90"}`}
         style={{ 
           backgroundImage: `url(${getBgImage()})`,
-          WebkitTouchCallout: 'none'
         }}
-        onPointerDown={(e) => {
-          // デフォルトのブラウザ挙動を抑制
+        onPointerDown={() => {
           if (phase === "STANDBY") setPhase("PRESSED");
         }}
         onPointerUp={() => {
@@ -104,7 +100,7 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
         const user = slots[index];
         const isThumb = config.id === "thumb";
         
-        // OPENフェーズは表示しない / STANDBYは親指以外 / PRESSEDは全部
+        // LOADINGフェーズは非表示 / STANDBYは親指以外 / PRESSEDは全部
         const isVisible = phase !== "LOADING" && (!isThumb || phase === "PRESSED");
 
         return (
@@ -116,28 +112,28 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
             style={{
               left: `${config.x}%`,
               top: `${config.y}%`,
-              width: "12.5%", // 爪の横幅を微調整
-              height: "16.5%", // 爪の縦幅を微調整
-              transform: `translate(-50%, -50%) rotate(${config.deg}deg)`,
+              width: `${config.w}%`,
+              height: `${config.h}%`,
+              transform: `translate(-50%, -50%) rotate(${config.r}deg)`,
               zIndex: isThumb ? 50 : 40,
-              WebkitTouchCallout: 'none',
+              borderRadius: config.br, // 指ごとの形状を適用
             }}
           >
             {user && (
               <Link 
                 href={`/${user.username}`} 
                 className="block w-full h-full group active:scale-95 transition-transform"
-                onContextMenu={(e) => e.preventDefault()} // リンクの長押しメニューも防止
+                onContextMenu={(e) => e.preventDefault()}
               >
                 <div 
-                  className="w-full h-full rounded-[45%_45%_20%_20%] border-2 border-white shadow-md overflow-hidden bg-gray-200"
+                  className="w-full h-full border-2 border-white shadow-md overflow-hidden bg-gray-200"
                   style={{ 
+                    borderRadius: 'inherit', // 親の形状を継承
                     backgroundImage: `url(${user.image})`, 
                     backgroundSize: 'cover', 
                     backgroundPosition: 'center' 
                   }}
                 >
-                  {/* ホバー/タップ時のオーバーレイ */}
                   <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
                 </div>
               </Link>
@@ -146,7 +142,7 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
         );
       })}
 
-      {/* ローディング演出 (handopen表示中のみ) */}
+      {/* ローディング演出 */}
       {phase === "LOADING" && (
         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-none">
           <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
