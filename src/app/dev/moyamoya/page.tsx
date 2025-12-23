@@ -2,26 +2,38 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const POINT_COUNT = 60; // 密度を上げて波を綺麗に見せる
+const POINT_COUNT = 100; // 密度を上げて複雑な絡まりを表現
 const CANVAS_SIZE = 600;
+const FIXED_WAVE_AMP = 15; // 形状時の固定された「うねりの強さ」
 
 export default function MoyamoyaSoulSandbox() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [targetType, setTargetType] = useState<string>("BASE");
   const [isPressed, setIsPressed] = useState(false);
   
-  // パラメーター
-  const [metabolism, setMetabolism] = useState(0.04); // うねりの速さ
-  const [waveAmp, setWaveAmp] = useState(15);      // うねりの強さ
+  // ユーザー調整用（主にBASEの質感や全体の色）
+  const [metabolism, setMetabolism] = useState(0.04);
   const [color, setColor] = useState("#22d3ee");
 
-  const pointsRef = useRef(Array.from({ length: POINT_COUNT }, (_, i) => ({
+  const pointsRef = useRef(Array.from({ length: POINT_COUNT }, () => ({
     x: 0.5, y: 0.5, vx: 0, vy: 0
   })));
 
-  // 形状の基本座標（ターゲット）
-  const getBaseTarget = (type: string, t: number) => {
+  // 形状の基本座標取得
+  const getBaseTarget = (type: string, t: number, time: number) => {
     const angle = t * Math.PI * 2 - Math.PI / 2;
+    
+    // --- BASE: 複雑な絡まりのアルゴリズム ---
+    if (type === "BASE") {
+      // 複数のサイン波を組み合わせて、複雑な半径の変動を作る
+      const r1 = 0.2 + Math.sin(t * Math.PI * 4 + time * 0.5) * 0.05;
+      const r2 = Math.cos(t * Math.PI * 10 - time) * 0.1;
+      const r3 = Math.sin(t * Math.PI * 2 + time * 2) * 0.02;
+      const radius = r1 + r2 + r3;
+      return { x: 0.5 + Math.cos(angle) * radius, y: 0.5 + Math.sin(angle) * radius };
+    }
+
+    // --- 各形状 ---
     if (type === "CIRCLE") return { x: 0.5 + Math.cos(angle) * 0.3, y: 0.5 + Math.sin(angle) * 0.3 };
     if (type === "TRIANGLE") {
       const side = Math.floor(t * 3);
@@ -39,7 +51,7 @@ export default function MoyamoyaSoulSandbox() {
       const r = (Math.floor(t * 10) % 2 === 0) ? 0.35 : 0.15;
       return { x: 0.5 + Math.cos(angle) * r, y: 0.5 + Math.sin(angle) * r };
     }
-    return { x: 0.5 + Math.cos(angle) * 0.2, y: 0.5 + Math.sin(angle) * 0.2 };
+    return { x: 0.5, y: 0.5 };
   };
 
   useEffect(() => {
@@ -58,16 +70,18 @@ export default function MoyamoyaSoulSandbox() {
 
       pts.forEach((p, i) => {
         const t = i / POINT_COUNT;
-        const base = getBaseTarget(targetType, t);
+        const base = getBaseTarget(targetType, t, time);
         
-        // --- 波のアルゴリズム ---
-        // 形状の法線方向に波を乗せる（生き物のようなうねり）
-        const wave = Math.sin(t * Math.PI * 10 + time) * (waveAmp / CANVAS_SIZE);
+        // --- うねり(WAVE)の適用 ---
+        // BASE時は複雑な座標に含まれているため波は弱く、形状時は指定の強さ(15)で固定
+        const currentWaveAmp = targetType === "BASE" ? 5 : FIXED_WAVE_AMP;
+        const wave = Math.sin(t * Math.PI * 12 + time * 1.5) * (currentWaveAmp / CANVAS_SIZE);
+        
         const finalTargetX = base.x + (base.x - 0.5) * wave;
         const finalTargetY = base.y + (base.y - 0.5) * wave;
 
-        // 親指が押されている時の反応（Interaction）
-        const spring = isPressed ? 0.2 : 0.08;
+        // 親指アクション(Interaction)時の反応
+        const spring = isPressed ? 0.25 : 0.08;
         p.vx += (finalTargetX - p.x) * spring;
         p.vy += (finalTargetY - p.y) * spring;
 
@@ -77,11 +91,11 @@ export default function MoyamoyaSoulSandbox() {
         p.y += p.vy;
       });
 
-      // 描画（滑らかな曲線）
+      // 描画：常に丸みを帯びた一筆書き
       ctx.beginPath();
       ctx.strokeStyle = color;
-      ctx.lineWidth = 3;
-      ctx.shadowBlur = 20;
+      ctx.lineWidth = 2.5;
+      ctx.shadowBlur = 15;
       ctx.shadowColor = color;
 
       for (let i = 0; i <= pts.length; i++) {
@@ -99,7 +113,7 @@ export default function MoyamoyaSoulSandbox() {
 
     render();
     return () => cancelAnimationFrame(animationFrameId);
-  }, [targetType, isPressed, metabolism, waveAmp, color]);
+  }, [targetType, isPressed, metabolism, color]);
 
   return (
     <div className="p-8 bg-slate-950 min-h-screen text-white flex flex-col items-center">
@@ -107,32 +121,40 @@ export default function MoyamoyaSoulSandbox() {
         <canvas ref={canvasRef} width={CANVAS_SIZE} height={CANVAS_SIZE} className="bg-transparent" />
 
         <div className="w-72 space-y-8">
-          <div className="space-y-4">
-            <p className="text-[10px] tracking-widest text-cyan-500 font-bold uppercase">Form</p>
+          <section className="space-y-4">
+            <p className="text-[10px] tracking-widest text-cyan-500 font-bold uppercase">Target Phase</p>
             <div className="grid grid-cols-2 gap-2 text-[10px]">
               {["BASE", "CIRCLE", "TRIANGLE", "SQUARE", "STAR"].map(f => (
-                <button key={f} onClick={() => setTargetType(f)} className={`py-2 rounded border ${targetType === f ? "bg-cyan-500 text-black" : "border-white/20 text-white/50"}`}>{f}</button>
+                <button key={f} onClick={() => setTargetType(f)} className={`py-2 rounded border transition-colors ${targetType === f ? "bg-cyan-500 text-black font-bold" : "border-white/20 text-white/50 hover:border-white/40"}`}>
+                  {f === "BASE" ? "COMPLEX BASE" : f}
+                </button>
               ))}
             </div>
-          </div>
+            <p className="text-[9px] text-gray-500 leading-tight">
+              ※BASE時は複雑な魂の形になります。図形選択時はうねりが「15」に固定されます。
+            </p>
+          </section>
 
-          <div className="space-y-4">
-            <p className="text-[10px] tracking-widest text-red-500 font-bold uppercase">Interaction (Thumb Action)</p>
+          <section className="space-y-4">
+            <p className="text-[10px] tracking-widest text-red-500 font-bold uppercase">Interaction</p>
             <button 
               onPointerDown={() => setIsPressed(true)} 
               onPointerUp={() => setIsPressed(false)}
-              className={`w-full py-4 rounded-xl border-2 transition-all font-black ${isPressed ? "bg-red-500 border-red-400" : "border-red-900/30 text-red-900"}`}>
+              className={`w-full py-4 rounded-xl border-2 transition-all font-black ${isPressed ? "bg-red-500 border-red-400 scale-95 shadow-[0_0_20px_rgba(239,68,68,0.4)]" : "border-red-900/30 text-red-900"}`}>
               PRESS THUMB
             </button>
-          </div>
+          </section>
 
-          <div className="space-y-4 pt-4 border-t border-white/10">
-            <label className="block text-[9px] uppercase text-white/40">Wave Speed</label>
-            <input type="range" min="0.01" max="0.2" step="0.01" value={metabolism} onChange={e => setMetabolism(parseFloat(e.target.value))} className="w-full" />
-            
-            <label className="block text-[9px] uppercase text-white/40">Wave Amplitude (うねりの強さ)</label>
-            <input type="range" min="0" max="50" value={waveAmp} onChange={e => setWaveAmp(parseInt(e.target.value))} className="w-full" />
-          </div>
+          <section className="space-y-6 pt-6 border-t border-white/10">
+            <div>
+              <label className="block text-[9px] uppercase text-white/40 mb-2">Metabolism (生命の速度)</label>
+              <input type="range" min="0.01" max="0.1" step="0.01" value={metabolism} onChange={e => setMetabolism(parseFloat(e.target.value))} className="w-full accent-cyan-500" />
+            </div>
+            <div>
+              <label className="block text-[9px] uppercase text-white/40 mb-2">Aura Color</label>
+              <input type="color" value={color} onChange={e => setColor(e.target.value)} className="w-full h-8 bg-transparent border border-white/20 rounded cursor-pointer" />
+            </div>
+          </section>
         </div>
       </div>
     </div>
