@@ -14,7 +14,6 @@ interface InteractiveHandProps {
   slots: (ProfileSummary | null)[];
 }
 
-// 頂いた最新の形状データを反映
 const NAIL_CONFIG = [
   { id: "thumb",  x: 54.06, y: 63.36, w: 7.7, h: 12.4, r: -124, br: "45% 45% 20% 20%" },
   { id: "index",  x: 56.27, y: 51.23, w: 7.6, h: 9.7,  r: 161,  br: "45% 45% 20% 20%" },
@@ -28,7 +27,6 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
   const [isAssetsReady, setIsAssetsReady] = useState(false);
 
   useEffect(() => {
-    // プリロード対象の画像リスト
     const imagesToPreload = [
       "/handclose.png",
       "/handgoo.png",
@@ -47,10 +45,7 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
       });
 
       await Promise.all(promises);
-      
-      // 最低2秒間の演出時間を確保
-      const elapsedTime = Date.now() - startTime;
-      const delay = Math.max(0, 2000 - elapsedTime);
+      const delay = Math.max(0, 2000 - (Date.now() - startTime));
 
       setTimeout(() => {
         setIsAssetsReady(true);
@@ -69,7 +64,8 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
 
   return (
     <div 
-      className="relative w-full overflow-hidden aspect-[3/4] select-none touch-none bg-transparent"
+      /* max-w-[450px] と mx-auto を追加し、PCでは中央に、スマホでは幅いっぱいに設定 */
+      className="relative w-full max-w-[450px] mx-auto overflow-hidden aspect-[3/4] select-none touch-none bg-transparent"
       style={{
         WebkitTouchCallout: 'none',
         WebkitUserSelect: 'none',
@@ -99,8 +95,6 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
       {NAIL_CONFIG.map((config, index) => {
         const user = slots[index];
         const isThumb = config.id === "thumb";
-        
-        // LOADINGフェーズは非表示 / STANDBYは親指以外 / PRESSEDは全部
         const isVisible = phase !== "LOADING" && (!isThumb || phase === "PRESSED");
 
         return (
@@ -116,7 +110,7 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
               height: `${config.h}%`,
               transform: `translate(-50%, -50%) rotate(${config.r}deg)`,
               zIndex: isThumb ? 50 : 40,
-              borderRadius: config.br, // 指ごとの形状を適用
+              borderRadius: config.br,
             }}
           >
             {user && (
@@ -124,12 +118,12 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
                 href={`/${user.username}`} 
                 className="block w-full h-full group active:scale-95 transition-transform"
                 onContextMenu={(e) => e.preventDefault()}
-                style={{ borderRadius: 'inherit' }} // Linkにも継承
+                style={{ borderRadius: 'inherit' }}
               >
                 <div 
                   className="w-full h-full border-2 border-white shadow-md overflow-hidden bg-gray-200"
                   style={{ 
-                    borderRadius: 'inherit', // 親の形状を継承（ここが重要でした）
+                    borderRadius: 'inherit',
                     backgroundImage: `url(${user.image})`, 
                     backgroundSize: 'cover', 
                     backgroundPosition: 'center' 
