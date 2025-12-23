@@ -64,7 +64,6 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
 
   return (
     <div 
-      /* max-w-[450px] と mx-auto を追加し、PCでは中央に、スマホでは幅いっぱいに設定 */
       className="relative w-full max-w-[450px] mx-auto overflow-hidden aspect-[3/4] select-none touch-none bg-transparent"
       style={{
         WebkitTouchCallout: 'none',
@@ -120,8 +119,9 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
                 onContextMenu={(e) => e.preventDefault()}
                 style={{ borderRadius: 'inherit' }}
               >
+                {/* 修正箇所: shadow-md を削除し、border-white を border-black に変更 */}
                 <div 
-                  className="w-full h-full border-2 border-white shadow-md overflow-hidden bg-gray-200"
+                  className="w-full h-full border-2 border-black overflow-hidden bg-gray-200"
                   style={{ 
                     borderRadius: 'inherit',
                     backgroundImage: `url(${user.image})`, 
