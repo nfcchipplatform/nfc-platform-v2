@@ -18,6 +18,8 @@ interface InteractiveHandProps {
 // --- 2. 定数・ライブラリ設定 ---
 const POINT_COUNT = 100;
 const AURA_COLORS = ["#22d3ee", "#6366f1", "#f43f5e", "#f59e0b", "#10b981"];
+// ★追加: 重ねる紫色の定義 (鮮やかな紫)
+const PURPLE_AURA_COLOR = "#a855f7"; 
 
 const NAIL_CONFIG = [
   { id: "thumb",  x: 54.06, y: 63.36, w: 7.7, h: 12.4, r: -124, br: "45% 45% 20% 20%" },
@@ -55,7 +57,11 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [targetType, setTargetType] = useState<string>("BASE");
   const [auraColor, setAuraColor] = useState(AURA_COLORS[0]);
+  
+  // 通常レイヤー用の頂点
   const pointsRef = useRef(Array.from({ length: POINT_COUNT }, () => ({ x: 0.5, y: 0.5, vx: 0, vy: 0 })));
+  // ★追加: 紫レイヤー専用の独立した頂点データ
+  const purplePointsRef = useRef(Array.from({ length: POINT_COUNT }, () => ({ x: 0.5, y: 0.5, vx: 0, vy: 0 })));
 
   const phaseRef = useRef(phase);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
@@ -86,54 +92,103 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
     return () => clearInterval(cycle);
   }, [phase]);
 
-  // 3. 親指アクション（PRESSED時）の挙動
+  // 3. 親指アクション時の挙動
   useEffect(() => {
     if (phase === "PRESSED") {
-      // BASEへ強制リセット
       setTargetType("BASE");
-      // 色をランダムに変更
       const nextColor = AURA_COLORS[Math.floor(Math.random() * AURA_COLORS.length)];
       setAuraColor(nextColor);
     }
   }, [phase]);
 
-  // 4. 魂の描画エンジン
+  // 4. 魂の描画エンジン (大幅に改修)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || phase === "LOADING") return;
     const ctx = canvas.getContext("2d"); if (!ctx) return;
     let time = 0; let animationFrameId: number;
 
+    // --- ヘルパー関数: ターゲット座標計算 (共通化) ---
+    const calculateTargetPos = (type: string, t: number, currentTime: number) => {
+      if (type === "BASE") {
+        // チューニング済みBASE値
+        let r = 0.14; 
+        for (let j = 1; j <= 4; j++) r += Math.sin(t * Math.PI * (38 * j * 0.5) + currentTime * j) * (0.05 / j);
+        return {
+          x: 0.5 + Math.cos(t * Math.PI * 2 - Math.PI / 2) * r,
+          y: 0.5 + Math.sin(t * Math.PI * 2 - Math.PI / 2) * r
+        };
+      } else {
+        // 形状
+        const base = SHAPE_LIBRARY[type](t);
+        const wave = Math.sin(t * Math.PI * 12 + currentTime * 1.5) * (15 / 600);
+        return {
+          x: base.x + (base.x - 0.5) * wave,
+          y: base.y + (base.y - 0.5) * wave
+        };
+      }
+    };
+
+    // --- ヘルパー関数: スプライン曲線描画 (共通化) ---
+    const drawSpline = (points: any[], color: string) => {
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = color;
+      // 重ね合わせ効果のために合成モードを変更
+      ctx.globalCompositeOperation = "screen"; 
+
+      for (let i = 0; i <= points.length; i++) {
+        const p0 = points[i % points.length];
+        const p1 = points[(i + 1) % points.length];
+        const xc = (p0.x + p1.x) / 2 * canvas.width;
+        const yc = (p0.y + p1.y) / 2 * canvas.height;
+        if (i === 0) ctx.moveTo(xc, yc);
+        else ctx.quadraticCurveTo(p0.x * canvas.width, p0.y * canvas.height, xc, yc);
+      }
+      ctx.stroke();
+      // 合成モードを戻す
+      ctx.globalCompositeOperation = "source-over";
+    };
+
+    // --- メイン描画ループ ---
     const render = () => {
-      time += 0.04; ctx.clearRect(0, 0, canvas.width, canvas.height);
+      time += 0.04; // 基本スピード
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // === レイヤー1: 通常のモヤモヤ ===
       const pts = pointsRef.current;
       pts.forEach((p, i) => {
         const t = i / POINT_COUNT;
-        let tx, ty;
-        if (targetType === "BASE") {
-          let r = 0.14; 
-          for (let j = 1; j <= 4; j++) r += Math.sin(t * Math.PI * (38 * j * 0.5) + time * j) * (0.05 / j);
-          tx = 0.5 + Math.cos(t * Math.PI * 2 - Math.PI / 2) * r;
-          ty = 0.5 + Math.sin(t * Math.PI * 2 - Math.PI / 2) * r;
-        } else {
-          const base = SHAPE_LIBRARY[targetType](t);
-          const wave = Math.sin(t * Math.PI * 12 + time * 1.5) * (15 / 600);
-          tx = base.x + (base.x - 0.5) * wave; ty = base.y + (base.y - 0.5) * wave;
-        }
-        p.vx += (tx - p.x) * 0.08; p.vy += (ty - p.y) * 0.08;
+        // 現在のtargetTypeと標準スピード(time)で計算
+        const target = calculateTargetPos(targetType, t, time);
+        // 物理演算適用
+        p.vx += (target.x - p.x) * 0.08; p.vy += (target.y - p.y) * 0.08;
         p.vx *= 0.8; p.vy *= 0.8; p.x += p.vx; p.y += p.vy;
       });
+      drawSpline(pts, auraColor);
 
-      ctx.beginPath(); ctx.strokeStyle = auraColor; ctx.lineWidth = 2.5;
-      ctx.shadowBlur = 15; ctx.shadowColor = auraColor;
-      for (let i = 0; i <= pts.length; i++) {
-        const p0 = pts[i % pts.length], p1 = pts[(i + 1) % pts.length];
-        const xc = (p0.x + p1.x) / 2 * canvas.width, yc = (p0.y + p1.y) / 2 * canvas.height;
-        if (i === 0) ctx.moveTo(xc, yc); else ctx.quadraticCurveTo(p0.x * canvas.width, p0.y * canvas.height, xc, yc);
+      // === レイヤー2: 紫の倍速モヤモヤ (PRESSED時のみ) ===
+      if (phase === "PRESSED") {
+        const purplePts = purplePointsRef.current;
+        const fastTime = time * 2.5; // 倍速以上のスピードを設定
+
+        purplePts.forEach((p, i) => {
+          const t = i / POINT_COUNT;
+          // 強制的に"BASE"タイプとし、倍速時間(fastTime)で計算
+          const target = calculateTargetPos("BASE", t, fastTime);
+          // 物理演算適用 (紫レイヤー用)
+          p.vx += (target.x - p.x) * 0.08; p.vy += (target.y - p.y) * 0.08;
+          p.vx *= 0.8; p.vy *= 0.8; p.x += p.vx; p.y += p.vy;
+        });
+        // 紫色で重ねて描画
+        drawSpline(purplePts, PURPLE_AURA_COLOR);
       }
-      ctx.stroke();
+
       animationFrameId = requestAnimationFrame(render);
     };
+
     render();
     return () => cancelAnimationFrame(animationFrameId);
   }, [targetType, auraColor, phase]);
@@ -141,14 +196,9 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
   return (
     <div 
       className="relative w-full max-w-[450px] mx-auto overflow-hidden aspect-[3/4] select-none touch-none bg-transparent"
-      style={{
-        WebkitTouchCallout: 'none',
-        WebkitUserSelect: 'none',
-        userSelect: 'none',
-      }}
+      style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
       onContextMenu={(e) => e.preventDefault()}
     >
-      
       {/* 背景イラスト層 */}
       <div 
         className={`absolute inset-0 transition-opacity duration-700 bg-contain bg-center bg-no-repeat ${isAssetsReady ? "opacity-100" : "opacity-90"}`}
@@ -158,19 +208,16 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
         onPointerLeave={() => setPhase("STANDBY")}
       />
 
-      {/* 魂（モヤモヤ）層: 状態に応じて scale を 0.5(BASE) と 0.67(SHAPE) で切り替え */}
+      {/* 魂（モヤモヤ）層 */}
       <canvas 
         ref={canvasRef} 
         width={400} 
         height={400} 
+        // PRESSED時は scale-0.5 (BASEサイズ) に固定されるため、紫レイヤーも同じ大きさになる
         className={`absolute pointer-events-none opacity-80 transition-transform duration-700 ease-in-out ${
           targetType === "BASE" ? "scale-[0.5]" : "scale-[0.67]"
         }`} 
-        style={{
-          left: "45.59%",
-          top: "67.22%",
-          transform: `translate(-50%, -50%) ${targetType === "BASE" ? "scale(0.5)" : "scale(0.67)"}`
-        }}
+        style={{ left: "45.59%", top: "67.22%", transform: `translate(-50%, -50%) ${targetType === "BASE" ? "scale(0.5)" : "scale(0.67)"}` }}
       />
 
       {/* ネイル層 */}
@@ -181,12 +228,7 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
         return (
           <Link key={config.id} href={`/${user.username}`}
             className={`absolute block border-2 border-black overflow-hidden bg-cover bg-center group active:scale-95 transition-all duration-400 ${isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}
-            style={{ 
-              left: `${config.x}%`, top: `${config.y}%`, width: `${config.w}%`, height: `${config.h}%`, 
-              transform: `translate(-50%, -50%) rotate(${config.r}deg)`, 
-              zIndex: config.id === "thumb" ? 50 : 40, 
-              borderRadius: config.br, backgroundImage: `url(${user.image})`, WebkitTouchCallout: 'none' 
-            }}
+            style={{ left: `${config.x}%`, top: `${config.y}%`, width: `${config.w}%`, height: `${config.h}%`, transform: `translate(-50%, -50%) rotate(${config.r}deg)`, zIndex: config.id === "thumb" ? 50 : 40, borderRadius: config.br, backgroundImage: `url(${user.image})`, WebkitTouchCallout: 'none' }}
             onContextMenu={(e) => e.preventDefault()}
           >
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
