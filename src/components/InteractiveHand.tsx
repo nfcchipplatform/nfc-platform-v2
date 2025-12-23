@@ -124,11 +124,12 @@ export default function InteractiveHand({ slots }: InteractiveHandProps) {
                 href={`/${user.username}`} 
                 className="block w-full h-full group active:scale-95 transition-transform"
                 onContextMenu={(e) => e.preventDefault()}
+                style={{ borderRadius: 'inherit' }} // Linkにも継承
               >
                 <div 
                   className="w-full h-full border-2 border-white shadow-md overflow-hidden bg-gray-200"
                   style={{ 
-                    borderRadius: 'inherit', // 親の形状を継承
+                    borderRadius: 'inherit', // 親の形状を継承（ここが重要でした）
                     backgroundImage: `url(${user.image})`, 
                     backgroundSize: 'cover', 
                     backgroundPosition: 'center' 
