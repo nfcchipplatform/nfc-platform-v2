@@ -111,11 +111,11 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
     setSoulOpacity(0.8);
   }, []);
 
-  // 押し続けている時間に応じて魂の不透明度を調整（3秒かけて）
+  // 押し続けている時間に応じて魂の不透明度を調整（1.5秒かけて）
   useEffect(() => {
     if (phase !== "PRESSED" || pressedStartTime === null) return;
 
-    const FADE_DURATION = 3000; // 3秒
+    const FADE_DURATION = 1500; // 1.5秒
     const interval = setInterval(() => {
       const elapsed = Date.now() - pressedStartTime;
       const progress = Math.min(elapsed / FADE_DURATION, 1.0);
@@ -202,7 +202,8 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
                   : "scale(0.67)"
             }`,
             touchAction: "none",
-            opacity: isExploding ? 0 : soulOpacity
+            opacity: isExploding ? 0 : soulOpacity,
+            zIndex: 100 // 魂を常に一番前に表示（ネイルチップより上）
           }} 
         />
       )}
