@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { NAIL_CONFIG, NailPoint } from "../constants/soulData";
@@ -15,45 +15,90 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
   // フックからアニメーション状態を取得
   const { canvasRef, targetType, triggerExplosion, isExploding } = useSoulAnimation(phase);
 
-  // 画像プリロード（2秒ウェイトを削除、即時表示に変更）
+  // handopenの時に表示されるマイフィンガーの画像を特定（親指以外の4本の指）
+  const myFingerImages = useMemo(() => {
+    return slots
+      .slice(1) // 親指（index 0）を除外
+      .filter(s => s?.image)
+      .map(s => s!.image as string);
+  }, [slots]);
+
+  // 画像プリロード：handopenの時に必要な画像を確実に読み込む
   useEffect(() => {
-    const images = ["/handclose.png", "/handgoo.png", "/handopen.png", ...slots.filter(s => s?.image).map(s => s!.image as string)];
-    let loadedCount = 0;
-    const totalImages = images.length;
+    // 手の画像（必須）
+    const handImages = ["/handopen.png", "/handgoo.png", "/handclose.png"];
     
-    // 重要な画像（手の画像）を優先読み込み
-    const criticalImages = images.slice(0, 3);
-    const profileImages = images.slice(3);
+    // handopenの時に表示されるマイフィンガーの画像（必須）
+    // 親指以外の4本の指の画像を確実に読み込む
+    const criticalProfileImages = myFingerImages;
+    
+    // その他のプロフィール画像（親指など、後で表示されるもの）
+    const otherProfileImages = slots
+      .filter((s, idx) => idx === 0 && s?.image) // 親指のみ
+      .map(s => s!.image as string);
     
     const preload = async () => {
-      // 重要な画像を先に読み込み
-      await Promise.all(criticalImages.map((src): Promise<void> => {
+      // 1. 手の画像を読み込み
+      await Promise.all(handImages.map((src): Promise<void> => {
         return new Promise((resolve) => {
           const img = document.createElement('img');
           img.src = src;
-          img.onload = () => { loadedCount++; resolve(); };
-          img.onerror = () => { loadedCount++; resolve(); };
+          img.onload = () => resolve();
+          img.onerror = () => resolve(); // エラーでも続行
         });
       }));
       
-      // 重要な画像が読み込まれたら即座に表示開始
+      // 2. handopenの時に表示されるマイフィンガーの画像を読み込み
+      await Promise.all(criticalProfileImages.map((src): Promise<void> => {
+        return new Promise((resolve) => {
+          const img = document.createElement('img');
+          // Cloudinary最適化パラメータを追加
+          const optimizedSrc = src?.startsWith('http') 
+            ? `${src}?f_auto,q_auto,w_200` 
+            : src;
+          img.src = optimizedSrc;
+          img.onload = () => resolve();
+          img.onerror = () => resolve(); // エラーでも続行
+        });
+      }));
+      
+      // 3. 全ての重要な画像が読み込まれたら表示開始
       setIsAssetsReady(true);
       setPhase("STANDBY");
       
-      // プロフィール画像はバックグラウンドで読み込み（ブロックしない）
-      profileImages.forEach(src => {
+      // 4. その他のプロフィール画像はバックグラウンドで読み込み（ブロックしない）
+      otherProfileImages.forEach(src => {
         const img = document.createElement('img');
-        img.src = src;
-        img.onload = () => { loadedCount++; };
-        img.onerror = () => { loadedCount++; };
+        const optimizedSrc = src?.startsWith('http') 
+          ? `${src}?f_auto,q_auto,w_200` 
+          : src;
+        img.src = optimizedSrc;
       });
     };
     preload();
-  }, [slots]);
+  }, [slots, myFingerImages]);
 
-  // 指を閉じる/開く処理の共通化
-  const handlePointerDown = () => setPhase("PRESSED");
-  const handlePointerUp = () => setPhase("STANDBY");
+  // 指を閉じる/開く処理の共通化（メモ化で再レンダリングを防止）
+  const handlePointerDown = useCallback(() => setPhase("PRESSED"), []);
+  const handlePointerUp = useCallback(() => setPhase("STANDBY"), []);
+  
+  // 手の画像URLをメモ化
+  const handImageSrc = useMemo(() => {
+    if (phase === "PRESSED") return "/handgoo.png";
+    if (phase === "LOADING") return "/handopen.png";
+    return "/handclose.png";
+  }, [phase]);
+  
+  // ネイルチップの最適化されたURLをメモ化
+  const nailConfigs = useMemo(() => {
+    return NAIL_CONFIG.map((config, index) => {
+      const user = slots[index];
+      const optimizedImageUrl = user?.image?.startsWith('http') 
+        ? `${user.image}?f_auto,q_auto,w_200` 
+        : user?.image;
+      return { config, user, optimizedImageUrl };
+    });
+  }, [slots]);
 
   return (
     <div className="relative w-full max-w-[450px] mx-auto overflow-hidden aspect-[3/4] select-none touch-none bg-transparent"
@@ -63,7 +108,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       {/* 1. 背景イラスト層（next/imageで最適化） */}
       <div className="absolute inset-0" onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerLeave={handlePointerUp}>
         <Image
-          src={phase === "PRESSED" ? "/handgoo.png" : phase === "LOADING" ? "/handopen.png" : "/handclose.png"}
+          src={handImageSrc}
           alt="Hand illustration"
           fill
           className={`object-contain transition-opacity duration-700 ${isAssetsReady ? "opacity-100" : "opacity-90"}`}
@@ -95,14 +140,9 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       )}
 
       {/* 3. ネイルチップ層 */}
-      {NAIL_CONFIG.map((config: NailPoint, index: number) => {
-        const user = slots[index];
-        const isVisible = phase !== "LOADING" && (config.id !== "thumb" || phase === "PRESSED");
+      {nailConfigs.map(({ config, user, optimizedImageUrl }) => {
         if (!user) return null;
-        // Cloudinary最適化: 画像URLに最適化パラメータを追加
-        const optimizedImageUrl = user.image?.startsWith('http') 
-          ? `${user.image}?f_auto,q_auto,w_200` 
-          : user.image;
+        const isVisible = phase !== "LOADING" && (config.id !== "thumb" || phase === "PRESSED");
         
         return (
           <Link key={config.id} href={`/${user.username}`}
