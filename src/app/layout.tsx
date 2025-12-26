@@ -7,7 +7,12 @@ import "./globals.css";
 // この行を新しく追加します
 import AuthSessionProvider from "@/providers/AuthSessionProvider";
 
-const inter = Inter({ subsets: ["latin"] });
+// フォント最適化: display: 'swap'でFOUTを防止、preloadで早期読み込み
+const inter = Inter({ 
+  subsets: ["latin"],
+  display: 'swap', // フォント読み込み中もテキストを表示
+  preload: true, // フォントを事前読み込み
+});
 
 export const metadata: Metadata = {
   title: "Create Next App",

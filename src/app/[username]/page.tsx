@@ -4,7 +4,6 @@ import { PrismaClient } from "@prisma/client";
 import { trackProfileView } from "@/actions/trackView";
 import DirectLinkInterstitial from "@/components/DirectLinkInterstitial";
 import FollowButton from "@/components/FollowButton";
-// HamsaHand から InteractiveHand に変更
 import InteractiveHand from "@/components/InteractiveHand";
 import SalonFooter from "@/components/SalonFooter";
 import { getServerSession } from "next-auth";
@@ -12,6 +11,7 @@ import { authOptions } from "@/lib/auth";
 import { checkIsFollowing } from "@/actions/followActions";
 import Link from "next/link";
 import { getTheme } from "@/lib/themeConfig";
+import { Suspense } from "react";
 
 const prisma = new PrismaClient();
 
@@ -29,27 +29,51 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
   const { username } = params;
   const session = await getServerSession(authOptions);
 
-  // ユーザー情報取得
+  // ユーザー情報取得（必要なカラムのみselectで最適化）
   const user = await prisma.user.findUnique({
     where: { username: decodeURIComponent(username) },
-    include: {
-        favorites: {
-            include: { 
-              selectedUser: {
-                select: {
-                  id: true,
-                  username: true,
-                  name: true,
-                  image: true,
-                  title: true,
-                }
-              }
-            },
-            orderBy: { slotIndex: 'asc' }
+    select: {
+      id: true,
+      username: true,
+      name: true,
+      image: true,
+      title: true,
+      bio: true,
+      website: true,
+      twitter: true,
+      instagram: true,
+      directLinkEnabled: true,
+      directLinkUrl: true,
+      favorites: {
+        select: {
+          slotIndex: true,
+          selectedUser: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+              image: true,
+              title: true,
+            }
+          }
         },
-        salon: {
-            include: { theme: true }
+        orderBy: { slotIndex: 'asc' }
+      },
+      salon: {
+        select: {
+          id: true,
+          name: true,
+          logoUrl: true,
+          primaryColor: true,
+          accentColor: true,
+          theme: {
+            select: {
+              id: true,
+              name: true,
+            }
+          }
         }
+      }
     }
   });
 
@@ -66,13 +90,15 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
   // 本人確認
   const isOwner = session?.user?.id === user.id;
   
-  // 閲覧記録とフォロー状態チェックを並列実行
-  const [_, isFollowing] = await Promise.all([
-    trackProfileView(user.id).catch(err => {
-      console.error("Failed to track view:", err);
-    }),
-    session?.user?.id && !isOwner ? checkIsFollowing(user.id) : Promise.resolve(false)
-  ]);
+  // 閲覧記録を完全非同期化（fire-and-forget）- レスポンスをブロックしない
+  trackProfileView(user.id).catch(err => {
+    console.error("Failed to track view:", err);
+  });
+  
+  // フォロー状態チェックのみawait（必要最小限）
+  const isFollowing = session?.user?.id && !isOwner 
+    ? await checkIsFollowing(user.id) 
+    : false;
 
   // --- テーマ決定ロジック (常にデフォルトを使用) ---
   const themeId = "default";
@@ -87,13 +113,18 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
   });
 
   return (
-    /* py-0 px-0 に変更して画面端まで使用 */
     <div className={`min-h-screen flex flex-col items-center py-0 px-0 transition-colors duration-500 ${theme.bgClass} ${theme.textClass} ${theme.fontClass}`}>
       
-      {/* --- メインコンテンツ: Interactive Hand (画面幅いっぱい) --- */}
-      <div className="w-full z-10">
+      {/* --- メインコンテンツ: Interactive Hand (Suspenseでストリーミング) --- */}
+      <Suspense fallback={
+        <div className="w-full max-w-[450px] mx-auto aspect-[3/4] relative">
+          <div className="absolute inset-0 bg-gray-100 animate-pulse" />
+        </div>
+      }>
+        <div className="w-full z-10">
           <InteractiveHand slots={slots} />
-      </div>
+        </div>
+      </Suspense>
 
       {/* 名前以降のコンテンツは左右余白を持たせるための div で囲う */}
       <div className="w-full px-4 flex flex-col items-center">
