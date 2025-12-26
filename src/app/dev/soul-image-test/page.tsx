@@ -232,14 +232,15 @@ export default function SoulImageTestPage() {
   }, [targetType, auraColor, phase, isExploding, showImage, imageUrl]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-8">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 text-gray-800 p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8 text-cyan-400">魂の線の中に画像を表示する検証</h1>
+        <h1 className="text-3xl font-bold mb-8 text-purple-600">魂の線の中に画像を表示する検証</h1>
         
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* 左側：手の表示エリア（InteractiveHandと同じ構造） */}
-          <div className="flex-shrink-0">
-            <div className="relative w-full max-w-[450px] mx-auto overflow-hidden aspect-[3/4] select-none touch-none bg-transparent border-4 border-cyan-500/30 rounded-lg"
+          {/* 左側：手の表示エリア（InteractiveHandと同じ構造 - 本番環境と同じ） */}
+          <div className="flex-shrink-0 flex flex-col items-center">
+            {/* 本番環境と同じサイズとレイアウト */}
+            <div className="relative w-full max-w-[450px] mx-auto overflow-hidden aspect-[3/4] select-none touch-none bg-transparent"
               style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
               onContextMenu={(e) => e.preventDefault()}>
               
