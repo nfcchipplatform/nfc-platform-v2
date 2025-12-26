@@ -154,11 +154,13 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
         />
       )}
 
-      {/* 3. ネイルチップ層（handcloseが表示されるタイミングと同じ） */}
+      {/* 3. ネイルチップ層 */}
       {nailConfigs.map(({ config, user, optimizedImageUrl }) => {
         if (!user) return null;
-        // handcloseが表示されるタイミング（STANDBY）と同じタイミングでネイルを表示
-        const isVisible = phase === "STANDBY";
+        // handgoo（PRESSED）の時：5本すべて表示、handclose（STANDBY）の時：親指以外の4本のみ表示
+        const isVisible = phase === "PRESSED" 
+          ? true // handgooの時は5本すべて表示
+          : phase === "STANDBY" && config.id !== "thumb"; // handcloseの時は親指以外の4本のみ表示
         
         return (
           <Link key={config.id} href={`/${user.username}`}
