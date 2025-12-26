@@ -13,6 +13,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
   // 最初からLOADING状態でhandopenを表示（読み込みを待たない）
   const [phase, setPhase] = useState<"LOADING" | "STANDBY" | "PRESSED">("LOADING");
   const [isAssetsReady, setIsAssetsReady] = useState(false);
+  const [isHandCloseReady, setIsHandCloseReady] = useState(false); // handcloseが読み込まれたかどうか
   const [pressedStartTime, setPressedStartTime] = useState<number | null>(null);
   const [soulOpacity, setSoulOpacity] = useState(0.8);
   
@@ -52,17 +53,29 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       .map(s => s!.image as string);
     
     const preload = async () => {
-      // 1. handgooとhandcloseを読み込み（handopenは既に表示中なので待たない）
-      await Promise.all(handImages.map((src): Promise<void> => {
-        return new Promise((resolve) => {
-          const img = document.createElement('img');
-          img.src = src;
-          img.onload = () => resolve();
-          img.onerror = () => resolve(); // エラーでも続行
-        });
-      }));
+      // 1. handcloseを確実に読み込む（handcloseが表示される前に読み込み完了を確認）
+      await new Promise<void>((resolve) => {
+        const img = document.createElement('img');
+        img.src = "/handclose.png";
+        img.onload = () => {
+          setIsHandCloseReady(true); // handcloseが読み込まれたことを記録
+          resolve();
+        };
+        img.onerror = () => {
+          setIsHandCloseReady(true); // エラーでも続行
+          resolve();
+        };
+      });
       
-      // 2. handopenの時に表示されるマイフィンガーの画像を読み込み
+      // 2. handgooを読み込み（handcloseの後に読み込む）
+      await new Promise<void>((resolve) => {
+        const img = document.createElement('img');
+        img.src = "/handgoo.png";
+        img.onload = () => resolve();
+        img.onerror = () => resolve(); // エラーでも続行
+      });
+      
+      // 3. handopenの時に表示されるマイフィンガーの画像を読み込み
       await Promise.all(criticalProfileImages.map((src): Promise<void> => {
         return new Promise((resolve) => {
           const img = document.createElement('img');
@@ -76,7 +89,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
         });
       }));
       
-      // 3. 全ての重要な画像が読み込まれたら、最低1秒経過するまで待つ
+      // 4. 全ての重要な画像が読み込まれたら、最低1秒経過するまで待つ
       const elapsedTime = Date.now() - startTime;
       const remainingTime = Math.max(0, MIN_DISPLAY_TIME - elapsedTime);
       
@@ -84,11 +97,11 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
         await new Promise(resolve => setTimeout(resolve, remainingTime));
       }
       
-      // 4. ローディング完了
+      // 5. ローディング完了（handcloseが確実に読み込まれた後にSTANDBYに移行）
       setIsAssetsReady(true);
       setPhase("STANDBY");
       
-      // 5. その他のプロフィール画像はバックグラウンドで読み込み（ブロックしない）
+      // 6. その他のプロフィール画像はバックグラウンドで読み込み（ブロックしない）
       otherProfileImages.forEach(src => {
         const img = document.createElement('img');
         const optimizedSrc = src?.startsWith('http') 
@@ -212,12 +225,13 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       {nailConfigs.map(({ config, user, optimizedImageUrl }) => {
         if (!user) return null;
         // handopen（LOADING）の時は表示しない
-        // handgoo（PRESSED）の時：5本すべて表示、handclose（STANDBY）の時：親指以外の4本のみ表示
+        // handgoo（PRESSED）の時：5本すべて表示
+        // handclose（STANDBY）の時：handcloseが読み込まれた後に親指以外の4本のみ表示
         const isVisible = phase === "LOADING" 
           ? false // handopenの時は表示しない
           : phase === "PRESSED" 
             ? true // handgooの時は5本すべて表示
-            : phase === "STANDBY" && config.id !== "thumb"; // handcloseの時は親指以外の4本のみ表示
+            : phase === "STANDBY" && isHandCloseReady && config.id !== "thumb"; // handcloseが読み込まれた後に親指以外の4本のみ表示
         
         return (
           <Link key={config.id} href={`/${user.username}`}
