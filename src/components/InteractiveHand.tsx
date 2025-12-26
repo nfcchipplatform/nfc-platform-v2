@@ -124,11 +124,11 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
     setSoulOpacity(0.8);
   }, []);
 
-  // 押し続けている時間に応じて魂の不透明度を調整（1.5秒かけて）
+  // 押し続けている時間に応じて魂の不透明度を調整（0.6秒かけて）
   useEffect(() => {
     if (phase !== "PRESSED" || pressedStartTime === null) return;
 
-    const FADE_DURATION = 1500; // 1.5秒
+    const FADE_DURATION = 600; // 0.6秒
     const interval = setInterval(() => {
       const elapsed = Date.now() - pressedStartTime;
       const progress = Math.min(elapsed / FADE_DURATION, 1.0);
