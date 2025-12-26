@@ -77,7 +77,7 @@ export default function SoulImageTestPage() {
       return;
     }
     
-    const img = new Image();
+    const img = new window.Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
       imageRef.current = img;
