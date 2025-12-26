@@ -154,7 +154,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
           } ${phase === "PRESSED" ? "scale-[1.2]" : targetType === "BASE" ? "scale-[0.5]" : "scale-[0.67] cursor-pointer"}`} 
           style={{ 
             left: phase === "PRESSED" ? "50%" : "45.59%", 
-            top: phase === "PRESSED" ? "50%" : "67.22%", 
+            top: phase === "PRESSED" ? "32%" : "67.22%", 
             transform: `translate(-50%, -50%) ${
               phase === "PRESSED" 
                 ? "scale(1.2)" 
