@@ -151,11 +151,17 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
           onPointerLeave={handlePointerUp} 
           className={`absolute pointer-events-auto transition-all duration-1000 ease-in-out ${
             isExploding ? "opacity-0 -translate-y-[200px] scale-[1.5]" : "opacity-80"
-          } ${targetType === "BASE" ? "scale-[0.5]" : "scale-[0.67] cursor-pointer"}`} 
+          } ${phase === "PRESSED" ? "scale-[1.2]" : targetType === "BASE" ? "scale-[0.5]" : "scale-[0.67] cursor-pointer"}`} 
           style={{ 
-            left: "45.59%", 
-            top: "67.22%", 
-            transform: `translate(-50%, -50%) ${targetType === "BASE" ? "scale(0.5)" : "scale(0.67)"}`,
+            left: phase === "PRESSED" ? "50%" : "45.59%", 
+            top: phase === "PRESSED" ? "50%" : "67.22%", 
+            transform: `translate(-50%, -50%) ${
+              phase === "PRESSED" 
+                ? "scale(1.2)" 
+                : targetType === "BASE" 
+                  ? "scale(0.5)" 
+                  : "scale(0.67)"
+            }`,
             touchAction: "none"
           }} 
         />

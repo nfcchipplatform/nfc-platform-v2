@@ -96,7 +96,8 @@ export function useSoulAnimationWithImage(
       
       [pointsRef.current, purplePointsRef.current].forEach((pts, layer) => {
         if (layer === 1 && phase !== "PRESSED") return;
-        const currentType = layer === 1 ? "BASE" : targetType;
+        // PRESSED状態の時は常に丸型（BASE）にして大きく表示
+        const currentType = phase === "PRESSED" ? "BASE" : (layer === 1 ? "BASE" : targetType);
         const currentTime = layer === 1 ? time * 2.5 : time;
         
         pts.forEach((p, i) => {
@@ -109,9 +110,13 @@ export function useSoulAnimationWithImage(
           
           let tx, ty;
           if (currentType === "BASE") {
-            let r = 0.14;
+            // PRESSED状態の時は大きく丸型に広がる
+            const baseRadius = phase === "PRESSED" ? 0.35 : 0.14; // PRESSED時は大きく
+            let r = baseRadius;
+            // PRESSED状態の時は波を小さくして滑らかな円に近づける
+            const waveAmplitude = phase === "PRESSED" ? 0.02 : 0.05;
             for (let j = 1; j <= 4; j++) {
-              r += Math.sin((i/POINT_COUNT) * Math.PI * (38 * j * 0.5) + currentTime * j) * (0.05 / j);
+              r += Math.sin((i/POINT_COUNT) * Math.PI * (38 * j * 0.5) + currentTime * j) * (waveAmplitude / j);
             }
             tx = 0.5 + Math.cos((i/POINT_COUNT) * Math.PI * 2 - Math.PI / 2) * r;
             ty = 0.5 + Math.sin((i/POINT_COUNT) * Math.PI * 2 - Math.PI / 2) * r;
