@@ -216,7 +216,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
             }`,
             touchAction: "none",
             opacity: isExploding ? 0 : soulOpacity,
-            zIndex: 100 // 魂を常に一番前に表示（ネイルチップより上）
+            zIndex: phase === "PRESSED" ? 100 : 50 // handgooの時だけ魂を前に、handcloseの時は後ろに
           }} 
         />
       )}
@@ -239,7 +239,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
             style={{ 
               left: `${config.x}%`, top: `${config.y}%`, width: `${config.w}%`, height: `${config.h}%`, 
               transform: `translate(-50%, -50%) rotate(${config.r}deg)`, 
-              zIndex: config.id === "thumb" ? 110 : 110, // ネイルチップを魂より上に配置してクリック可能にする
+              zIndex: phase === "PRESSED" ? 50 : 110, // handgooの時は後ろに、handcloseの時は前に配置してクリック可能にする
               borderRadius: config.br,
               WebkitTouchCallout: 'none'
             }}
