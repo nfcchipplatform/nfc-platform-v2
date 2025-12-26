@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { NAIL_CONFIG, NailPoint } from "../constants/soulData";
-import { useSoulAnimation } from "../hooks/useSoulAnimation";
+import { useSoulAnimationWithImage } from "../hooks/useSoulAnimationWithImage";
+import { ImageDisplayConfig, DEFAULT_IMAGE_DISPLAY_CONFIG } from "../lib/soulImageDisplayAlgorithm";
 
 interface ProfileSummary { id: string; username: string | null; name: string | null; image: string | null; }
 
@@ -13,8 +14,14 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
   const [phase, setPhase] = useState<"LOADING" | "STANDBY" | "PRESSED">("LOADING");
   const [isAssetsReady, setIsAssetsReady] = useState(false);
   
-  // フックからアニメーション状態を取得
-  const { canvasRef, targetType, triggerExplosion, isExploding } = useSoulAnimation(phase);
+  // 画像表示設定（デフォルトで有効、画像が無い場合はフォールバック画像を表示）
+  const imageDisplayConfig: ImageDisplayConfig = useMemo(() => ({
+    ...DEFAULT_IMAGE_DISPLAY_CONFIG,
+    enabled: true, // 画像表示を有効にする
+  }), []);
+
+  // フックからアニメーション状態を取得（画像表示機能付き）
+  const { canvasRef, targetType, triggerExplosion, isExploding } = useSoulAnimationWithImage(phase, imageDisplayConfig);
 
   // handopenの時に表示されるマイフィンガーの画像を特定（親指以外の4本の指）
   const myFingerImages = useMemo(() => {
@@ -154,13 +161,16 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
         />
       )}
 
-      {/* 3. ネイルチップ層 */}
+      {/* 3. ネイルチップ層（handcloseまたはhandgooが表示されてから表示） */}
       {nailConfigs.map(({ config, user, optimizedImageUrl }) => {
         if (!user) return null;
+        // handopen（LOADING）の時は表示しない
         // handgoo（PRESSED）の時：5本すべて表示、handclose（STANDBY）の時：親指以外の4本のみ表示
-        const isVisible = phase === "PRESSED" 
-          ? true // handgooの時は5本すべて表示
-          : phase === "STANDBY" && config.id !== "thumb"; // handcloseの時は親指以外の4本のみ表示
+        const isVisible = phase === "LOADING" 
+          ? false // handopenの時は表示しない
+          : phase === "PRESSED" 
+            ? true // handgooの時は5本すべて表示
+            : phase === "STANDBY" && config.id !== "thumb"; // handcloseの時は親指以外の4本のみ表示
         
         return (
           <Link key={config.id} href={`/${user.username}`}

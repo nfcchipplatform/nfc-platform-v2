@@ -13,6 +13,24 @@ export interface SoulImageConfig {
 }
 
 /**
+ * デフォルトのフォールバック画像（画像が無い時に表示）
+ */
+const DEFAULT_FALLBACK_IMAGES: SoulImageConfig[] = [
+  { 
+    id: "fallback-1", 
+    path: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop", 
+    name: "フォールバック画像1", 
+    tags: ["fallback", "default"] 
+  },
+  { 
+    id: "fallback-2", 
+    path: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop", 
+    name: "フォールバック画像2", 
+    tags: ["fallback", "default"] 
+  },
+];
+
+/**
  * 魂の中に表示する画像のリスト
  * 画像を追加する場合は、この配列に追加してください
  */
@@ -32,11 +50,13 @@ export function getSoulImagePath(imageId: string | null): string | null {
 
 /**
  * ランダムに画像を選択する（後でアルゴリズムを変更可能）
+ * 画像が無い場合はフォールバック画像を返す
  */
 export function getRandomSoulImage(): SoulImageConfig | null {
-  if (SOUL_IMAGES.length === 0) return null;
-  const randomIndex = Math.floor(Math.random() * SOUL_IMAGES.length);
-  return SOUL_IMAGES[randomIndex];
+  const allImages = SOUL_IMAGES.length > 0 ? SOUL_IMAGES : DEFAULT_FALLBACK_IMAGES;
+  if (allImages.length === 0) return null;
+  const randomIndex = Math.floor(Math.random() * allImages.length);
+  return allImages[randomIndex];
 }
 
 /**
