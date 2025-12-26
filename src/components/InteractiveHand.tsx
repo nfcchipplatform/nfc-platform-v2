@@ -15,8 +15,6 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
   const [isAssetsReady, setIsAssetsReady] = useState(false);
   const [pressedStartTime, setPressedStartTime] = useState<number | null>(null);
   const [soulOpacity, setSoulOpacity] = useState(0.8);
-  const [handOpacity, setHandOpacity] = useState(1.0);
-  const [nailOpacity, setNailOpacity] = useState(1.0);
   
   // 画像表示設定（デフォルトで有効、画像が無い場合はフォールバック画像を表示）
   const imageDisplayConfig: ImageDisplayConfig = useMemo(() => ({
@@ -111,11 +109,9 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
     setPhase("STANDBY");
     setPressedStartTime(null);
     setSoulOpacity(0.8);
-    setHandOpacity(1.0);
-    setNailOpacity(1.0);
   }, []);
 
-  // 押し続けている時間に応じて不透明度を調整（3秒かけて）
+  // 押し続けている時間に応じて魂の不透明度を調整（3秒かけて）
   useEffect(() => {
     if (phase !== "PRESSED" || pressedStartTime === null) return;
 
@@ -124,12 +120,8 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       const elapsed = Date.now() - pressedStartTime;
       const progress = Math.min(elapsed / FADE_DURATION, 1.0);
       
-      // 魂の不透明度を0.8から1.0に上げる
+      // 魂の不透明度を0.8から1.0に上げる（handの上に濃い魂が重なる）
       setSoulOpacity(0.8 + (0.2 * progress));
-      
-      // handとネイルの不透明度を1.0から0.0に下げる
-      setHandOpacity(1.0 - progress);
-      setNailOpacity(1.0 - progress);
     }, 16); // 約60fps
 
     return () => clearInterval(interval);
@@ -178,8 +170,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
           src={handImageSrc}
           alt="Hand illustration"
           fill
-          className="object-contain transition-opacity duration-300"
-          style={{ opacity: handOpacity }}
+          className="object-contain opacity-100"
           priority
           quality={100}
           sizes="(max-width: 450px) 100vw, 450px"
@@ -227,19 +218,15 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
             ? true // handgooの時は5本すべて表示
             : phase === "STANDBY" && config.id !== "thumb"; // handcloseの時は親指以外の4本のみ表示
         
-        // 押し続けている時は不透明度を下げる
-        const currentNailOpacity = phase === "PRESSED" ? nailOpacity : (isVisible ? 1.0 : 0.0);
-        
         return (
           <Link key={config.id} href={`/${user.username}`}
-            className={`absolute block border-2 border-black overflow-hidden group active:scale-95 transition-all duration-400 ${isVisible ? "scale-100" : "scale-95 pointer-events-none"}`}
+            className={`absolute block border-2 border-black overflow-hidden group active:scale-95 transition-all duration-400 ${isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}
             style={{ 
               left: `${config.x}%`, top: `${config.y}%`, width: `${config.w}%`, height: `${config.h}%`, 
               transform: `translate(-50%, -50%) rotate(${config.r}deg)`, 
               zIndex: config.id === "thumb" ? 50 : 40, 
               borderRadius: config.br,
-              WebkitTouchCallout: 'none',
-              opacity: currentNailOpacity
+              WebkitTouchCallout: 'none'
             }}
             onContextMenu={(e) => e.preventDefault()}>
             {optimizedImageUrl && (

@@ -33,10 +33,15 @@ const DEFAULT_FALLBACK_IMAGES: SoulImageConfig[] = [
 /**
  * 魂の中に表示する画像のリスト
  * 画像を追加する場合は、この配列に追加してください
+ * 
+ * 画像ファイルを public/images/soul/ フォルダに配置したら、
+ * 以下の形式で追加してください：
+ * { id: "画像ID", path: "/images/soul/ファイル名.jpg", name: "画像名", tags: ["default"] }
  */
 export const SOUL_IMAGES: SoulImageConfig[] = [
-  // 例: { id: "1", path: "/images/soul/image1.jpg", name: "画像1", tags: ["default"] },
-  // 画像を追加する場合は、上記の形式で追加してください
+  { id: "001", path: "/images/soul/001.jpg", name: "画像001", tags: ["default"] },
+  // 新しい画像を追加する場合は、上記の形式で追加してください
+  // 例: { id: "002", path: "/images/soul/002.jpg", name: "画像002", tags: ["default"] },
 ];
 
 /**
