@@ -1,0 +1,4 @@
+# このフォルダに魂の中に表示する画像を配置してください
+# 画像ファイル名: image1.jpg, image2.jpg, ... など
+# 設定は src/lib/soulImageConfig.ts で管理してください
+

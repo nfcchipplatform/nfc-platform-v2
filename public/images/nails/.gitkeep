@@ -1,0 +1,4 @@
+# このフォルダにネイルのTOP画像を配置してください
+# 画像ファイル名: top1.jpg, top2.jpg, ... など
+# 設定は src/lib/nailImageConfig.ts で管理してください
+
