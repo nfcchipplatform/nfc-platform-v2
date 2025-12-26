@@ -27,6 +27,10 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
 
   // バックグラウンドで画像をプリロード（handopenは既に表示されているので待たない）
   useEffect(() => {
+    // handopenの表示開始時刻を記録（最低1秒表示するため）
+    const startTime = Date.now();
+    const MIN_DISPLAY_TIME = 1000; // 1秒
+    
     // 手の画像（handgooとhandcloseのみ、handopenは既に表示中）
     const handImages = ["/handgoo.png", "/handclose.png"];
     
@@ -64,12 +68,20 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
         });
       }));
       
-      // 3. 全ての重要な画像が読み込まれたらローディング完了
+      // 3. 全ての重要な画像が読み込まれたら、最低1秒経過するまで待つ
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, MIN_DISPLAY_TIME - elapsedTime);
+      
+      if (remainingTime > 0) {
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      }
+      
+      // 4. ローディング完了
       setIsAssetsReady(true);
       setIsLoading(false);
       setPhase("STANDBY");
       
-      // 4. その他のプロフィール画像はバックグラウンドで読み込み（ブロックしない）
+      // 5. その他のプロフィール画像はバックグラウンドで読み込み（ブロックしない）
       otherProfileImages.forEach(src => {
         const img = document.createElement('img');
         const optimizedSrc = src?.startsWith('http') 
