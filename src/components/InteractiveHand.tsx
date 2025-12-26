@@ -239,7 +239,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
             style={{ 
               left: `${config.x}%`, top: `${config.y}%`, width: `${config.w}%`, height: `${config.h}%`, 
               transform: `translate(-50%, -50%) rotate(${config.r}deg)`, 
-              zIndex: config.id === "thumb" ? 50 : 40, 
+              zIndex: config.id === "thumb" ? 110 : 110, // ネイルチップを魂より上に配置してクリック可能にする
               borderRadius: config.br,
               WebkitTouchCallout: 'none'
             }}
