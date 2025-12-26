@@ -52,9 +52,9 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       await Promise.all(criticalProfileImages.map((src): Promise<void> => {
         return new Promise((resolve) => {
           const img = document.createElement('img');
-          // Cloudinary最適化パラメータを追加
+          // Cloudinary最適化パラメータを追加（高解像度対応）
           const optimizedSrc = src?.startsWith('http') 
-            ? `${src}?f_auto,q_auto,w_200` 
+            ? `${src}?f_auto,q_auto,w_400,dpr_auto` 
             : src;
           img.src = optimizedSrc;
           img.onload = () => resolve();
@@ -70,7 +70,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       otherProfileImages.forEach(src => {
         const img = document.createElement('img');
         const optimizedSrc = src?.startsWith('http') 
-          ? `${src}?f_auto,q_auto,w_200` 
+          ? `${src}?f_auto,q_auto,w_400,dpr_auto` 
           : src;
         img.src = optimizedSrc;
       });
@@ -89,12 +89,13 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
     return "/handclose.png";
   }, [phase]);
   
-  // ネイルチップの最適化されたURLをメモ化
+  // ネイルチップの最適化されたURLをメモ化（高解像度対応）
   const nailConfigs = useMemo(() => {
     return NAIL_CONFIG.map((config, index) => {
       const user = slots[index];
+      // Retinaディスプレイ対応のため、幅400px + dpr_autoで高解像度を確保
       const optimizedImageUrl = user?.image?.startsWith('http') 
-        ? `${user.image}?f_auto,q_auto,w_200` 
+        ? `${user.image}?f_auto,q_auto,w_400,dpr_auto` 
         : user?.image;
       return { config, user, optimizedImageUrl };
     });
