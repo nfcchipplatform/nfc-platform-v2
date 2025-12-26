@@ -13,6 +13,10 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
   // 最初からLOADING状態でhandopenを表示（読み込みを待たない）
   const [phase, setPhase] = useState<"LOADING" | "STANDBY" | "PRESSED">("LOADING");
   const [isAssetsReady, setIsAssetsReady] = useState(false);
+  const [pressedStartTime, setPressedStartTime] = useState<number | null>(null);
+  const [soulOpacity, setSoulOpacity] = useState(0.8);
+  const [handOpacity, setHandOpacity] = useState(1.0);
+  const [nailOpacity, setNailOpacity] = useState(1.0);
   
   // 画像表示設定（デフォルトで有効、画像が無い場合はフォールバック画像を表示）
   const imageDisplayConfig: ImageDisplayConfig = useMemo(() => ({
@@ -99,8 +103,37 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
   }, [slots, myFingerImages]);
 
   // 指を閉じる/開く処理の共通化（メモ化で再レンダリングを防止）
-  const handlePointerDown = useCallback(() => setPhase("PRESSED"), []);
-  const handlePointerUp = useCallback(() => setPhase("STANDBY"), []);
+  const handlePointerDown = useCallback(() => {
+    setPhase("PRESSED");
+    setPressedStartTime(Date.now());
+  }, []);
+  const handlePointerUp = useCallback(() => {
+    setPhase("STANDBY");
+    setPressedStartTime(null);
+    setSoulOpacity(0.8);
+    setHandOpacity(1.0);
+    setNailOpacity(1.0);
+  }, []);
+
+  // 押し続けている時間に応じて不透明度を調整（3秒かけて）
+  useEffect(() => {
+    if (phase !== "PRESSED" || pressedStartTime === null) return;
+
+    const FADE_DURATION = 3000; // 3秒
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - pressedStartTime;
+      const progress = Math.min(elapsed / FADE_DURATION, 1.0);
+      
+      // 魂の不透明度を0.8から1.0に上げる
+      setSoulOpacity(0.8 + (0.2 * progress));
+      
+      // handとネイルの不透明度を1.0から0.0に下げる
+      setHandOpacity(1.0 - progress);
+      setNailOpacity(1.0 - progress);
+    }, 16); // 約60fps
+
+    return () => clearInterval(interval);
+  }, [phase, pressedStartTime]);
   
   // 手の画像URLをメモ化
   const handImageSrc = useMemo(() => {
@@ -127,15 +160,30 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       onContextMenu={(e) => e.preventDefault()}>
       
       {/* 1. 背景イラスト層（handopenを最優先で即座に表示、ぼやけないように品質を確保） */}
-      <div className="absolute inset-0" onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerLeave={handlePointerUp}>
+      <div 
+        className="absolute inset-0" 
+        onPointerDown={handlePointerDown} 
+        onPointerUp={handlePointerUp} 
+        onPointerLeave={handlePointerUp}
+        style={{ 
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none',
+          touchAction: 'none',
+          WebkitTapHighlightColor: 'transparent'
+        }}
+        onDragStart={(e) => e.preventDefault()}
+      >
         <Image
           src={handImageSrc}
           alt="Hand illustration"
           fill
-          className="object-contain opacity-100"
+          className="object-contain transition-opacity duration-300"
+          style={{ opacity: handOpacity }}
           priority
           quality={100}
           sizes="(max-width: 450px) 100vw, 450px"
+          draggable={false}
         />
       </div>
 
@@ -150,8 +198,8 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerUp} 
           className={`absolute pointer-events-auto transition-all duration-1000 ease-in-out ${
-            isExploding ? "opacity-0 -translate-y-[200px] scale-[1.5]" : "opacity-80"
-          } ${phase === "PRESSED" ? "scale-[1.2]" : targetType === "BASE" ? "scale-[0.5]" : "scale-[0.67] cursor-pointer"}`} 
+            isExploding ? "opacity-0 -translate-y-[200px] scale-[1.5]" : ""
+          } ${phase === "PRESSED" ? "scale-[1.2]" : targetType === "BASE" ? "scale-[0.5]" : "scale-[0.67] cursor-pointer"}`}
           style={{ 
             left: phase === "PRESSED" ? "50%" : "45.59%", 
             top: phase === "PRESSED" ? "32%" : "67.22%", 
@@ -162,7 +210,8 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
                   ? "scale(0.5)" 
                   : "scale(0.67)"
             }`,
-            touchAction: "none"
+            touchAction: "none",
+            opacity: isExploding ? 0 : soulOpacity
           }} 
         />
       )}
@@ -178,15 +227,19 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
             ? true // handgooの時は5本すべて表示
             : phase === "STANDBY" && config.id !== "thumb"; // handcloseの時は親指以外の4本のみ表示
         
+        // 押し続けている時は不透明度を下げる
+        const currentNailOpacity = phase === "PRESSED" ? nailOpacity : (isVisible ? 1.0 : 0.0);
+        
         return (
           <Link key={config.id} href={`/${user.username}`}
-            className={`absolute block border-2 border-black overflow-hidden group active:scale-95 transition-all duration-400 ${isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}
+            className={`absolute block border-2 border-black overflow-hidden group active:scale-95 transition-all duration-400 ${isVisible ? "scale-100" : "scale-95 pointer-events-none"}`}
             style={{ 
               left: `${config.x}%`, top: `${config.y}%`, width: `${config.w}%`, height: `${config.h}%`, 
               transform: `translate(-50%, -50%) rotate(${config.r}deg)`, 
               zIndex: config.id === "thumb" ? 50 : 40, 
               borderRadius: config.br,
-              WebkitTouchCallout: 'none' 
+              WebkitTouchCallout: 'none',
+              opacity: currentNailOpacity
             }}
             onContextMenu={(e) => e.preventDefault()}>
             {optimizedImageUrl && (
