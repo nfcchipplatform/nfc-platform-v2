@@ -12,7 +12,6 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
   // 最初からLOADING状態でhandopenを表示（読み込みを待たない）
   const [phase, setPhase] = useState<"LOADING" | "STANDBY" | "PRESSED">("LOADING");
   const [isAssetsReady, setIsAssetsReady] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   
   // フックからアニメーション状態を取得
   const { canvasRef, targetType, triggerExplosion, isExploding } = useSoulAnimation(phase);
@@ -78,7 +77,6 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       
       // 4. ローディング完了
       setIsAssetsReady(true);
-      setIsLoading(false);
       setPhase("STANDBY");
       
       // 5. その他のプロフィール画像はバックグラウンドで読み込み（ブロックしない）
@@ -121,7 +119,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
       onContextMenu={(e) => e.preventDefault()}>
       
-      {/* 1. 背景イラスト層（handopenを最優先で即座に表示） */}
+      {/* 1. 背景イラスト層（handopenを最優先で即座に表示、ぼやけないように品質を確保） */}
       <div className="absolute inset-0" onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerLeave={handlePointerUp}>
         <Image
           src={handImageSrc}
@@ -129,16 +127,10 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
           fill
           className="object-contain opacity-100"
           priority
+          quality={100}
           sizes="(max-width: 450px) 100vw, 450px"
         />
       </div>
-
-      {/* ローディングアニメーション（handopen表示後に表示） */}
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-sm z-20">
-          <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-        </div>
-      )}
 
       {/* 2. 魂（もやもや）層: 背景と同じ操作イベントを追加（アセット読み込み後に表示） */}
       {isAssetsReady && (
