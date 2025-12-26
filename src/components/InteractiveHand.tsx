@@ -9,8 +9,10 @@ import { useSoulAnimation } from "../hooks/useSoulAnimation";
 interface ProfileSummary { id: string; username: string | null; name: string | null; image: string | null; }
 
 export default function InteractiveHand({ slots }: { slots: (ProfileSummary | null)[] }) {
+  // 最初からLOADING状態でhandopenを表示（読み込みを待たない）
   const [phase, setPhase] = useState<"LOADING" | "STANDBY" | "PRESSED">("LOADING");
   const [isAssetsReady, setIsAssetsReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   // フックからアニメーション状態を取得
   const { canvasRef, targetType, triggerExplosion, isExploding } = useSoulAnimation(phase);
@@ -23,10 +25,10 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       .map(s => s!.image as string);
   }, [slots]);
 
-  // 画像プリロード：handopenの時に必要な画像を確実に読み込む
+  // バックグラウンドで画像をプリロード（handopenは既に表示されているので待たない）
   useEffect(() => {
-    // 手の画像（必須）
-    const handImages = ["/handopen.png", "/handgoo.png", "/handclose.png"];
+    // 手の画像（handgooとhandcloseのみ、handopenは既に表示中）
+    const handImages = ["/handgoo.png", "/handclose.png"];
     
     // handopenの時に表示されるマイフィンガーの画像（必須）
     // 親指以外の4本の指の画像を確実に読み込む
@@ -38,7 +40,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       .map(s => s!.image as string);
     
     const preload = async () => {
-      // 1. 手の画像を読み込み
+      // 1. handgooとhandcloseを読み込み（handopenは既に表示中なので待たない）
       await Promise.all(handImages.map((src): Promise<void> => {
         return new Promise((resolve) => {
           const img = document.createElement('img');
@@ -62,8 +64,9 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
         });
       }));
       
-      // 3. 全ての重要な画像が読み込まれたら表示開始
+      // 3. 全ての重要な画像が読み込まれたらローディング完了
       setIsAssetsReady(true);
+      setIsLoading(false);
       setPhase("STANDBY");
       
       // 4. その他のプロフィール画像はバックグラウンドで読み込み（ブロックしない）
@@ -106,17 +109,24 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
       onContextMenu={(e) => e.preventDefault()}>
       
-      {/* 1. 背景イラスト層（next/imageで最適化） */}
+      {/* 1. 背景イラスト層（handopenを最優先で即座に表示） */}
       <div className="absolute inset-0" onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerLeave={handlePointerUp}>
         <Image
           src={handImageSrc}
           alt="Hand illustration"
           fill
-          className={`object-contain transition-opacity duration-700 ${isAssetsReady ? "opacity-100" : "opacity-90"}`}
+          className="object-contain opacity-100"
           priority
           sizes="(max-width: 450px) 100vw, 450px"
         />
       </div>
+
+      {/* ローディングアニメーション（handopen表示後に表示） */}
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-sm z-20">
+          <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+        </div>
+      )}
 
       {/* 2. 魂（もやもや）層: 背景と同じ操作イベントを追加（アセット読み込み後に表示） */}
       {isAssetsReady && (
