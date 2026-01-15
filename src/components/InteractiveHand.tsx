@@ -32,7 +32,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
   const { canvasRef, targetType, triggerExplosion, isExploding, currentSoulImage, advanceImage } = useSoulAnimationWithImage(
     phase,
     imageDisplayConfig,
-    { forceShape: showLike ? "HEART" : undefined, burst: likeBurst }
+    { forceShape: showLike && phase === "PRESSED" ? "HEART" : undefined, burst: likeBurst }
   );
 
   // ネイルコレクション（5本すべて）の画像を特定
