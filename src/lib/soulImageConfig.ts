@@ -118,3 +118,10 @@ export function getSoulImagesByTag(tag: string): SoulImageConfig[] {
   return SOUL_IMAGES.filter(img => img.tags?.includes(tag));
 }
 
+/**
+ * 全ての画像を取得（フォールバック含む）
+ */
+export function getAllSoulImages(): SoulImageConfig[] {
+  return SOUL_IMAGES.length > 0 ? SOUL_IMAGES : DEFAULT_FALLBACK_IMAGES;
+}
+

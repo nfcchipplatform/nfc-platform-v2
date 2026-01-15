@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import { POINT_COUNT, AURA_COLORS, PURPLE_AURA_COLOR, SHAPE_LIBRARY } from "../constants/soulData";
 import { selectSoulImage, ImageDisplayConfig, DEFAULT_IMAGE_DISPLAY_CONFIG } from "../lib/soulImageDisplayAlgorithm";
-import { SoulImageConfig } from "../lib/soulImageConfig";
+import { SoulImageConfig, getAllSoulImages } from "../lib/soulImageConfig";
 
 export function useSoulAnimationWithImage(
   phase: "LOADING" | "STANDBY" | "PRESSED",
@@ -16,6 +16,7 @@ export function useSoulAnimationWithImage(
   const imageRef = useRef<HTMLImageElement | null>(null);
   const imageCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
   const prefetchQueueRef = useRef<SoulImageConfig[]>([]);
+  const usedImageIdsRef = useRef<Set<string>>(new Set());
   const [targetType, setTargetType] = useState<string>("BASE");
   const [auraColor, setAuraColor] = useState(AURA_COLORS[0]);
   const [isExploding, setIsExploding] = useState(false);
@@ -42,10 +43,29 @@ export function useSoulAnimationWithImage(
     img.src = image.path;
   };
 
+  const getNextUnseenImage = (): SoulImageConfig | null => {
+    const allImages = getAllSoulImages();
+    if (allImages.length === 0) return null;
+
+    // 未使用の画像を優先
+    const unused = allImages.filter(img => !usedImageIdsRef.current.has(img.id));
+    const pool = unused.length > 0 ? unused : allImages;
+
+    // 全て使い切ったらリセット
+    if (unused.length === 0) {
+      usedImageIdsRef.current.clear();
+    }
+
+    const randomIndex = Math.floor(Math.random() * pool.length);
+    const selected = pool[randomIndex];
+    usedImageIdsRef.current.add(selected.id);
+    return selected;
+  };
+
   const refillPrefetchQueue = () => {
     const prefetchCount = imageDisplayConfig.prefetchCount ?? 5;
     while (prefetchQueueRef.current.length < prefetchCount) {
-      const candidate = selectSoulImage(imageDisplayConfig, targetType, phaseRef.current);
+      const candidate = getNextUnseenImage();
       if (!candidate) break;
       prefetchQueueRef.current.push(candidate);
       preloadImage(candidate);
@@ -67,6 +87,7 @@ export function useSoulAnimationWithImage(
       imageRef.current = null;
       imageCacheRef.current.clear();
       prefetchQueueRef.current = [];
+      usedImageIdsRef.current.clear();
       setCurrentSoulImage(null);
       return;
     }
@@ -100,6 +121,33 @@ export function useSoulAnimationWithImage(
     };
     img.src = selectedImage.path;
   }, [imageDisplayConfig, targetType]);
+
+  const advanceImage = () => {
+    if (!imageDisplayConfig.enabled) return;
+    const nextImage = getNextImage();
+    if (!nextImage) return;
+    setCurrentSoulImage(nextImage);
+    currentImageIdRef.current = nextImage.path;
+
+    const cached = imageCacheRef.current.get(nextImage.path);
+    if (cached) {
+      imageRef.current = cached;
+      return;
+    }
+
+    const img = new window.Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      imageCacheRef.current.set(nextImage.path, img);
+      if (currentImageIdRef.current === nextImage.path) {
+        imageRef.current = img;
+      }
+    };
+    img.onerror = () => {
+      console.error("Failed to load soul image:", nextImage.path);
+    };
+    img.src = nextImage.path;
+  };
 
   const triggerExplosion = () => {
     if (targetType === "BASE" || isExploding) return;
@@ -251,7 +299,8 @@ export function useSoulAnimationWithImage(
     targetType, 
     triggerExplosion, 
     isExploding,
-    currentSoulImage 
+    currentSoulImage,
+    advanceImage
   };
 }
 

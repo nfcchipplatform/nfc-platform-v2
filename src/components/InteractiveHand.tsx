@@ -24,9 +24,11 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
   }), []);
 
   // フックからアニメーション状態を取得（画像表示機能付き）
-  const { canvasRef, targetType, triggerExplosion, isExploding, currentSoulImage } = useSoulAnimationWithImage(phase, imageDisplayConfig);
+  const { canvasRef, targetType, triggerExplosion, isExploding, currentSoulImage, advanceImage } = useSoulAnimationWithImage(phase, imageDisplayConfig);
   const likeTimeoutRef = useRef<number | null>(null);
   const likedThisPressRef = useRef(false);
+  const [showLike, setShowLike] = useState(false);
+  const [likeBurst, setLikeBurst] = useState(false);
 
   // ネイルコレクション（5本すべて）の画像を特定
   const nailCollectionImages = useMemo(() => {
@@ -133,6 +135,18 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       };
       const updated = [nextEntry, ...existing].slice(0, 20);
       window.localStorage.setItem(key, JSON.stringify(updated));
+
+      // LIKE演出
+      setShowLike(true);
+      setLikeBurst(true);
+      window.setTimeout(() => setShowLike(false), 1200);
+      window.setTimeout(() => setLikeBurst(false), 900);
+
+      // handcloseに戻して次の未表示画像を表示
+      setPhase("STANDBY");
+      setPressedStartTime(null);
+      setSoulOpacity(0.8);
+      advanceImage();
     }, 5000);
 
     return () => {
@@ -182,6 +196,25 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
     <div className="relative w-full max-w-[450px] mx-auto overflow-hidden aspect-[3/4] select-none touch-none bg-transparent"
       style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
       onContextMenu={(e) => e.preventDefault()}>
+      <style jsx>{`
+        .soul-burst {
+          animation: soul-burst 0.9s ease-out both;
+        }
+        .like-pop {
+          animation: like-pop 1.2s ease-out both;
+          text-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+        }
+        @keyframes soul-burst {
+          0% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; filter: drop-shadow(0 0 6px rgba(255,255,255,0.4)); }
+          70% { transform: translate(-50%, -50%) scale(1.6) rotate(8deg); opacity: 0.6; }
+          100% { transform: translate(-50%, -50%) scale(2.0) rotate(15deg); opacity: 0; }
+        }
+        @keyframes like-pop {
+          0% { transform: scale(0.8); opacity: 0; }
+          20% { transform: scale(1.1); opacity: 1; }
+          100% { transform: scale(1.2); opacity: 0; }
+        }
+      `}</style>
       
       {/* 1. 背景イラスト層（handopenを最優先で即座に表示、ぼやけないように品質を確保） */}
       <div 
@@ -222,7 +255,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
           onPointerLeave={handlePointerUp} 
           className={`absolute pointer-events-auto transition-all duration-1000 ease-in-out ${
             isExploding ? "opacity-0 -translate-y-[200px] scale-[1.5]" : ""
-          } ${phase === "PRESSED" ? "scale-[1.2]" : targetType === "BASE" ? "scale-[0.5]" : "scale-[0.67] cursor-pointer"}`}
+          } ${likeBurst ? "soul-burst" : ""} ${phase === "PRESSED" ? "scale-[1.2]" : targetType === "BASE" ? "scale-[0.5]" : "scale-[0.67] cursor-pointer"}`}
           style={{ 
             left: phase === "PRESSED" ? "50%" : "45.59%", 
             top: phase === "PRESSED" ? "32%" : "67.22%", 
@@ -238,6 +271,12 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
             zIndex: phase === "PRESSED" ? 100 : 50 // handgooの時だけ魂を前に、handcloseの時は後ろに
           }} 
         />
+      )}
+
+      {showLike && (
+        <div className="absolute inset-0 flex items-center justify-center z-[120] pointer-events-none">
+          <div className="like-pop text-white text-3xl font-bold tracking-widest">LIKE</div>
+        </div>
       )}
 
       {/* 3. ネイルチップ層（handcloseまたはhandgooが表示されてから表示） */}
