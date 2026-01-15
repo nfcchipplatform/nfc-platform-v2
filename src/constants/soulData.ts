@@ -42,13 +42,13 @@ export const SHAPE_LIBRARY: Record<string, (t: number) => { x: number, y: number
     return { x: 0.5 + Math.cos(a) * r, y: 0.5 + Math.sin(a) * r };
   },
   HEART: (t: number) => {
-    // ハート曲線 (0-1に正規化)
+    // ハート曲線（中心0,0）を他の形状と同程度のスケールに合わせる
     const a = t * Math.PI * 2;
     const x = 16 * Math.pow(Math.sin(a), 3);
     const y = 13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a);
-    // 正規化: x,y を [-18,18] 近辺から [0,1] にマップ
-    const nx = 0.5 + (x / 36);
-    const ny = 0.5 - (y / 36);
+    const scale = 0.23; // CIRCLE(0.25)より少し小さめ
+    const nx = 0.5 + (x / 16) * scale;
+    const ny = 0.5 - (y / 17) * scale;
     return { x: nx, y: ny };
   }
 };
