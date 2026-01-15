@@ -26,10 +26,9 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
   // フックからアニメーション状態を取得（画像表示機能付き）
   const { canvasRef, targetType, triggerExplosion, isExploding } = useSoulAnimationWithImage(phase, imageDisplayConfig);
 
-  // handopenの時に表示されるマイフィンガーの画像を特定（親指以外の4本の指）
-  const myFingerImages = useMemo(() => {
+  // ネイルコレクション（5本すべて）の画像を特定
+  const nailCollectionImages = useMemo(() => {
     return slots
-      .slice(1) // 親指（index 0）を除外
       .filter(s => s?.image)
       .map(s => s!.image as string);
   }, [slots]);
@@ -40,20 +39,22 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
     const startTime = Date.now();
     const MIN_DISPLAY_TIME = 1000; // 1秒
     
-    // 手の画像（handgooとhandcloseのみ、handopenは既に表示中）
-    const handImages = ["/handgoo.png", "/handclose.png"];
-    
-    // handopenの時に表示されるマイフィンガーの画像（必須）
-    // 親指以外の4本の指の画像を確実に読み込む
-    const criticalProfileImages = myFingerImages;
-    
-    // その他のプロフィール画像（親指など、後で表示されるもの）
-    const otherProfileImages = slots
-      .filter((s, idx) => idx === 0 && s?.image) // 親指のみ
-      .map(s => s!.image as string);
-    
     const preload = async () => {
-      // 1. handcloseを確実に読み込む（handcloseが表示される前に読み込み完了を確認）
+      // 1. ネイルコレクション（5本すべて）の画像を先に読み込む
+      await Promise.all(nailCollectionImages.map((src): Promise<void> => {
+        return new Promise((resolve) => {
+          const img = document.createElement('img');
+          // Cloudinary最適化パラメータを追加（高解像度対応）
+          const optimizedSrc = src?.startsWith('http') 
+            ? `${src}?f_auto,q_auto,w_400,dpr_auto` 
+            : src;
+          img.src = optimizedSrc;
+          img.onload = () => resolve();
+          img.onerror = () => resolve(); // エラーでも続行
+        });
+      }));
+      
+      // 2. handcloseを確実に読み込む（handcloseが表示される前に読み込み完了を確認）
       await new Promise<void>((resolve) => {
         const img = document.createElement('img');
         img.src = "/handclose.png";
@@ -67,27 +68,13 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
         };
       });
       
-      // 2. handgooを読み込み（handcloseの後に読み込む）
+      // 3. handgooを読み込み（handcloseの後に読み込む）
       await new Promise<void>((resolve) => {
         const img = document.createElement('img');
         img.src = "/handgoo.png";
         img.onload = () => resolve();
         img.onerror = () => resolve(); // エラーでも続行
       });
-      
-      // 3. handopenの時に表示されるマイフィンガーの画像を読み込み
-      await Promise.all(criticalProfileImages.map((src): Promise<void> => {
-        return new Promise((resolve) => {
-          const img = document.createElement('img');
-          // Cloudinary最適化パラメータを追加（高解像度対応）
-          const optimizedSrc = src?.startsWith('http') 
-            ? `${src}?f_auto,q_auto,w_400,dpr_auto` 
-            : src;
-          img.src = optimizedSrc;
-          img.onload = () => resolve();
-          img.onerror = () => resolve(); // エラーでも続行
-        });
-      }));
       
       // 4. 全ての重要な画像が読み込まれたら、最低1秒経過するまで待つ
       const elapsedTime = Date.now() - startTime;
@@ -100,18 +87,9 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       // 5. ローディング完了（handcloseが確実に読み込まれた後にSTANDBYに移行）
       setIsAssetsReady(true);
       setPhase("STANDBY");
-      
-      // 6. その他のプロフィール画像はバックグラウンドで読み込み（ブロックしない）
-      otherProfileImages.forEach(src => {
-        const img = document.createElement('img');
-        const optimizedSrc = src?.startsWith('http') 
-          ? `${src}?f_auto,q_auto,w_400,dpr_auto` 
-          : src;
-        img.src = optimizedSrc;
-      });
     };
     preload();
-  }, [slots, myFingerImages]);
+  }, [slots, nailCollectionImages]);
 
   // 指を閉じる/開く処理の共通化（メモ化で再レンダリングを防止）
   const handlePointerDown = useCallback(() => {
