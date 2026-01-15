@@ -14,10 +14,13 @@ export function useSoulAnimationWithImage(
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
+  const imageCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
+  const prefetchQueueRef = useRef<SoulImageConfig[]>([]);
   const [targetType, setTargetType] = useState<string>("BASE");
   const [auraColor, setAuraColor] = useState(AURA_COLORS[0]);
   const [isExploding, setIsExploding] = useState(false);
   const [currentSoulImage, setCurrentSoulImage] = useState<SoulImageConfig | null>(null);
+  const currentImageIdRef = useRef<string | null>(null);
 
   const pointsRef = useRef(Array.from({ length: POINT_COUNT }, () => ({ x: 0.5, y: 0.5, vx: 0, vy: 0 })));
   const purplePointsRef = useRef(Array.from({ length: POINT_COUNT }, () => ({ x: 0.5, y: 0.5, vx: 0, vy: 0 })));
@@ -25,33 +28,78 @@ export function useSoulAnimationWithImage(
 
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
-  // 画像を選択して読み込む
+  const preloadImage = (image: SoulImageConfig | null) => {
+    if (!image) return;
+    if (imageCacheRef.current.has(image.path)) return;
+    const img = new window.Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      imageCacheRef.current.set(image.path, img);
+    };
+    img.onerror = () => {
+      console.error("Failed to load soul image:", image.path);
+    };
+    img.src = image.path;
+  };
+
+  const refillPrefetchQueue = () => {
+    const prefetchCount = imageDisplayConfig.prefetchCount ?? 5;
+    while (prefetchQueueRef.current.length < prefetchCount) {
+      const candidate = selectSoulImage(imageDisplayConfig, targetType, phaseRef.current);
+      if (!candidate) break;
+      prefetchQueueRef.current.push(candidate);
+      preloadImage(candidate);
+    }
+  };
+
+  const getNextImage = (): SoulImageConfig | null => {
+    if (prefetchQueueRef.current.length === 0) {
+      refillPrefetchQueue();
+    }
+    const next = prefetchQueueRef.current.shift() || null;
+    refillPrefetchQueue();
+    return next;
+  };
+
+  // 画像を選択して読み込む（先読みキューから取得）
   useEffect(() => {
     if (!imageDisplayConfig.enabled) {
       imageRef.current = null;
+      imageCacheRef.current.clear();
+      prefetchQueueRef.current = [];
       setCurrentSoulImage(null);
       return;
     }
 
-    const selectedImage = selectSoulImage(imageDisplayConfig, targetType, phase);
+    const selectedImage = getNextImage();
     if (!selectedImage) {
-      imageRef.current = null;
       setCurrentSoulImage(null);
       return;
     }
 
     setCurrentSoulImage(selectedImage);
+    currentImageIdRef.current = selectedImage.path;
+
+    const cached = imageCacheRef.current.get(selectedImage.path);
+    if (cached) {
+      imageRef.current = cached;
+      return;
+    }
+
+    // キャッシュにない場合は読み込み開始し、前の画像を維持
     const img = new window.Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
-      imageRef.current = img;
+      imageCacheRef.current.set(selectedImage.path, img);
+      if (currentImageIdRef.current === selectedImage.path) {
+        imageRef.current = img;
+      }
     };
     img.onerror = () => {
       console.error("Failed to load soul image:", selectedImage.path);
-      imageRef.current = null;
     };
     img.src = selectedImage.path;
-  }, [imageDisplayConfig, targetType, phase]);
+  }, [imageDisplayConfig, targetType]);
 
   const triggerExplosion = () => {
     if (targetType === "BASE" || isExploding) return;

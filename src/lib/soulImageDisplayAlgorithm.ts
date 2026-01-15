@@ -18,6 +18,7 @@ export type ImageDisplayAlgorithm =
 export interface ImageDisplayConfig {
   algorithm: ImageDisplayAlgorithm;
   enabled: boolean; // 画像表示を有効にするか
+  prefetchCount?: number; // 先読みする候補数
   // 後で追加可能な設定項目
   // interval?: number; // 画像切り替えの間隔（ミリ秒）
   // transitionDuration?: number; // トランジション時間
@@ -61,5 +62,6 @@ export function selectSoulImage(
 export const DEFAULT_IMAGE_DISPLAY_CONFIG: ImageDisplayConfig = {
   algorithm: "random",
   enabled: false, // デフォルトでは無効（後で有効化可能）
+  prefetchCount: 5,
 };
 

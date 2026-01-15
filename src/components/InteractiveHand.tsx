@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { NAIL_CONFIG, NailPoint } from "../constants/soulData";
@@ -24,7 +24,9 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
   }), []);
 
   // フックからアニメーション状態を取得（画像表示機能付き）
-  const { canvasRef, targetType, triggerExplosion, isExploding } = useSoulAnimationWithImage(phase, imageDisplayConfig);
+  const { canvasRef, targetType, triggerExplosion, isExploding, currentSoulImage } = useSoulAnimationWithImage(phase, imageDisplayConfig);
+  const likeTimeoutRef = useRef<number | null>(null);
+  const likedThisPressRef = useRef(false);
 
   // ネイルコレクション（5本すべて）の画像を特定
   const nailCollectionImages = useMemo(() => {
@@ -95,12 +97,51 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
   const handlePointerDown = useCallback(() => {
     setPhase("PRESSED");
     setPressedStartTime(Date.now());
+    likedThisPressRef.current = false;
   }, []);
   const handlePointerUp = useCallback(() => {
     setPhase("STANDBY");
     setPressedStartTime(null);
     setSoulOpacity(0.8);
+    likedThisPressRef.current = false;
+    if (likeTimeoutRef.current) {
+      window.clearTimeout(likeTimeoutRef.current);
+      likeTimeoutRef.current = null;
+    }
   }, []);
+
+  // handgooを5秒保持したらLIKEを記録（過去20件のみ保持）
+  useEffect(() => {
+    if (phase !== "PRESSED" || !currentSoulImage || likedThisPressRef.current) return;
+    if (likeTimeoutRef.current) {
+      window.clearTimeout(likeTimeoutRef.current);
+    }
+
+    likeTimeoutRef.current = window.setTimeout(() => {
+      if (likedThisPressRef.current || phase !== "PRESSED") return;
+      likedThisPressRef.current = true;
+
+      if (typeof window === "undefined") return;
+      const key = "soulLikeHistory";
+      const existingRaw = window.localStorage.getItem(key);
+      const existing = existingRaw ? JSON.parse(existingRaw) : [];
+      const nextEntry = {
+        id: currentSoulImage.id,
+        path: currentSoulImage.path,
+        tags: currentSoulImage.tags ?? [],
+        likedAt: new Date().toISOString(),
+      };
+      const updated = [nextEntry, ...existing].slice(0, 20);
+      window.localStorage.setItem(key, JSON.stringify(updated));
+    }, 5000);
+
+    return () => {
+      if (likeTimeoutRef.current) {
+        window.clearTimeout(likeTimeoutRef.current);
+        likeTimeoutRef.current = null;
+      }
+    };
+  }, [phase, currentSoulImage]);
 
   // 押し続けている時間に応じて魂の不透明度を調整（0.6秒かけて）
   useEffect(() => {
