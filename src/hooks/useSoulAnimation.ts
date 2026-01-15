@@ -29,7 +29,7 @@ export function useSoulAnimation(phase: "LOADING" | "STANDBY" | "PRESSED") {
     if (phase !== "STANDBY" || isExploding) return;
     const cycle = setInterval(() => {
       if (phaseRef.current !== "STANDBY") return;
-      const keys = Object.keys(SHAPE_LIBRARY);
+      const keys = Object.keys(SHAPE_LIBRARY).filter((key) => key !== "HEART");
       setTargetType(keys[Math.floor(Math.random() * keys.length)]);
       setAuraColor(AURA_COLORS[Math.floor(Math.random() * AURA_COLORS.length)]);
       setTimeout(() => { if (phaseRef.current !== "PRESSED") setTargetType("BASE"); }, 5000);
