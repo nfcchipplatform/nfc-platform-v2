@@ -105,10 +105,15 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
     setPhase("STANDBY");
     setPressedStartTime(null);
     setSoulOpacity(0.8);
+    const shouldAdvance = !likedThisPressRef.current;
     likedThisPressRef.current = false;
     if (likeTimeoutRef.current) {
       window.clearTimeout(likeTimeoutRef.current);
       likeTimeoutRef.current = null;
+    }
+    // LIKEされなかった場合はすぐ次の画像へ
+    if (shouldAdvance) {
+      advanceImage();
     }
   }, []);
 
@@ -202,7 +207,8 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
         }
         .like-pop {
           animation: like-pop 1.2s ease-out both;
-          text-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+          text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+          opacity: 0.5;
         }
         @keyframes soul-burst {
           0% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; filter: drop-shadow(0 0 6px rgba(255,255,255,0.4)); }
