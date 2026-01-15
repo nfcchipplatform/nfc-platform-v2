@@ -84,7 +84,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
         await new Promise(resolve => setTimeout(resolve, remainingTime));
       }
       
-      // 5. ローディング完了（handcloseが確実に読み込まれた後にSTANDBYに移行）
+      // 5. ローディング完了（ネイル画像とhandcloseが確実に読み込まれた後にSTANDBYに移行）
       setIsAssetsReady(true);
       setPhase("STANDBY");
     };
