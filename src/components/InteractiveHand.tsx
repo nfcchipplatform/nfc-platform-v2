@@ -122,7 +122,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
     }
   }, []);
 
-  // handgooを5秒保持したらLIKEを記録（過去20件のみ保持）
+  // handgooを3秒保持したらLIKEを記録（過去20件のみ保持）
   useEffect(() => {
     if (phase !== "PRESSED" || !currentSoulImage || likedThisPressRef.current) return;
     if (likeTimeoutRef.current) {
@@ -157,7 +157,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       setPressedStartTime(null);
       setSoulOpacity(0.8);
       advanceImage();
-    }, 5000);
+    }, 3000);
 
     return () => {
       if (likeTimeoutRef.current) {
@@ -166,6 +166,14 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       }
     };
   }, [phase, currentSoulImage]);
+
+  // STANDBYに戻ったらハート演出をリセット
+  useEffect(() => {
+    if (phase === "STANDBY") {
+      setLikeBurst(false);
+      setShowLike(false);
+    }
+  }, [phase]);
 
   // 押し続けている時間に応じて魂の不透明度を調整（0.6秒かけて）
   useEffect(() => {
