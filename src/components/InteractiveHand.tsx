@@ -24,7 +24,11 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
   }), []);
 
   // フックからアニメーション状態を取得（画像表示機能付き）
-  const { canvasRef, targetType, triggerExplosion, isExploding, currentSoulImage, advanceImage } = useSoulAnimationWithImage(phase, imageDisplayConfig);
+  const { canvasRef, targetType, triggerExplosion, isExploding, currentSoulImage, advanceImage } = useSoulAnimationWithImage(
+    phase,
+    imageDisplayConfig,
+    { forceShape: likeBurst ? "HEART" : undefined, burst: likeBurst }
+  );
   const likeTimeoutRef = useRef<number | null>(null);
   const likedThisPressRef = useRef(false);
   const [showLike, setShowLike] = useState(false);

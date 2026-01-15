@@ -40,5 +40,15 @@ export const SHAPE_LIBRARY: Record<string, (t: number) => { x: number, y: number
     const a = t * Math.PI * 2 - Math.PI / 2;
     const r = (Math.floor(t * 10) % 2 === 0) ? 0.3 : 0.12;
     return { x: 0.5 + Math.cos(a) * r, y: 0.5 + Math.sin(a) * r };
+  },
+  HEART: (t: number) => {
+    // ハート曲線 (0-1に正規化)
+    const a = t * Math.PI * 2;
+    const x = 16 * Math.pow(Math.sin(a), 3);
+    const y = 13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a);
+    // 正規化: x,y を [-18,18] 近辺から [0,1] にマップ
+    const nx = 0.5 + (x / 36);
+    const ny = 0.5 - (y / 36);
+    return { x: nx, y: ny };
   }
 };

@@ -10,7 +10,8 @@ import { SoulImageConfig, getAllSoulImages } from "../lib/soulImageConfig";
 
 export function useSoulAnimationWithImage(
   phase: "LOADING" | "STANDBY" | "PRESSED",
-  imageDisplayConfig: ImageDisplayConfig = DEFAULT_IMAGE_DISPLAY_CONFIG
+  imageDisplayConfig: ImageDisplayConfig = DEFAULT_IMAGE_DISPLAY_CONFIG,
+  effect?: { forceShape?: string; burst?: boolean }
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -193,7 +194,8 @@ export function useSoulAnimationWithImage(
       [pointsRef.current, purplePointsRef.current].forEach((pts, layer) => {
         if (layer === 1 && phase !== "PRESSED") return;
         // PRESSED状態の時は常に丸型（BASE）にして大きく表示
-        const currentType = phase === "PRESSED" ? "BASE" : (layer === 1 ? "BASE" : targetType);
+        const baseType = phase === "PRESSED" ? "BASE" : (layer === 1 ? "BASE" : targetType);
+        const currentType = effect?.forceShape ?? baseType;
         const currentTime = layer === 1 ? time * 2.5 : time;
         
         pts.forEach((p, i) => {
@@ -202,6 +204,11 @@ export function useSoulAnimationWithImage(
             p.x += p.vx;
             p.y += p.vy;
             return;
+          }
+          if (effect?.burst && layer === 0) {
+            // 外側へ弾ける演出
+            p.vx += (p.x - 0.5) * 0.04;
+            p.vy += (p.y - 0.5) * 0.04;
           }
           
           let tx, ty;
