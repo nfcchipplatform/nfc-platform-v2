@@ -146,17 +146,18 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       const updated = [nextEntry, ...existing].slice(0, 20);
       window.localStorage.setItem(key, JSON.stringify(updated));
 
-      // LIKE演出
+      // LIKE演出（手は押された状態のまま、バースト後に戻す）
       setShowLike(true);
       setLikeBurst(true);
       window.setTimeout(() => setShowLike(false), 1200);
-      window.setTimeout(() => setLikeBurst(false), 900);
-
-      // handcloseに戻して次の未表示画像を表示
-      setPhase("STANDBY");
-      setPressedStartTime(null);
-      setSoulOpacity(0.8);
-      advanceImage();
+      window.setTimeout(() => {
+        setLikeBurst(false);
+        // バーストが終わったらhandcloseに戻して次の未表示画像へ
+        setPhase("STANDBY");
+        setPressedStartTime(null);
+        setSoulOpacity(0.8);
+        advanceImage();
+      }, 900);
     }, 3000);
 
     return () => {
