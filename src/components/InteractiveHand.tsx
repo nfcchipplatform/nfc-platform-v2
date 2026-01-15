@@ -29,10 +29,11 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
   const [likeBurst, setLikeBurst] = useState(false);
 
   // フックからアニメーション状態を取得（画像表示機能付き）
+  const isLikeAnimating = showLike || likeBurst;
   const { canvasRef, targetType, triggerExplosion, isExploding, currentSoulImage, advanceImage } = useSoulAnimationWithImage(
     phase,
     imageDisplayConfig,
-    { forceShape: showLike && phase === "PRESSED" ? "HEART" : undefined, burst: likeBurst }
+    { forceShape: showLike ? "HEART" : undefined, burst: likeBurst }
   );
 
   // ネイルコレクション（5本すべて）の画像を特定
@@ -107,6 +108,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
     likedThisPressRef.current = false;
   }, []);
   const handlePointerUp = useCallback(() => {
+    if (likedThisPressRef.current || isLikeAnimating) return;
     setPhase("STANDBY");
     setPressedStartTime(null);
     setSoulOpacity(0.8);
@@ -120,7 +122,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
     if (shouldAdvance) {
       advanceImage();
     }
-  }, []);
+  }, [isLikeAnimating]);
 
   // handgooを3秒保持したらLIKEを記録（過去20件のみ保持）
   useEffect(() => {
