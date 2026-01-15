@@ -46,7 +46,7 @@ export const SHAPE_LIBRARY: Record<string, (t: number) => { x: number, y: number
     const a = t * Math.PI * 2;
     const x = 16 * Math.pow(Math.sin(a), 3);
     const y = 13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a);
-    const scale = 0.18; // CIRCLE(0.25)より小さめにして余白を抑える
+    const scale = 0.16; // CIRCLE(0.25)より小さめにして余白を抑える
     const nx = 0.5 + (x / 16) * scale;
     const ny = 0.5 - (y / 17) * scale;
     return { x: nx, y: ny };

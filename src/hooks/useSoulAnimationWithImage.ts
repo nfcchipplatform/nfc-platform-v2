@@ -178,6 +178,13 @@ export function useSoulAnimationWithImage(
     } 
   }, [phase]);
 
+  // ハートが残っている場合は通常形状に戻す
+  useEffect(() => {
+    if (targetType === "HEART" && effect?.forceShape !== "HEART") {
+      setTargetType("BASE");
+    }
+  }, [targetType, effect?.forceShape]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || phase === "LOADING") return;

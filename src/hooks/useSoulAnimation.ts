@@ -39,6 +39,13 @@ export function useSoulAnimation(phase: "LOADING" | "STANDBY" | "PRESSED") {
 
   useEffect(() => { if (phase === "PRESSED") { setTargetType("BASE"); setAuraColor(AURA_COLORS[Math.floor(Math.random() * AURA_COLORS.length)]); } }, [phase]);
 
+  // ハートが残っている場合は通常形状に戻す
+  useEffect(() => {
+    if (targetType === "HEART") {
+      setTargetType("BASE");
+    }
+  }, [targetType]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || phase === "LOADING") return;
