@@ -271,8 +271,9 @@ export function useSoulAnimationWithImage(
 
     const scheduleNext = () => {
       if (cancelled || phaseRef.current !== "PRESSED" || pauseSwitch) return;
-      advanceImage();
       const p = Math.min(1, Math.max(0, progressRef.current));
+      if (p >= 0.5) return;
+      advanceImage();
       const base = 333; // ~3 images/sec
       const min = 260; // gentle acceleration
       const interval = Math.max(min, Math.round(base - p * 70));
