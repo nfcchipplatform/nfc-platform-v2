@@ -25,6 +25,7 @@ export function useHandInteraction({
   const [pressProgress, setPressProgress] = useState(0);
   const [chargeFail, setChargeFail] = useState(false);
   const [showLike, setShowLike] = useState(false);
+  const [showResonance, setShowResonance] = useState(false);
   const [likeBurst, setLikeBurst] = useState(false);
   const [likeLocked, setLikeLocked] = useState(false);
   const [likeConfirmedAt, setLikeConfirmedAt] = useState<number | null>(null);
@@ -52,7 +53,7 @@ export function useHandInteraction({
     setSoulOpacity(0.8);
     setPressProgress(0);
     pressProgressRef.current = 0;
-    const shouldAdvance = pressProgressRef.current < 0.2 && !likedThisPressRef.current;
+    const shouldAdvance = !likedThisPressRef.current;
     likedThisPressRef.current = false;
     if (likeTimeoutRef.current) {
       window.clearTimeout(likeTimeoutRef.current);
@@ -88,11 +89,13 @@ export function useHandInteraction({
       const updated = [nextEntry, ...existing].slice(0, 20);
       window.localStorage.setItem(key, JSON.stringify(updated));
 
-      setShowLike(true);
-      window.setTimeout(() => setShowLike(false), 1200);
+      setShowLike(false);
+      setShowResonance(true);
       const burstDelay = 500;
       const burstDuration = 900;
+
       window.setTimeout(() => {
+        setShowResonance(false);
         setLikeBurst(true);
         onLikeExplosion?.();
         window.setTimeout(() => {
@@ -103,6 +106,7 @@ export function useHandInteraction({
           setPressProgress(0);
           pressProgressRef.current = 0;
           setLikeLocked(false);
+          onAdvanceImage();
         }, burstDuration);
       }, burstDelay);
     }, likeDuration);
@@ -119,6 +123,7 @@ export function useHandInteraction({
     if (phase === "STANDBY") {
       setLikeBurst(false);
       setShowLike(false);
+      setShowResonance(false);
       setLikeLocked(false);
     }
   }, [phase]);
@@ -145,6 +150,7 @@ export function useHandInteraction({
     pressProgress,
     chargeFail,
     showLike,
+    showResonance,
     likeBurst,
     likeLocked,
     likeConfirmedAt,

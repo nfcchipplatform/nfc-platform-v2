@@ -65,6 +65,7 @@ export default function InteractiveHand({
     pressProgress,
     chargeFail,
     showLike,
+    showResonance,
     likeBurst,
     likeLocked,
     likeConfirmedAt,
@@ -301,6 +302,38 @@ export default function InteractiveHand({
           }}
         />
       )}
+      {phase === "PRESSED" && isAssetsReady && (
+        <div
+          className="absolute pointer-events-none z-[125]"
+          style={{
+            left: "45.59%",
+            top: "67.22%",
+            transform: "translate(-50%, -50%)",
+          }}
+        >
+          <svg width="120" height="120">
+            <circle
+              cx="60"
+              cy="60"
+              r="48"
+              stroke="rgba(255,255,255,0.15)"
+              strokeWidth="3"
+              fill="none"
+            />
+            <circle
+              cx="60"
+              cy="60"
+              r="48"
+              stroke="rgba(255,255,255,0.85)"
+              strokeWidth="3"
+              fill="none"
+              strokeDasharray={`${Math.round(2 * Math.PI * 48 * pressProgress)} ${Math.round(2 * Math.PI * 48)}`}
+              strokeLinecap="round"
+              transform="rotate(-90 60 60)"
+            />
+          </svg>
+        </div>
+      )}
       {showGuide && isAssetsReady && (
         <div className="absolute inset-0 pointer-events-none z-[140]">
           <div
@@ -329,6 +362,13 @@ export default function InteractiveHand({
       {showLike && (
         <div className="absolute inset-0 flex items-center justify-center z-[120] pointer-events-none">
           <div className="like-pop text-white text-3xl font-bold tracking-widest">LIKE</div>
+        </div>
+      )}
+      {showResonance && (
+        <div className="absolute inset-0 flex items-center justify-center z-[130] pointer-events-none">
+          <div className="text-white text-lg font-black tracking-widest bg-black/40 px-4 py-2 rounded-full">
+            RESONANCE COMPLETE
+          </div>
         </div>
       )}
 
