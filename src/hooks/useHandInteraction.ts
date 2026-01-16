@@ -43,7 +43,7 @@ export function useHandInteraction({
 
   const handlePointerUp = useCallback(() => {
     if (likedThisPressRef.current) return;
-    if (pressProgressRef.current < 1) {
+    if (pressProgressRef.current >= 0.2 && pressProgressRef.current < 1) {
       setChargeFail(true);
       window.setTimeout(() => setChargeFail(false), 220);
     }
@@ -52,7 +52,7 @@ export function useHandInteraction({
     setSoulOpacity(0.8);
     setPressProgress(0);
     pressProgressRef.current = 0;
-    const shouldAdvance = !likedThisPressRef.current;
+    const shouldAdvance = pressProgressRef.current < 0.2 && !likedThisPressRef.current;
     likedThisPressRef.current = false;
     if (likeTimeoutRef.current) {
       window.clearTimeout(likeTimeoutRef.current);
@@ -103,7 +103,6 @@ export function useHandInteraction({
           setPressProgress(0);
           pressProgressRef.current = 0;
           setLikeLocked(false);
-          onAdvanceImage();
         }, burstDuration);
       }, burstDelay);
     }, likeDuration);

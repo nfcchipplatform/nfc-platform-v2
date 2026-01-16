@@ -22,6 +22,7 @@ type SoulCanvasProps = {
   likeBurst: boolean;
   likeLocked: boolean;
   likeConfirmedAt: number | null;
+  pauseSwitch: boolean;
   onPointerDown: () => void;
   onPointerUp: () => void;
   onPointerLeave: () => void;
@@ -44,6 +45,7 @@ const SoulCanvas = memo(
         onPointerUp,
         onPointerLeave,
         onImageChange,
+        pauseSwitch,
       },
       ref
     ) => {
@@ -69,7 +71,8 @@ const SoulCanvas = memo(
         overlayImages,
         0.1,
         flashAlpha,
-        likeLocked
+        likeLocked,
+        pauseSwitch
       );
 
       useImperativeHandle(ref, () => ({ advanceImage, triggerExplosion }), [advanceImage, triggerExplosion]);
@@ -80,7 +83,7 @@ const SoulCanvas = memo(
 
       useEffect(() => {
         if (!likeConfirmedAt) return;
-        setFlashAlpha(0.9);
+        setFlashAlpha(1);
         const timeout = window.setTimeout(() => setFlashAlpha(0), 200);
         return () => window.clearTimeout(timeout);
       }, [likeConfirmedAt]);

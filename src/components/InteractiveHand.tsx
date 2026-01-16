@@ -284,6 +284,7 @@ export default function InteractiveHand({
         likeBurst={likeBurst}
         likeLocked={likeLocked}
         likeConfirmedAt={likeConfirmedAt}
+        pauseSwitch={phase === "PRESSED"}
         onPointerDown={handlePointerDownWithGuide}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
