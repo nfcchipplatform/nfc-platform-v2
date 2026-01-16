@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import { POINT_COUNT, AURA_COLORS, PURPLE_AURA_COLOR, SHAPE_LIBRARY } from "../constants/soulData";
 import { selectSoulImage, ImageDisplayConfig, DEFAULT_IMAGE_DISPLAY_CONFIG } from "../lib/soulImageDisplayAlgorithm";
-import { SoulImageConfig, SoulImageFilter, filterSoulImages } from "../lib/soulImageConfig";
+import { SoulImageConfig, SoulImageFilter, filterSoulImages, getAllSoulImages } from "../lib/soulImageConfig";
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
   const normalized = hex.replace("#", "");
@@ -104,7 +104,10 @@ export function useSoulAnimationWithImage(
 
   const getNextUnseenImage = (): SoulImageConfig | null => {
     const allImages = filterSoulImages(filters);
-    if (allImages.length === 0) return null;
+    if (allImages.length === 0) {
+      const fallback = getAllSoulImages();
+      return fallback[0] ?? null;
+    }
 
     // 未使用の画像を優先
     const unused = allImages.filter(img => !usedImageIdsRef.current.has(img.id));

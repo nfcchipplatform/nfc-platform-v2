@@ -1,9 +1,9 @@
 ﻿// src/lib/soulImageConfig.ts
-// 鬲ゅ・荳ｭ縺ｫ陦ｨ遉ｺ縺吶ｋ逕ｻ蜒上・險ｭ螳壹→邂｡逅・
+// Soul image configuration and helpers.
 
 /**
- * 鬲ゅ・荳ｭ縺ｫ陦ｨ遉ｺ縺吶ｋ逕ｻ蜒上・險ｭ螳・
- * 逕ｻ蜒上・ public/images/soul/ 繝輔か繝ｫ繝縺ｫ驟咲ｽｮ縺励※縺上□縺輔＞
+ * Soul image config.
+ * Place files under public/images/soul/.
  */
 export interface SoulImageConfig {
   id: string;
@@ -20,20 +20,14 @@ export type SoulImageFilter = {
 };
 
 /**
- * 繝・ヵ繧ｩ繝ｫ繝医・繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ逕ｻ蜒擾ｼ育判蜒上′辟｡縺・凾縺ｫ陦ｨ遉ｺ・・
+ * Local fallback (keeps rendering within /images/soul).
  */
 const DEFAULT_FALLBACK_IMAGES: SoulImageConfig[] = [
-  { 
-    id: "fallback-1", 
-    path: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop", 
-    name: "繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ逕ｻ蜒・", 
-    tags: ["fallback", "default"] 
-  },
-  { 
-    id: "fallback-2", 
-    path: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop", 
-    name: "繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ逕ｻ蜒・", 
-    tags: ["fallback", "default"] 
+  {
+    id: "fallback-001",
+    path: "/images/soul/001.jpg",
+    name: "Fallback Soul",
+    tags: ["fallback", "default"],
   },
 ];
 
