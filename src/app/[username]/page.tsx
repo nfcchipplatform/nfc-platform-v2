@@ -81,14 +81,14 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
     return <div className="flex items-center justify-center min-h-screen">ユーザーが見つかりません</div>;
   }
   
-  // ダイレクトリンク処理
-  const fromInterstitial = searchParams.from === 'interstitial';
-  if (user.directLinkEnabled && user.directLinkUrl && !fromInterstitial) {
-    return <DirectLinkInterstitial redirectUrl={user.directLinkUrl} profileUrl={`/${user.username}`} />;
-  }
-
   // 本人確認
   const isOwner = session?.user?.id === user.id;
+
+  // ダイレクトリンク処理（本人は常にスキップ）
+  const fromInterstitial = searchParams.from === 'interstitial';
+  if (!isOwner && user.directLinkEnabled && user.directLinkUrl && !fromInterstitial) {
+    return <DirectLinkInterstitial redirectUrl={user.directLinkUrl} profileUrl={`/${user.username}`} />;
+  }
   
   // 閲覧記録を完全非同期化（fire-and-forget）- レスポンスをブロックしない
   trackProfileView(user.id).catch(err => {

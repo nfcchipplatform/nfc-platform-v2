@@ -271,13 +271,13 @@ export function useSoulAnimationWithImage(
       if (cancelled || phaseRef.current !== "PRESSED") return;
       advanceImage();
       const p = Math.min(1, Math.max(0, progressRef.current));
-      const base = 250; // ~4 images/sec
-      const min = 160; // slight acceleration
-      const interval = Math.max(min, Math.round(base - p * 90));
+      const base = 333; // ~3 images/sec
+      const min = 260; // gentle acceleration
+      const interval = Math.max(min, Math.round(base - p * 70));
       timer = window.setTimeout(scheduleNext, interval);
     };
 
-    timer = window.setTimeout(scheduleNext, 250);
+    timer = window.setTimeout(scheduleNext, 333);
     return () => {
       cancelled = true;
       if (timer) window.clearTimeout(timer);
@@ -393,7 +393,7 @@ export function useSoulAnimationWithImage(
           }
 
           const now = performance.now();
-          const fadeMs = 100;
+          const fadeMs = 200;
           const sinceSwitch = now - lastImageSwitchRef.current;
           const prevAlpha = Math.max(0, 1 - Math.min(1, sinceSwitch / fadeMs));
 
