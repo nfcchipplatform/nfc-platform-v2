@@ -26,6 +26,8 @@ export function useHandInteraction({
   const [chargeFail, setChargeFail] = useState(false);
   const [showLike, setShowLike] = useState(false);
   const [likeBurst, setLikeBurst] = useState(false);
+  const [likeLocked, setLikeLocked] = useState(false);
+  const [likeConfirmedAt, setLikeConfirmedAt] = useState<number | null>(null);
 
   const pressProgressRef = useRef(0);
   const likeTimeoutRef = useRef<number | null>(null);
@@ -70,6 +72,8 @@ export function useHandInteraction({
     likeTimeoutRef.current = window.setTimeout(() => {
       if (likedThisPressRef.current || phase !== "PRESSED") return;
       likedThisPressRef.current = true;
+      setLikeLocked(true);
+      setLikeConfirmedAt(Date.now());
 
       if (typeof window === "undefined") return;
       const key = "soulLikeHistory";
@@ -85,18 +89,23 @@ export function useHandInteraction({
       window.localStorage.setItem(key, JSON.stringify(updated));
 
       setShowLike(true);
-      setLikeBurst(true);
-      onLikeExplosion?.();
       window.setTimeout(() => setShowLike(false), 1200);
+      const burstDelay = 500;
+      const burstDuration = 900;
       window.setTimeout(() => {
-        setLikeBurst(false);
-        setPhase("STANDBY");
-        setPressedStartTime(null);
-        setSoulOpacity(0.8);
-        setPressProgress(0);
-        pressProgressRef.current = 0;
-        onAdvanceImage();
-      }, 900);
+        setLikeBurst(true);
+        onLikeExplosion?.();
+        window.setTimeout(() => {
+          setLikeBurst(false);
+          setPhase("STANDBY");
+          setPressedStartTime(null);
+          setSoulOpacity(0.8);
+          setPressProgress(0);
+          pressProgressRef.current = 0;
+          setLikeLocked(false);
+          onAdvanceImage();
+        }, burstDuration);
+      }, burstDelay);
     }, likeDuration);
 
     return () => {
@@ -111,6 +120,7 @@ export function useHandInteraction({
     if (phase === "STANDBY") {
       setLikeBurst(false);
       setShowLike(false);
+      setLikeLocked(false);
     }
   }, [phase]);
 
@@ -137,6 +147,8 @@ export function useHandInteraction({
     chargeFail,
     showLike,
     likeBurst,
+    likeLocked,
+    likeConfirmedAt,
     handlePointerDown,
     handlePointerUp,
   };

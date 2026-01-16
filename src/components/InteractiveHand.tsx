@@ -66,6 +66,8 @@ export default function InteractiveHand({
     chargeFail,
     showLike,
     likeBurst,
+    likeLocked,
+    likeConfirmedAt,
     handlePointerDown,
     handlePointerUp,
   } = useHandInteraction({
@@ -280,6 +282,8 @@ export default function InteractiveHand({
         auraColor={auraAccentColor}
         soulOpacity={soulOpacity}
         likeBurst={likeBurst}
+        likeLocked={likeLocked}
+        likeConfirmedAt={likeConfirmedAt}
         onPointerDown={handlePointerDownWithGuide}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}

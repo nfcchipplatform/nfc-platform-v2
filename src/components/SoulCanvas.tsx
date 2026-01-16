@@ -20,6 +20,8 @@ type SoulCanvasProps = {
   auraColor: string;
   soulOpacity: number;
   likeBurst: boolean;
+  likeLocked: boolean;
+  likeConfirmedAt: number | null;
   onPointerDown: () => void;
   onPointerUp: () => void;
   onPointerLeave: () => void;
@@ -46,6 +48,7 @@ const SoulCanvas = memo(
       ref
     ) => {
       const [overlayImages, setOverlayImages] = useState<HTMLImageElement[]>([]);
+      const [flashAlpha, setFlashAlpha] = useState(0);
       const overlayLoadIdRef = useRef(0);
 
       const [canvasSize, setCanvasSize] = useState(400);
@@ -64,7 +67,9 @@ const SoulCanvas = memo(
         progress,
         auraColor,
         overlayImages,
-        0.1
+        0.1,
+        flashAlpha,
+        likeLocked
       );
 
       useImperativeHandle(ref, () => ({ advanceImage, triggerExplosion }), [advanceImage, triggerExplosion]);
@@ -72,6 +77,13 @@ const SoulCanvas = memo(
       useEffect(() => {
         onImageChange?.(currentSoulImage);
       }, [currentSoulImage, onImageChange]);
+
+      useEffect(() => {
+        if (!likeConfirmedAt) return;
+        setFlashAlpha(0.9);
+        const timeout = window.setTimeout(() => setFlashAlpha(0), 200);
+        return () => window.clearTimeout(timeout);
+      }, [likeConfirmedAt]);
 
       useEffect(() => {
         const canvas = canvasRef.current;

@@ -63,7 +63,9 @@ export function useSoulAnimationWithImage(
   progress: number = 0,
   auraOverride?: string,
   overlayImages: HTMLImageElement[] = [],
-  overlayOpacity: number = 0.1
+  overlayOpacity: number = 0.1,
+  flashAlpha: number = 0,
+  pauseSwitch: boolean = false
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -263,12 +265,12 @@ export function useSoulAnimationWithImage(
   }, [phase, auraOverride]);
 
   useEffect(() => {
-    if (phase !== "PRESSED" || !imageDisplayConfig.enabled) return;
+    if (phase !== "PRESSED" || !imageDisplayConfig.enabled || pauseSwitch) return;
     let timer: number | null = null;
     let cancelled = false;
 
     const scheduleNext = () => {
-      if (cancelled || phaseRef.current !== "PRESSED") return;
+      if (cancelled || phaseRef.current !== "PRESSED" || pauseSwitch) return;
       advanceImage();
       const p = Math.min(1, Math.max(0, progressRef.current));
       const base = 333; // ~3 images/sec
@@ -282,7 +284,7 @@ export function useSoulAnimationWithImage(
       cancelled = true;
       if (timer) window.clearTimeout(timer);
     };
-  }, [phase, imageDisplayConfig.enabled, advanceImage]);
+  }, [phase, imageDisplayConfig.enabled, advanceImage, pauseSwitch]);
 
   // ハートが残っている場合は通常形状に戻す
   useEffect(() => {
@@ -407,6 +409,14 @@ export function useSoulAnimationWithImage(
               imgSize,
               imgSize
             );
+            ctx.restore();
+          }
+
+          if (flashAlpha > 0) {
+            ctx.save();
+            ctx.globalAlpha = flashAlpha;
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(centerX - imgSize / 2, centerY - imgSize / 2, imgSize, imgSize);
             ctx.restore();
           }
 
