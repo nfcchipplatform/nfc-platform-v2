@@ -61,7 +61,9 @@ export function useSoulAnimationWithImage(
   effect?: { forceShape?: string; burst?: boolean },
   filters: SoulImageFilter = {},
   progress: number = 0,
-  auraOverride?: string
+  auraOverride?: string,
+  overlayImages: HTMLImageElement[] = [],
+  overlayOpacity: number = 0.1
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -336,6 +338,22 @@ export function useSoulAnimationWithImage(
           const imgSize = Math.min(canvas.width, canvas.height) * 0.8;
           
           ctx.globalCompositeOperation = "source-over";
+
+          if (overlayImages.length > 0) {
+            ctx.save();
+            ctx.globalAlpha = overlayOpacity;
+            overlayImages.forEach((img) => {
+              ctx.drawImage(
+                img,
+                centerX - imgSize / 2,
+                centerY - imgSize / 2,
+                imgSize,
+                imgSize
+              );
+            });
+            ctx.restore();
+          }
+
           ctx.drawImage(
             imageRef.current,
             centerX - imgSize / 2,

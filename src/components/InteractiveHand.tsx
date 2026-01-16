@@ -67,6 +67,26 @@ export default function InteractiveHand({ slots, themeId = "default" }: { slots:
     onAdvanceImage: handleAdvanceImage,
     onLikeExplosion: handleTriggerExplosion,
   });
+  const [showGuide, setShowGuide] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const key = "soulGuideDismissed";
+    const dismissed = window.localStorage.getItem(key);
+    setShowGuide(!dismissed);
+  }, []);
+
+  const handleGuideDismiss = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("soulGuideDismissed", "1");
+    }
+    setShowGuide(false);
+  }, []);
+
+  const handlePointerDownWithGuide = useCallback(() => {
+    handleGuideDismiss();
+    handlePointerDown();
+  }, [handleGuideDismiss, handlePointerDown]);
 
   // ネイルコレクション（5本すべて）の画像を特定
   const nailCollectionImages = useMemo(() => {
@@ -169,6 +189,9 @@ export default function InteractiveHand({ slots, themeId = "default" }: { slots:
         .charge-fail {
           animation: charge-fail 0.18s ease-in-out;
         }
+        .guide-pulse {
+          animation: guide-pulse 1.6s ease-in-out infinite;
+        }
         @keyframes soul-burst {
           0% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; filter: drop-shadow(0 0 6px rgba(255,255,255,0.4)); }
           70% { transform: translate(-50%, -50%) scale(1.6) rotate(8deg); opacity: 0.6; }
@@ -186,12 +209,17 @@ export default function InteractiveHand({ slots, themeId = "default" }: { slots:
           75% { transform: translateX(-1px); }
           100% { transform: translateX(0); }
         }
+        @keyframes guide-pulse {
+          0% { transform: scale(0.95); opacity: 0.5; }
+          50% { transform: scale(1.08); opacity: 0.9; }
+          100% { transform: scale(0.95); opacity: 0.5; }
+        }
       `}</style>
       
       {/* 1. 背景イラスト層（handopenを最優先で即座に表示、ぼやけないように品質を確保） */}
       <div 
         className="absolute inset-0" 
-        onPointerDown={handlePointerDown} 
+        onPointerDown={handlePointerDownWithGuide} 
         onPointerUp={handlePointerUp} 
         onPointerLeave={handlePointerUp}
         style={{ 
@@ -226,11 +254,35 @@ export default function InteractiveHand({ slots, themeId = "default" }: { slots:
         auraColor={auraAccentColor}
         soulOpacity={soulOpacity}
         likeBurst={likeBurst}
-        onPointerDown={handlePointerDown}
+        onPointerDown={handlePointerDownWithGuide}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
         onImageChange={setCurrentSoulImage}
       />
+      {showGuide && isAssetsReady && (
+        <div className="absolute inset-0 pointer-events-none z-[140]">
+          <div
+            className="absolute rounded-full border border-white/60 guide-pulse"
+            style={{
+              left: phase === "PRESSED" ? "50%" : "45.59%",
+              top: phase === "PRESSED" ? "32%" : "67.22%",
+              width: "120px",
+              height: "120px",
+              transform: "translate(-50%, -50%)",
+            }}
+          />
+          <div
+            className="absolute text-white/80 text-[10px] tracking-wide px-2 py-1 rounded-full bg-black/30"
+            style={{
+              left: "60%",
+              top: "60%",
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            長押しで共鳴（Like）
+          </div>
+        </div>
+      )}
 
       {showLike && (
         <div className="absolute inset-0 flex items-center justify-center z-[120] pointer-events-none">

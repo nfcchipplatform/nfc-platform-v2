@@ -36,7 +36,7 @@ export const THEMES: Record<string, ThemeConfig> = {
     name: "Cyber Neon",
     bgClass: "bg-gray-900",
     textClass: "text-gray-100",
-    accentColor: "#00FF9D", // Neon Green
+    accentColor: "#00FFD1", // High-contrast Neon
     pattern: "grid",
     fontClass: "font-mono",
     elementColors: [
@@ -53,7 +53,7 @@ export const THEMES: Record<string, ThemeConfig> = {
     name: "Zen Garden",
     bgClass: "bg-[#F5F5F0]", // 和紙っぽい色
     textClass: "text-stone-800",
-    accentColor: "#57534E", // Stone
+    accentColor: "#0EA5E9", // High-contrast Sky
     pattern: "none",
     fontClass: "font-serif",
     elementColors: [

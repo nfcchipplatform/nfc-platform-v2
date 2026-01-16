@@ -1,7 +1,7 @@
 // src/components/SoulCanvas.tsx
 "use client";
 
-import { forwardRef, memo, useEffect, useImperativeHandle } from "react";
+import { forwardRef, memo, useEffect, useMemo, useRef, useState, useImperativeHandle } from "react";
 import { ImageDisplayConfig } from "../lib/soulImageDisplayAlgorithm";
 import { SoulImageConfig, SoulImageFilter } from "../lib/soulImageConfig";
 import { useSoulAnimationWithImage } from "../hooks/useSoulAnimationWithImage";
@@ -45,6 +45,10 @@ const SoulCanvas = memo(
       },
       ref
     ) => {
+      const [overlayImages, setOverlayImages] = useState<HTMLImageElement[]>([]);
+      const overlayLoadIdRef = useRef(0);
+
+      const [canvasSize, setCanvasSize] = useState(400);
       const {
         canvasRef,
         targetType,
@@ -58,7 +62,9 @@ const SoulCanvas = memo(
         { burst: likeBurst },
         filters,
         progress,
-        auraColor
+        auraColor,
+        overlayImages,
+        0.1
       );
 
       useImperativeHandle(ref, () => ({ advanceImage, triggerExplosion }), [advanceImage, triggerExplosion]);
@@ -67,13 +73,72 @@ const SoulCanvas = memo(
         onImageChange?.(currentSoulImage);
       }, [currentSoulImage, onImageChange]);
 
+      useEffect(() => {
+        const canvas = canvasRef.current;
+        const parent = canvas?.parentElement;
+        if (!canvas || !parent) return;
+
+        const updateSize = () => {
+          const rect = parent.getBoundingClientRect();
+          const size = Math.max(240, Math.round(Math.min(rect.width, rect.height)));
+          setCanvasSize(size);
+        };
+
+        updateSize();
+        const observer = new ResizeObserver(updateSize);
+        observer.observe(parent);
+        return () => observer.disconnect();
+      }, [canvasRef]);
+
+      const likedPaths = useMemo(() => {
+        if (typeof window === "undefined") return [];
+        try {
+          const raw = window.localStorage.getItem("soulLikeHistory");
+          const parsed = raw ? JSON.parse(raw) : [];
+          return parsed
+            .map((entry: { path?: string }) => entry?.path)
+            .filter((path: string | undefined): path is string => Boolean(path));
+        } catch {
+          return [];
+        }
+      }, [currentSoulImage?.id]);
+
+      useEffect(() => {
+        if (likedPaths.length === 0) {
+          setOverlayImages([]);
+          return;
+        }
+        const loadId = overlayLoadIdRef.current + 1;
+        overlayLoadIdRef.current = loadId;
+
+        const unique = Array.from(new Set(likedPaths));
+        const count = Math.min(unique.length, Math.random() < 0.5 ? 1 : 2);
+        const shuffled = unique.sort(() => Math.random() - 0.5).slice(0, count);
+
+        const loaders = shuffled.map(
+          (path) =>
+            new Promise<HTMLImageElement>((resolve) => {
+              const img = new window.Image();
+              img.crossOrigin = "anonymous";
+              img.onload = () => resolve(img);
+              img.onerror = () => resolve(img);
+              img.src = path;
+            })
+        );
+
+        Promise.all(loaders).then((images) => {
+          if (overlayLoadIdRef.current !== loadId) return;
+          setOverlayImages(images);
+        });
+      }, [likedPaths]);
+
       if (!isAssetsReady) return null;
 
       return (
         <canvas
           ref={canvasRef}
-          width={400}
-          height={400}
+          width={canvasSize}
+          height={canvasSize}
           onClick={triggerExplosion}
           onPointerDown={onPointerDown}
           onPointerUp={onPointerUp}
@@ -92,6 +157,8 @@ const SoulCanvas = memo(
             touchAction: "none",
             opacity: isExploding ? 0 : soulOpacity,
             zIndex: phase === "PRESSED" ? 100 : 50,
+            width: `${canvasSize}px`,
+            height: `${canvasSize}px`,
           }}
         />
       );
