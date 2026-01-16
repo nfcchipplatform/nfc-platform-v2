@@ -73,7 +73,6 @@ const SoulCanvas = memo(
         overlayImages,
         0.1,
         flashAlpha,
-        likeLocked,
         pauseSwitch
       );
 
