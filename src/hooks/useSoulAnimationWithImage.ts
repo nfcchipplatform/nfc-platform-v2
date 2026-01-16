@@ -67,6 +67,8 @@ export function useSoulAnimationWithImage(
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
+  const previousImageRef = useRef<HTMLImageElement | null>(null);
+  const lastImageSwitchRef = useRef(0);
   const imageCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
   const prefetchQueueRef = useRef<SoulImageConfig[]>([]);
   const usedImageIdsRef = useRef<Set<string>>(new Set());
@@ -79,8 +81,10 @@ export function useSoulAnimationWithImage(
   const pointsRef = useRef(Array.from({ length: POINT_COUNT }, () => ({ x: 0.5, y: 0.5, vx: 0, vy: 0 })));
   const purplePointsRef = useRef(Array.from({ length: POINT_COUNT }, () => ({ x: 0.5, y: 0.5, vx: 0, vy: 0 })));
   const phaseRef = useRef(phase);
+  const progressRef = useRef(progress);
 
   useEffect(() => { phaseRef.current = phase; }, [phase]);
+  useEffect(() => { progressRef.current = progress; }, [progress]);
 
   useEffect(() => {
     if (auraOverride) {
@@ -100,6 +104,15 @@ export function useSoulAnimationWithImage(
       console.error("Failed to load soul image:", image.path);
     };
     img.src = image.path;
+  };
+
+  const swapImageWithFade = (img: HTMLImageElement | null) => {
+    if (!img) return;
+    if (imageRef.current && imageRef.current !== img) {
+      previousImageRef.current = imageRef.current;
+      lastImageSwitchRef.current = performance.now();
+    }
+    imageRef.current = img;
   };
 
   const getNextUnseenImage = (): SoulImageConfig | null => {
@@ -165,7 +178,7 @@ export function useSoulAnimationWithImage(
 
     const cached = imageCacheRef.current.get(selectedImage.path);
     if (cached) {
-      imageRef.current = cached;
+      swapImageWithFade(cached);
       return;
     }
 
@@ -175,7 +188,7 @@ export function useSoulAnimationWithImage(
     img.onload = () => {
       imageCacheRef.current.set(selectedImage.path, img);
       if (currentImageIdRef.current === selectedImage.path) {
-        imageRef.current = img;
+        swapImageWithFade(img);
       }
     };
     img.onerror = () => {
@@ -199,7 +212,7 @@ export function useSoulAnimationWithImage(
 
     const cached = imageCacheRef.current.get(nextImage.path);
     if (cached) {
-      imageRef.current = cached;
+      swapImageWithFade(cached);
       return;
     }
 
@@ -208,7 +221,7 @@ export function useSoulAnimationWithImage(
     img.onload = () => {
       imageCacheRef.current.set(nextImage.path, img);
       if (currentImageIdRef.current === nextImage.path) {
-        imageRef.current = img;
+        swapImageWithFade(img);
       }
     };
     img.onerror = () => {
@@ -248,6 +261,28 @@ export function useSoulAnimationWithImage(
       }
     } 
   }, [phase, auraOverride]);
+
+  useEffect(() => {
+    if (phase !== "PRESSED" || !imageDisplayConfig.enabled) return;
+    let timer: number | null = null;
+    let cancelled = false;
+
+    const scheduleNext = () => {
+      if (cancelled || phaseRef.current !== "PRESSED") return;
+      advanceImage();
+      const p = Math.min(1, Math.max(0, progressRef.current));
+      const base = 250; // ~4 images/sec
+      const min = 160; // slight acceleration
+      const interval = Math.max(min, Math.round(base - p * 90));
+      timer = window.setTimeout(scheduleNext, interval);
+    };
+
+    timer = window.setTimeout(scheduleNext, 250);
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [phase, imageDisplayConfig.enabled, advanceImage]);
 
   // ハートが残っている場合は通常形状に戻す
   useEffect(() => {
@@ -354,6 +389,24 @@ export function useSoulAnimationWithImage(
                 imgSize
               );
             });
+            ctx.restore();
+          }
+
+          const now = performance.now();
+          const fadeMs = 100;
+          const sinceSwitch = now - lastImageSwitchRef.current;
+          const prevAlpha = Math.max(0, 1 - Math.min(1, sinceSwitch / fadeMs));
+
+          if (previousImageRef.current && prevAlpha > 0) {
+            ctx.save();
+            ctx.globalAlpha = prevAlpha;
+            ctx.drawImage(
+              previousImageRef.current,
+              centerX - imgSize / 2,
+              centerY - imgSize / 2,
+              imgSize,
+              imgSize
+            );
             ctx.restore();
           }
 
