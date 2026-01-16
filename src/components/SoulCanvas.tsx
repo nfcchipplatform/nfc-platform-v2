@@ -41,6 +41,8 @@ const SoulCanvas = memo(
         auraColor,
         soulOpacity,
         likeBurst,
+        likeLocked,
+        likeConfirmedAt,
         onPointerDown,
         onPointerUp,
         onPointerLeave,
