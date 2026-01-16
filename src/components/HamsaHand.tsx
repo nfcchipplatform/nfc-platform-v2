@@ -121,23 +121,12 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
 
             {/* アイコン本体 - blanknail.pngを使用したマイネイル表示 */}
             <div 
-              className={`relative ${fingerShape.width} ${fingerShape.height} transition-transform hover:scale-110 active:scale-95 overflow-hidden ${isThumb ? "scale-[1.2]" : ""}`}
+              className={`relative ${fingerShape.width} ${fingerShape.height} transition-transform hover:scale-110 active:scale-95 overflow-hidden`}
               style={{
-                border: isThumb ? `2px solid ${displayAccentColor}` : '1px solid rgba(255,255,255,0.25)',
-                boxShadow: isThumb
-                  ? `0 0 18px ${displayAccentColor}88, 0 0 36px ${displayAccentColor}55`
-                  : '0 0 8px rgba(255,255,255,0.15)',
+                border: '1px solid rgba(255,255,255,0.25)',
+                boxShadow: '0 0 8px rgba(255,255,255,0.15)',
               }}
             >
-              {isThumb && (
-                <div
-                  className="absolute inset-0 rounded-full z-0"
-                  style={{
-                    boxShadow: `0 0 22px ${displayAccentColor}99, 0 0 44px ${displayAccentColor}55`,
-                    border: `2px solid ${displayAccentColor}99`,
-                  }}
-                />
-              )}
               {user ? (
                 <Link
                   href={isThumb ? "/dashboard/profile" : `/${user.username}`}

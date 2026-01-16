@@ -104,10 +104,11 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
   const themeId = "default";
   const theme = getTheme(themeId);
 
-  // 五大元素スロットの整形
+  // 五大元素スロットの整形（親指は常にオーナー）
   const slots = Array(5).fill(null);
+  slots[0] = user;
   user.favorites.forEach(fav => {
-      if (fav.slotIndex >= 0 && fav.slotIndex < 5) {
+      if (fav.slotIndex >= 1 && fav.slotIndex <= 4) {
           slots[fav.slotIndex] = fav.selectedUser;
       }
   });

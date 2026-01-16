@@ -54,7 +54,22 @@ export default function DashboardClient() {
         if (res.ok) {
           const data = await res.json();
           // 取得したデータをセット
-          setTop5Slots(data.top5Slots || [null, null, null, null, null]); 
+          const apiSlots = (data.top5Slots || [null, null, null, null, null]) as (ProfileSummary | null)[];
+          const slots: (ProfileSummary | null)[] = [null, null, null, null, null];
+          if (session.user) {
+            slots[0] = {
+              id: session.user.id,
+              username: (session.user as any).username ?? null,
+              name: session.user.name || null,
+              image: session.user.image || null,
+              title: (session.user as any).title ?? null,
+            };
+          }
+          // favorites are mapped only to slots[1..4]
+          for (let i = 1; i <= 4; i += 1) {
+            slots[i] = apiSlots[i] ?? null;
+          }
+          setTop5Slots(slots);
         }
       } catch (error) {
         console.error("Fetch error:", error);
