@@ -94,10 +94,10 @@ const SoulCanvas = memo(
         if (typeof window === "undefined") return [];
         try {
           const raw = window.localStorage.getItem("soulLikeHistory");
-          const parsed = raw ? JSON.parse(raw) : [];
+          const parsed = (raw ? JSON.parse(raw) : []) as Array<{ path?: unknown }>;
           return parsed
-            .map((entry: { path?: string }) => entry?.path)
-            .filter((path: string | undefined): path is string => Boolean(path));
+            .map((entry) => (typeof entry?.path === "string" ? entry.path : null))
+            .filter((path): path is string => Boolean(path));
         } catch {
           return [];
         }
