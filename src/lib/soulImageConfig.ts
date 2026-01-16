@@ -1,4 +1,4 @@
-﻿// src/lib/soulImageConfig.ts
+// src/lib/soulImageConfig.ts
 // Soul image configuration and helpers.
 
 /**
@@ -7,11 +7,11 @@
  */
 export interface SoulImageConfig {
   id: string;
-  path: string; // /images/soul/xxx.jpg 縺ｮ蠖｢蠑・
-  name?: string; // 逕ｻ蜒上・蜷榊燕・育ｮ｡逅・畑・・
-  tags?: string[]; // 繧ｿ繧ｰ・亥ｾ後〒繝輔ぅ繝ｫ繧ｿ繝ｪ繝ｳ繧ｰ縺ｪ縺ｩ縺ｫ菴ｿ逕ｨ蜿ｯ閭ｽ・・
-  elementTags?: string[]; // 謖・・繧ｨ繝ｬ繝｡繝ｳ繝茨ｼ井ｾ・ ["Fire", "Wind"]・・
-  userIds?: string[]; // 迚ｹ螳壹Θ繝ｼ繧ｶ繝ｼ縺ｫ邏舌▼縺丞ｴ蜷医・繝ｦ繝ｼ繧ｶ繝ｼID
+  path: string; // /images/soul/xxx.jpg
+  name?: string; // Image name (optional)
+  tags?: string[]; // Tags for filtering
+  elementTags?: string[]; // Element tags (e.g. ["Fire", "Wind"])
+  userIds?: string[]; // Specific user IDs (optional)
 }
 
 export type SoulImageFilter = {
@@ -39,59 +39,59 @@ const DEFAULT_FALLBACK_IMAGES: SoulImageConfig[] = [
  */
 export const SOUL_IMAGES: SoulImageConfig[] = [
   { id: "001", path: "/images/soul/001.jpg", name: "Healing Soft Light", tags: ["Fire", "healing", "calm"] },
-  { id: "002", path: "/images/soul/002.jpg", name: "Calm Water Blue", tags: ["Wind", "calm", "nature"] },
-  { id: "003", path: "/images/soul/003.jpg", name: "Quiet Forest Green", tags: ["Void", "nature", "healing"] },
-  { id: "004", path: "/images/soul/004.jpg", name: "Peaceful Ocean", tags: ["Earth", "calm", "nature"] },
-  { id: "005", path: "/images/soul/005.jpg", name: "Warm Sunrise Sky", tags: ["Water", "warm", "energy"] },
+  { id: "002", path: "/images/soul/002.jpg", name: "Calm Water Blue", tags: ["Fire", "calm", "nature"] },
+  { id: "003", path: "/images/soul/003.jpg", name: "Quiet Forest Green", tags: ["Fire", "nature", "healing"] },
+  { id: "004", path: "/images/soul/004.jpg", name: "Peaceful Ocean", tags: ["Fire", "calm", "nature"] },
+  { id: "005", path: "/images/soul/005.jpg", name: "Warm Sunrise Sky", tags: ["Fire", "warm", "energy"] },
   { id: "006", path: "/images/soul/006.jpg", name: "Meditation Zen", tags: ["Fire", "healing", "calm"] },
-  { id: "007", path: "/images/soul/007.jpg", name: "Relaxing Tea", tags: ["Wind", "calm", "healing"] },
-  { id: "008", path: "/images/soul/008.jpg", name: "Spa Relaxation", tags: ["Void", "healing", "calm"] },
-  { id: "009", path: "/images/soul/009.jpg", name: "Soft Pastel", tags: ["Earth", "calm", "creative"] },
-  { id: "010", path: "/images/soul/010.jpg", name: "Nature Flowers", tags: ["Water", "nature", "healing"] },
-  { id: "011", path: "/images/soul/011.jpg", name: "Bright Energy", tags: ["Fire", "energy"] },
+  { id: "007", path: "/images/soul/007.jpg", name: "Relaxing Tea", tags: ["Fire", "calm", "healing"] },
+  { id: "008", path: "/images/soul/008.jpg", name: "Spa Relaxation", tags: ["Fire", "healing", "calm"] },
+  { id: "009", path: "/images/soul/009.jpg", name: "Soft Pastel", tags: ["Fire", "calm", "creative"] },
+  { id: "010", path: "/images/soul/010.jpg", name: "Nature Flowers", tags: ["Fire", "nature", "healing"] },
+  { id: "011", path: "/images/soul/011.jpg", name: "Bright Energy", tags: ["Wind", "energy"] },
   { id: "012", path: "/images/soul/012.jpg", name: "Neon City Night", tags: ["Wind", "energy", "urban"] },
-  { id: "013", path: "/images/soul/013.jpg", name: "Runner Sport", tags: ["Void", "energy", "active"] },
-  { id: "014", path: "/images/soul/014.jpg", name: "Dance Stage", tags: ["Earth", "energy", "joy"] },
-  { id: "015", path: "/images/soul/015.jpg", name: "Festival Lights", tags: ["Water", "energy", "joy"] },
-  { id: "016", path: "/images/soul/016.jpg", name: "Fire Flame", tags: ["Fire", "energy"] },
+  { id: "013", path: "/images/soul/013.jpg", name: "Runner Sport", tags: ["Wind", "energy", "active"] },
+  { id: "014", path: "/images/soul/014.jpg", name: "Dance Stage", tags: ["Wind", "energy", "joy"] },
+  { id: "015", path: "/images/soul/015.jpg", name: "Festival Lights", tags: ["Wind", "energy", "joy"] },
+  { id: "016", path: "/images/soul/016.jpg", name: "Fire Flame", tags: ["Wind", "energy"] },
   { id: "017", path: "/images/soul/017.jpg", name: "Mountain Adventure", tags: ["Wind", "energy", "nature"] },
-  { id: "018", path: "/images/soul/018.jpg", name: "Travel Adventure", tags: ["Void", "energy"] },
-  { id: "019", path: "/images/soul/019.jpg", name: "Sport Training", tags: ["Earth", "energy", "focus"] },
-  { id: "020", path: "/images/soul/020.jpg", name: "Orange Sunset", tags: ["Water", "warm", "energy"] },
-  { id: "021", path: "/images/soul/021.jpg", name: "Focus Workspace", tags: ["Fire", "focus", "creative"] },
-  { id: "022", path: "/images/soul/022.jpg", name: "Books Library", tags: ["Wind", "focus", "calm"] },
+  { id: "018", path: "/images/soul/018.jpg", name: "Travel Adventure", tags: ["Wind", "energy"] },
+  { id: "019", path: "/images/soul/019.jpg", name: "Sport Training", tags: ["Wind", "energy", "focus"] },
+  { id: "020", path: "/images/soul/020.jpg", name: "Orange Sunset", tags: ["Wind", "warm", "energy"] },
+  { id: "021", path: "/images/soul/021.jpg", name: "Focus Workspace", tags: ["Void", "focus", "creative"] },
+  { id: "022", path: "/images/soul/022.jpg", name: "Books Library", tags: ["Void", "focus", "calm"] },
   { id: "023", path: "/images/soul/023.jpg", name: "Art Painting", tags: ["Void", "creative"] },
-  { id: "024", path: "/images/soul/024.jpg", name: "Music Guitar", tags: ["Earth", "creative", "joy"] },
-  { id: "025", path: "/images/soul/025.jpg", name: "Coding Laptop", tags: ["Water", "focus", "creative"] },
-  { id: "026", path: "/images/soul/026.jpg", name: "Coffee Work", tags: ["Fire", "focus"] },
-  { id: "027", path: "/images/soul/027.jpg", name: "Minimal Design", tags: ["Wind", "focus", "calm"] },
+  { id: "024", path: "/images/soul/024.jpg", name: "Music Guitar", tags: ["Void", "creative", "joy"] },
+  { id: "025", path: "/images/soul/025.jpg", name: "Coding Laptop", tags: ["Void", "focus", "creative"] },
+  { id: "026", path: "/images/soul/026.jpg", name: "Coffee Work", tags: ["Void", "focus"] },
+  { id: "027", path: "/images/soul/027.jpg", name: "Minimal Design", tags: ["Void", "focus", "calm"] },
   { id: "028", path: "/images/soul/028.jpg", name: "Notebook Writing", tags: ["Void", "focus"] },
-  { id: "029", path: "/images/soul/029.jpg", name: "Photography Camera", tags: ["Earth", "creative"] },
-  { id: "030", path: "/images/soul/030.jpg", name: "Handmade Craft", tags: ["Water", "creative"] },
-  { id: "031", path: "/images/soul/031.jpg", name: "Smile Portrait Woman", tags: ["Fire", "joy", "social"] },
-  { id: "032", path: "/images/soul/032.jpg", name: "Portrait Man", tags: ["Wind", "social"] },
-  { id: "033", path: "/images/soul/033.jpg", name: "Friends Laugh", tags: ["Void", "joy", "social"] },
+  { id: "029", path: "/images/soul/029.jpg", name: "Photography Camera", tags: ["Void", "creative"] },
+  { id: "030", path: "/images/soul/030.jpg", name: "Handmade Craft", tags: ["Void", "creative"] },
+  { id: "031", path: "/images/soul/031.jpg", name: "Smile Portrait Woman", tags: ["Earth", "joy", "social"] },
+  { id: "032", path: "/images/soul/032.jpg", name: "Portrait Man", tags: ["Earth", "social"] },
+  { id: "033", path: "/images/soul/033.jpg", name: "Friends Laugh", tags: ["Earth", "joy", "social"] },
   { id: "034", path: "/images/soul/034.jpg", name: "Family Happy", tags: ["Earth", "joy", "social"] },
-  { id: "035", path: "/images/soul/035.jpg", name: "Couple Love", tags: ["Water", "joy", "social"] },
-  { id: "036", path: "/images/soul/036.jpg", name: "Happy Celebration", tags: ["Fire", "joy"] },
-  { id: "037", path: "/images/soul/037.jpg", name: "Children Play", tags: ["Wind", "joy", "social"] },
-  { id: "038", path: "/images/soul/038.jpg", name: "People Smile", tags: ["Void", "joy", "social"] },
+  { id: "035", path: "/images/soul/035.jpg", name: "Couple Love", tags: ["Earth", "joy", "social"] },
+  { id: "036", path: "/images/soul/036.jpg", name: "Happy Celebration", tags: ["Earth", "joy"] },
+  { id: "037", path: "/images/soul/037.jpg", name: "Children Play", tags: ["Earth", "joy", "social"] },
+  { id: "038", path: "/images/soul/038.jpg", name: "People Smile", tags: ["Earth", "joy", "social"] },
   { id: "039", path: "/images/soul/039.jpg", name: "Crowd Festival", tags: ["Earth", "joy", "energy"] },
-  { id: "040", path: "/images/soul/040.jpg", name: "Success Achievement", tags: ["Water", "energy", "joy"] },
-  { id: "041", path: "/images/soul/041.jpg", name: "Moon Night", tags: ["Fire", "mystery", "calm"] },
-  { id: "042", path: "/images/soul/042.jpg", name: "Stars Sky", tags: ["Wind", "mystery", "calm"] },
-  { id: "043", path: "/images/soul/043.jpg", name: "Galaxy Space", tags: ["Void", "mystery"] },
-  { id: "044", path: "/images/soul/044.jpg", name: "Rain Window", tags: ["Earth", "calm", "mystery"] },
+  { id: "040", path: "/images/soul/040.jpg", name: "Success Achievement", tags: ["Earth", "energy", "joy"] },
+  { id: "041", path: "/images/soul/041.jpg", name: "Moon Night", tags: ["Water", "mystery", "calm"] },
+  { id: "042", path: "/images/soul/042.jpg", name: "Stars Sky", tags: ["Water", "mystery", "calm"] },
+  { id: "043", path: "/images/soul/043.jpg", name: "Galaxy Space", tags: ["Water", "mystery"] },
+  { id: "044", path: "/images/soul/044.jpg", name: "Rain Window", tags: ["Water", "calm", "mystery"] },
   { id: "045", path: "/images/soul/045.jpg", name: "Storm Clouds", tags: ["Water", "mystery", "energy"] },
-  { id: "046", path: "/images/soul/046.jpg", name: "Fog Forest", tags: ["Fire", "mystery", "nature"] },
-  { id: "047", path: "/images/soul/047.jpg", name: "Desert Sand", tags: ["Wind", "nature", "energy"] },
-  { id: "048", path: "/images/soul/048.jpg", name: "Snow Winter", tags: ["Void", "calm", "nature"] },
-  { id: "049", path: "/images/soul/049.jpg", name: "Autumn Leaves", tags: ["Earth", "nature", "warm"] },
+  { id: "046", path: "/images/soul/046.jpg", name: "Fog Forest", tags: ["Water", "mystery", "nature"] },
+  { id: "047", path: "/images/soul/047.jpg", name: "Desert Sand", tags: ["Water", "nature", "energy"] },
+  { id: "048", path: "/images/soul/048.jpg", name: "Snow Winter", tags: ["Water", "calm", "nature"] },
+  { id: "049", path: "/images/soul/049.jpg", name: "Autumn Leaves", tags: ["Water", "nature", "warm"] },
   { id: "050", path: "/images/soul/050.jpg", name: "Spring Flowers", tags: ["Water", "nature", "healing"] },
 ];
 
 /**
- * 逕ｻ蜒上・繝代せ繧貞叙蠕励☆繧具ｼ育判蜒上′蟄伜惠縺励↑縺・ｴ蜷医・繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ蜃ｦ逅・ｼ・
+ * Get image path by ID.
  */
 export function getSoulImagePath(imageId: string | null): string | null {
   if (!imageId) return null;
@@ -100,8 +100,7 @@ export function getSoulImagePath(imageId: string | null): string | null {
 }
 
 /**
- * 繝ｩ繝ｳ繝繝縺ｫ逕ｻ蜒上ｒ驕ｸ謚槭☆繧具ｼ亥ｾ後〒繧｢繝ｫ繧ｴ繝ｪ繧ｺ繝繧貞､画峩蜿ｯ閭ｽ・・
- * 逕ｻ蜒上′辟｡縺・ｴ蜷医・繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ逕ｻ蜒上ｒ霑斐☆
+ * Pick a random image (with fallback).
  */
 export function getRandomSoulImage(): SoulImageConfig | null {
   const allImages = SOUL_IMAGES.length > 0 ? SOUL_IMAGES : DEFAULT_FALLBACK_IMAGES;
@@ -111,14 +110,14 @@ export function getRandomSoulImage(): SoulImageConfig | null {
 }
 
 /**
- * 繧ｿ繧ｰ縺ｧ繝輔ぅ繝ｫ繧ｿ繝ｪ繝ｳ繧ｰ縺励※逕ｻ蜒上ｒ蜿門ｾ・
+ * Filter images by tag.
  */
 export function getSoulImagesByTag(tag: string): SoulImageConfig[] {
   return SOUL_IMAGES.filter(img => img.tags?.includes(tag));
 }
 
 /**
- * 蜈ｨ縺ｦ縺ｮ逕ｻ蜒上ｒ蜿門ｾ暦ｼ医ヵ繧ｩ繝ｼ繝ｫ繝舌ャ繧ｯ蜷ｫ繧・・
+ * Get all images (with fallback).
  */
 export function getAllSoulImages(): SoulImageConfig[] {
   return SOUL_IMAGES.length > 0 ? SOUL_IMAGES : DEFAULT_FALLBACK_IMAGES;

@@ -105,6 +105,7 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
       {/* --- 5本の指 --- */}
       {ELEMENT_LABELS.map((el, index) => {
         const user = slots[index];
+        const isThumb = index === 0;
         // テーマから各指の色設定を取得
         const colorClass = theme.elementColors[index] || "border-gray-200 bg-gray-50 text-gray-500";
 
@@ -118,12 +119,21 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
 
             {/* アイコン本体 - blanknail.pngを使用したマイネイル表示 */}
             <div 
-              className={`relative ${fingerShape.width} ${fingerShape.height} transition-transform hover:scale-110 active:scale-95 overflow-hidden`}
+              className={`relative ${fingerShape.width} ${fingerShape.height} transition-transform hover:scale-110 active:scale-95 overflow-hidden ${isThumb ? "scale-[1.15]" : ""}`}
               style={{
                 border: 'none',
                 boxShadow: 'none',
               }}
             >
+              {isThumb && (
+                <div
+                  className="absolute inset-0 rounded-full z-0"
+                  style={{
+                    boxShadow: `0 0 16px ${displayAccentColor}55, 0 0 32px ${displayAccentColor}33`,
+                    border: `1px solid ${displayAccentColor}66`,
+                  }}
+                />
+              )}
               {user ? (
                 <Link href={`/${user.username}`} className="block w-full h-full relative group">
                   {/* レイヤー1: blanknail.pngをベースとして配置（光沢や質感を含む） */}

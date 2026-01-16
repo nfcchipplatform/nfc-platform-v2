@@ -15,7 +15,15 @@ interface ProfileSummary { id: string; username: string | null; name: string | n
 
 const ELEMENT_TAGS = ["Fire", "Wind", "Void", "Earth", "Water"];
 
-export default function InteractiveHand({ slots, themeId = "default" }: { slots: (ProfileSummary | null)[]; themeId?: string }) {
+export default function InteractiveHand({
+  slots,
+  themeId = "default",
+  ownerImage = null,
+}: {
+  slots: (ProfileSummary | null)[];
+  themeId?: string;
+  ownerImage?: string | null;
+}) {
   // 最初からLOADING状態でhandopenを表示（読み込みを待たない）
   const theme = useMemo(() => getTheme(themeId), [themeId]);
   const auraAccentColor = theme.accentColor;
@@ -25,24 +33,24 @@ export default function InteractiveHand({ slots, themeId = "default" }: { slots:
   const soulCanvasRef = useRef<SoulCanvasHandle | null>(null);
   
   const equippedElementTags = useMemo(() => {
+    // 4本指（人差し指〜小指）に装備されているエレメントのみを合算
     return slots
-      .map((slot, index) => (slot ? ELEMENT_TAGS[index] : null))
+      .slice(1)
+      .map((slot, index) => (slot ? ELEMENT_TAGS[index + 1] : null))
       .filter((tag): tag is string => Boolean(tag));
   }, [slots]);
 
-  const equippedUserIds = useMemo(() => {
-    return slots
-      .filter((slot): slot is ProfileSummary => Boolean(slot))
-      .map((slot) => slot.id);
-  }, [slots]);
+  const ownerElementTag = ELEMENT_TAGS[0];
 
-  const hasEquippedFinger = equippedElementTags.length > 0 || equippedUserIds.length > 0;
+  const filterElementTags = useMemo(() => {
+    return equippedElementTags.length > 0 ? equippedElementTags : [ownerElementTag];
+  }, [equippedElementTags, ownerElementTag]);
 
-  // 画像表示設定（装備がない場合は魂のみ表示）
+  // 画像表示設定（装備がなくてもオーナー属性画像を表示）
   const imageDisplayConfig: ImageDisplayConfig = useMemo(() => ({
     ...DEFAULT_IMAGE_DISPLAY_CONFIG,
-    enabled: hasEquippedFinger,
-  }), [hasEquippedFinger]);
+    enabled: true,
+  }), []);
 
   const handleAdvanceImage = useCallback(() => {
     soulCanvasRef.current?.advanceImage();
@@ -167,11 +175,12 @@ export default function InteractiveHand({ slots, themeId = "default" }: { slots:
   const nailConfigs = useMemo(() => {
     return NAIL_CONFIG.map((config, index) => {
       const user = slots[index];
+      const rawImage = config.id === "thumb" ? ownerImage : user?.image;
       // Retinaディスプレイ対応のため、幅400px + dpr_autoで高解像度を確保
-      const optimizedImageUrl = user?.image ? withCloudinaryParams(user.image) : user?.image;
+      const optimizedImageUrl = rawImage ? withCloudinaryParams(rawImage) : rawImage;
       return { config, user, optimizedImageUrl };
     });
-  }, [slots]);
+  }, [slots, ownerImage]);
 
   return (
     <div className={`relative w-full max-w-[450px] mx-auto overflow-hidden aspect-[3/4] select-none touch-none bg-transparent ${chargeFail ? "charge-fail" : ""}`}
@@ -249,7 +258,7 @@ export default function InteractiveHand({ slots, themeId = "default" }: { slots:
         phase={phase}
         isAssetsReady={isAssetsReady}
         imageDisplayConfig={imageDisplayConfig}
-        filters={{ elementTags: equippedElementTags, userIds: equippedUserIds }}
+        filters={{ elementTags: filterElementTags }}
         progress={pressProgress}
         auraColor={auraAccentColor}
         soulOpacity={soulOpacity}
@@ -292,31 +301,56 @@ export default function InteractiveHand({ slots, themeId = "default" }: { slots:
 
       {/* 3. ネイルチップ層（handcloseまたはhandgooが表示されてから表示） */}
       {nailConfigs.map(({ config, user, optimizedImageUrl }) => {
-        if (!user) return null;
+        const isThumb = config.id === "thumb";
+        if (!isThumb && !user) return null;
         // handopen（LOADING）の時は表示しない
         // handgoo（PRESSED）の時：5本すべて表示
         // handclose（STANDBY）の時：handcloseが読み込まれた後に親指以外の4本のみ表示
         const isVisible = phase === "LOADING" 
           ? false // handopenの時は表示しない
-          : phase === "PRESSED" 
-            ? true // handgooの時は5本すべて表示
-            : phase === "STANDBY" && isHandCloseReady && config.id !== "thumb"; // handcloseが読み込まれた後に親指以外の4本のみ表示
+          : phase === "PRESSED"
+            ? (isThumb ? Boolean(ownerImage) : Boolean(user)) // handgooの時は親指に自分、他4本は装備者のみ
+            : phase === "STANDBY" && isHandCloseReady && config.id !== "thumb" && Boolean(user); // handcloseは親指なし＆装備者のみ
         
+        const commonProps = {
+          className: `absolute block border-2 border-black overflow-hidden group active:scale-95 transition-all duration-400 ${isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`,
+          style: {
+            left: `${config.x}%`,
+            top: `${config.y}%`,
+            width: `${config.w}%`,
+            height: `${config.h}%`,
+            transform: `translate(-50%, -50%) rotate(${config.r}deg)`,
+            zIndex: phase === "PRESSED" ? 50 : 110, // handgooの時は後ろに、handcloseの時は前に配置してクリック可能にする
+            borderRadius: config.br,
+            WebkitTouchCallout: "none",
+          } as React.CSSProperties,
+        };
+
+        if (isThumb) {
+          return (
+            <div key={config.id} {...commonProps}>
+              {optimizedImageUrl && (
+                <Image
+                  src={optimizedImageUrl}
+                  alt="Owner nail"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 450px) 8vw, 8vw"
+                  loading="lazy"
+                />
+              )}
+            </div>
+          );
+        }
+
         return (
-          <Link key={config.id} href={`/${user.username}`}
-            className={`absolute block border-2 border-black overflow-hidden group active:scale-95 transition-all duration-400 ${isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}
-            style={{ 
-              left: `${config.x}%`, top: `${config.y}%`, width: `${config.w}%`, height: `${config.h}%`, 
-              transform: `translate(-50%, -50%) rotate(${config.r}deg)`, 
-              zIndex: phase === "PRESSED" ? 50 : 110, // handgooの時は後ろに、handcloseの時は前に配置してクリック可能にする
-              borderRadius: config.br,
-              WebkitTouchCallout: 'none'
-            }}
+          <Link key={config.id} href={`/${user?.username ?? ""}`}
+            {...commonProps}
             onContextMenu={(e) => e.preventDefault()}>
             {optimizedImageUrl && (
               <Image
                 src={optimizedImageUrl}
-                alt={user.name || ""}
+                alt={user?.name || ""}
                 fill
                 className="object-cover"
                 sizes="(max-width: 450px) 8vw, 8vw"
