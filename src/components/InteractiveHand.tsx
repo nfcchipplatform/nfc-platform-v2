@@ -306,20 +306,20 @@ export default function InteractiveHand({
         <div
           className="absolute pointer-events-none z-[125]"
           style={{
-            left: "45.59%",
-            top: "67.22%",
+            left: "58%",
+            top: "60%",
             transform: "translate(-50%, -50%)",
           }}
         >
           <svg width="120" height="120">
             <path
-              d="M60 28 Q96 60 60 92 Q24 60 60 28"
+              d="M20 60 Q60 30 100 60 Q60 90 20 60"
               stroke="rgba(0,0,0,0.25)"
               strokeWidth="3"
               fill="none"
             />
             <path
-              d="M60 28 Q96 60 60 92 Q24 60 60 28"
+              d="M20 60 Q60 30 100 60 Q60 90 20 60"
               stroke="rgba(0,0,0,0.9)"
               strokeWidth="3"
               fill="none"
