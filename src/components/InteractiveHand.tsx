@@ -42,10 +42,6 @@ export default function InteractiveHand({
 
   const ownerElementTag = ELEMENT_TAGS[0];
 
-  const filterElementTags = useMemo(() => {
-    return equippedElementTags.length > 0 ? equippedElementTags : [ownerElementTag];
-  }, [equippedElementTags, ownerElementTag]);
-
   // 画像表示設定（装備がなくてもオーナー属性画像を表示）
   const imageDisplayConfig: ImageDisplayConfig = useMemo(() => ({
     ...DEFAULT_IMAGE_DISPLAY_CONFIG,
@@ -258,7 +254,7 @@ export default function InteractiveHand({
         phase={phase}
         isAssetsReady={isAssetsReady}
         imageDisplayConfig={imageDisplayConfig}
-        filters={{ elementTags: filterElementTags }}
+        filters={{ elementTags: equippedElementTags, ownerElementTag }}
         progress={pressProgress}
         auraColor={auraAccentColor}
         soulOpacity={soulOpacity}
@@ -309,7 +305,7 @@ export default function InteractiveHand({
         const isVisible = phase === "LOADING" 
           ? false // handopenの時は表示しない
           : phase === "PRESSED"
-            ? (isThumb ? Boolean(ownerImage) : Boolean(user)) // handgooの時は親指に自分、他4本は装備者のみ
+            ? (isThumb ? Boolean(ownerImage) : false) // handgooの時は親指のみ表示
             : phase === "STANDBY" && isHandCloseReady && config.id !== "thumb" && Boolean(user); // handcloseは親指なし＆装備者のみ
         
         const commonProps = {

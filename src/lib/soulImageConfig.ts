@@ -17,6 +17,7 @@ export interface SoulImageConfig {
 export type SoulImageFilter = {
   elementTags?: string[];
   userIds?: string[];
+  ownerElementTag?: string;
 };
 
 /**
@@ -139,29 +140,54 @@ export function filterSoulImages(filters: SoulImageFilter): SoulImageConfig[] {
   const allImages = getAllSoulImages();
   const elementTags = (filters.elementTags ?? []).map(normalizeTag).filter(Boolean);
   const userIds = (filters.userIds ?? []).map(String).filter(Boolean);
+  const ownerTag = filters.ownerElementTag ? normalizeTag(filters.ownerElementTag) : "";
 
-  if (elementTags.length === 0 && userIds.length === 0) {
+  const activeTags = elementTags.length > 0 ? elementTags : ownerTag ? [ownerTag] : [];
+
+  if (activeTags.length === 0 && userIds.length === 0) {
     if (allImages.length === 0) return [];
     const randomIndex = Math.floor(Math.random() * allImages.length);
     return [allImages[randomIndex]];
   }
 
-  return allImages.filter((image) => {
+  const matchesElementTag = (image: SoulImageConfig, tag: string): boolean => {
     const imageTags = (image.tags ?? []).map(normalizeTag);
     const imageElementTags = (image.elementTags ?? []).map(normalizeTag);
+    if (imageElementTags.includes(tag) || imageTags.includes(tag)) return true;
+    const aliases = ELEMENT_TAG_ALIASES[tag] ?? [];
+    return aliases.some((alias) => imageTags.includes(alias) || imageElementTags.includes(alias));
+  };
+
+  const matchesUser = (image: SoulImageConfig): boolean => {
     const imageUserIds = (image.userIds ?? []).map(String);
+    return userIds.length === 0 || imageUserIds.some((id) => userIds.includes(id));
+  };
 
-    const matchesUser = userIds.length === 0 || imageUserIds.some((id) => userIds.includes(id));
-    const matchesElement =
-      elementTags.length === 0 ||
-      elementTags.some((tag) => {
-        if (imageElementTags.includes(tag) || imageTags.includes(tag)) return true;
-        const aliases = ELEMENT_TAG_ALIASES[tag] ?? [];
-        return aliases.some((alias) => imageTags.includes(alias) || imageElementTags.includes(alias));
-      });
+  if (activeTags.length === 0) {
+    return allImages.filter(matchesUser);
+  }
 
-    return matchesUser && matchesElement;
-  });
+  const shuffle = <T,>(items: T[]): T[] => {
+    const arr = [...items];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  };
+
+  const groups = activeTags
+    .map((tag) => allImages.filter((image) => matchesUser(image) && matchesElementTag(image, tag)))
+    .filter((group) => group.length > 0);
+
+  if (groups.length === 0) {
+    const fallback = allImages.filter(matchesUser);
+    return fallback.length > 0 ? fallback : allImages.slice(0, 1);
+  }
+
+  const minCount = Math.min(...groups.map((group) => group.length));
+  const balanced = groups.flatMap((group) => shuffle(group).slice(0, minCount));
+  return balanced.length > 0 ? balanced : allImages.slice(0, 1);
 }
 
 

@@ -106,6 +106,8 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
       {ELEMENT_LABELS.map((el, index) => {
         const user = slots[index];
         const isThumb = index === 0;
+        const isMemorySlot = !isThumb;
+        const elementGlyph = ["火", "風", "空", "地", "水"][index] || "";
         // テーマから各指の色設定を取得
         const colorClass = theme.elementColors[index] || "border-gray-200 bg-gray-50 text-gray-500";
 
@@ -119,23 +121,28 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
 
             {/* アイコン本体 - blanknail.pngを使用したマイネイル表示 */}
             <div 
-              className={`relative ${fingerShape.width} ${fingerShape.height} transition-transform hover:scale-110 active:scale-95 overflow-hidden ${isThumb ? "scale-[1.15]" : ""}`}
+              className={`relative ${fingerShape.width} ${fingerShape.height} transition-transform hover:scale-110 active:scale-95 overflow-hidden ${isThumb ? "scale-[1.2]" : ""}`}
               style={{
-                border: 'none',
-                boxShadow: 'none',
+                border: isThumb ? `2px solid ${displayAccentColor}` : '1px solid rgba(255,255,255,0.25)',
+                boxShadow: isThumb
+                  ? `0 0 18px ${displayAccentColor}88, 0 0 36px ${displayAccentColor}55`
+                  : '0 0 8px rgba(255,255,255,0.15)',
               }}
             >
               {isThumb && (
                 <div
                   className="absolute inset-0 rounded-full z-0"
                   style={{
-                    boxShadow: `0 0 16px ${displayAccentColor}55, 0 0 32px ${displayAccentColor}33`,
-                    border: `1px solid ${displayAccentColor}66`,
+                    boxShadow: `0 0 22px ${displayAccentColor}99, 0 0 44px ${displayAccentColor}55`,
+                    border: `2px solid ${displayAccentColor}99`,
                   }}
                 />
               )}
               {user ? (
-                <Link href={`/${user.username}`} className="block w-full h-full relative group">
+                <Link
+                  href={isThumb ? "/dashboard/profile" : `/${user.username}`}
+                  className="block w-full h-full relative group"
+                >
                   {/* レイヤー1: blanknail.pngをベースとして配置（光沢や質感を含む） */}
                   <div 
                     className="absolute inset-0 w-full h-full z-0"
@@ -190,7 +197,10 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                   </div>
                 </Link>
               ) : (
-                <Link href={isOwner ? "/dashboard/favorites" : "#"} className="flex flex-col items-center justify-center w-full h-full opacity-50 hover:opacity-100 transition-opacity relative">
+                <Link
+                  href={isThumb ? "/dashboard/profile" : isOwner ? "/dashboard/favorites" : "#"}
+                  className="flex flex-col items-center justify-center w-full h-full opacity-60 hover:opacity-100 transition-opacity relative"
+                >
                   {/* 未登録時はblanknail.pngのみ表示 */}
                   <div 
                     className="absolute inset-0 w-full h-full"
@@ -202,6 +212,11 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                     }}
                   />
                   <SoulOverlay auraColor={displayAccentColor} />
+                  {isMemorySlot && (
+                    <div className="absolute inset-0 flex items-center justify-center text-white/60 text-lg font-semibold tracking-wide">
+                      {elementGlyph}
+                    </div>
+                  )}
                   <div className="relative z-10 flex flex-col items-center justify-center">
                     <span className="text-xl font-light">+</span>
                     <span className="text-[8px]">ADD</span>
