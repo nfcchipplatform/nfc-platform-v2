@@ -306,8 +306,8 @@ export default function InteractiveHand({
         <div
           className="absolute pointer-events-none z-[125]"
           style={{
-            left: "58%",
-            top: "60%",
+            left: "45.59%",
+            top: "67.22%",
             transform: "translate(-50%, -50%)",
           }}
         >
