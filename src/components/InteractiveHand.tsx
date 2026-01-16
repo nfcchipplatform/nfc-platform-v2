@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { NAIL_CONFIG, NailPoint } from "../constants/soulData";
 import SoulCanvas, { SoulCanvasHandle } from "./SoulCanvas";
@@ -26,6 +27,7 @@ export default function InteractiveHand({
 }) {
   // 最初からLOADING状態でhandopenを表示（読み込みを待たない）
   const theme = useMemo(() => getTheme(themeId), [themeId]);
+  const searchParams = useSearchParams();
   const auraAccentColor = theme.accentColor;
   const [isAssetsReady, setIsAssetsReady] = useState(false);
   const [isHandCloseReady, setIsHandCloseReady] = useState(false); // handcloseが読み込まれたかどうか
@@ -71,6 +73,17 @@ export default function InteractiveHand({
     onAdvanceImage: handleAdvanceImage,
     onLikeExplosion: handleTriggerExplosion,
   });
+  const [nfcPulse, setNfcPulse] = useState(false);
+
+  useEffect(() => {
+    if (!searchParams) return;
+    const entry = searchParams.get("entry");
+    if (entry === "nfc") {
+      setNfcPulse(true);
+      const timeout = window.setTimeout(() => setNfcPulse(false), 700);
+      return () => window.clearTimeout(timeout);
+    }
+  }, [searchParams]);
   const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
@@ -197,6 +210,9 @@ export default function InteractiveHand({
         .guide-pulse {
           animation: guide-pulse 1.6s ease-in-out infinite;
         }
+        .nfc-pulse {
+          animation: nfc-pulse 0.7s ease-out both;
+        }
         @keyframes soul-burst {
           0% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; filter: drop-shadow(0 0 6px rgba(255,255,255,0.4)); }
           70% { transform: translate(-50%, -50%) scale(1.6) rotate(8deg); opacity: 0.6; }
@@ -218,6 +234,11 @@ export default function InteractiveHand({
           0% { transform: scale(0.95); opacity: 0.5; }
           50% { transform: scale(1.08); opacity: 0.9; }
           100% { transform: scale(0.95); opacity: 0.5; }
+        }
+        @keyframes nfc-pulse {
+          0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.4; }
+          50% { transform: translate(-50%, -50%) scale(1.25); opacity: 1; }
+          100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.6; }
         }
       `}</style>
       
@@ -264,6 +285,17 @@ export default function InteractiveHand({
         onPointerLeave={handlePointerUp}
         onImageChange={setCurrentSoulImage}
       />
+      {nfcPulse && isAssetsReady && (
+        <div
+          className="absolute rounded-full border border-white/60 nfc-pulse pointer-events-none z-[130]"
+          style={{
+            left: phase === "PRESSED" ? "50%" : "45.59%",
+            top: phase === "PRESSED" ? "32%" : "67.22%",
+            width: "140px",
+            height: "140px",
+          }}
+        />
+      )}
       {showGuide && isAssetsReady && (
         <div className="absolute inset-0 pointer-events-none z-[140]">
           <div

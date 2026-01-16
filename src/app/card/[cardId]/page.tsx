@@ -30,7 +30,7 @@ export default async function CardPage({ params }: CardPageProps) {
       redirect('/dashboard');
     } 
     
-    redirect(`/${userWithCard.username}`);
+    redirect(`/${userWithCard.username}?entry=nfc`);
   }
 
   return (

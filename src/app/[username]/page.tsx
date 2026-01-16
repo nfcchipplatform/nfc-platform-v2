@@ -16,7 +16,8 @@ import { Suspense } from "react";
 const prisma = new PrismaClient();
 
 // キャッシュ設定: 60秒間キャッシュ
-export const revalidate = 60;
+export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
 interface UserProfilePageProps {
   params: {
