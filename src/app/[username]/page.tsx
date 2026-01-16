@@ -122,7 +122,7 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
         </div>
       }>
         <div className="w-full z-10">
-          <InteractiveHand slots={slots} />
+          <InteractiveHand slots={slots} themeId={themeId} />
         </div>
       </Suspense>
 

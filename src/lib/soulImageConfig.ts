@@ -10,7 +10,14 @@ export interface SoulImageConfig {
   path: string; // /images/soul/xxx.jpg の形式
   name?: string; // 画像の名前（管理用）
   tags?: string[]; // タグ（後でフィルタリングなどに使用可能）
+  elementTags?: string[]; // 指のエレメント（例: ["Fire", "Wind"]）
+  userIds?: string[]; // 特定ユーザーに紐づく場合のユーザーID
 }
+
+export type SoulImageFilter = {
+  elementTags?: string[];
+  userIds?: string[];
+};
 
 /**
  * デフォルトのフォールバック画像（画像が無い時に表示）
@@ -123,5 +130,44 @@ export function getSoulImagesByTag(tag: string): SoulImageConfig[] {
  */
 export function getAllSoulImages(): SoulImageConfig[] {
   return SOUL_IMAGES.length > 0 ? SOUL_IMAGES : DEFAULT_FALLBACK_IMAGES;
+}
+
+const ELEMENT_TAG_ALIASES: Record<string, string[]> = {
+  fire: ["energy", "warm", "joy", "fire"],
+  wind: ["creative", "social", "wind"],
+  void: ["mystery", "void"],
+  earth: ["nature", "focus", "earth"],
+  water: ["calm", "healing", "water"],
+};
+
+function normalizeTag(tag: string): string {
+  return tag.trim().toLowerCase();
+}
+
+export function filterSoulImages(filters: SoulImageFilter): SoulImageConfig[] {
+  const allImages = getAllSoulImages();
+  const elementTags = (filters.elementTags ?? []).map(normalizeTag).filter(Boolean);
+  const userIds = (filters.userIds ?? []).map(String).filter(Boolean);
+
+  if (elementTags.length === 0 && userIds.length === 0) {
+    return [];
+  }
+
+  return allImages.filter((image) => {
+    const imageTags = (image.tags ?? []).map(normalizeTag);
+    const imageElementTags = (image.elementTags ?? []).map(normalizeTag);
+    const imageUserIds = (image.userIds ?? []).map(String);
+
+    const matchesUser = userIds.length === 0 || imageUserIds.some((id) => userIds.includes(id));
+    const matchesElement =
+      elementTags.length === 0 ||
+      elementTags.some((tag) => {
+        if (imageElementTags.includes(tag) || imageTags.includes(tag)) return true;
+        const aliases = ELEMENT_TAG_ALIASES[tag] ?? [];
+        return aliases.some((alias) => imageTags.includes(alias) || imageElementTags.includes(alias));
+      });
+
+    return matchesUser && matchesElement;
+  });
 }
 

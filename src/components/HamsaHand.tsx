@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { ThemeConfig, THEMES } from "@/lib/themeConfig";
 import { getFingerShape } from "@/lib/fingerShapeConfig";
+import { useSoulAnimation } from "@/hooks/useSoulAnimation";
 
 interface ProfileSummary {
   id: string;
@@ -38,6 +39,28 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
   
   // マイフィンガーの形状設定を取得
   const fingerShape = getFingerShape(fingerShapeId);
+
+  const SoulOverlay = ({ auraColor }: { auraColor: string }) => {
+    const { canvasRef } = useSoulAnimation("STANDBY", auraColor);
+    return (
+      <canvas
+        ref={canvasRef}
+        width={140}
+        height={160}
+        className="absolute inset-0 w-full h-full pointer-events-none opacity-30"
+        style={{
+          WebkitMaskImage: "url(/blanknail.png)",
+          maskImage: "url(/blanknail.png)",
+          WebkitMaskSize: "contain",
+          maskSize: "contain",
+          WebkitMaskPosition: "center",
+          maskPosition: "center",
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+        }}
+      />
+    );
+  };
 
   return (
     <div className={`relative w-full max-w-[280px] sm:max-w-[320px] mx-auto aspect-square my-10 ${theme.fontClass}`}>
@@ -114,10 +137,13 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                     }}
                   />
                   
-                  {/* レイヤー2: プロフィール画像を重ねる（blanknail.pngの形状にクリップ） */}
+                  {/* レイヤー2: もやもやオーラを薄く重ねる */}
+                  <SoulOverlay auraColor={displayAccentColor} />
+
+                  {/* レイヤー3: プロフィール画像を重ねる（blanknail.pngの形状にクリップ） */}
                   {user.image && (
                     <div
-                      className="absolute inset-0 w-full h-full z-10"
+                      className="absolute inset-0 w-full h-full z-20"
                       style={{
                         backgroundImage: `url(${user.image})`,
                         backgroundSize: 'cover',
@@ -137,9 +163,9 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                     />
                   )}
                   
-                  {/* レイヤー3: blanknailbk.pngを重ねる（透明部分から下のレイヤーが見え、白い部分が下のレイヤーを隠す） */}
+                  {/* レイヤー4: blanknailbk.pngを重ねる（透明部分から下のレイヤーが見え、白い部分が下のレイヤーを隠す） */}
                   <div 
-                    className="absolute inset-0 w-full h-full z-20"
+                    className="absolute inset-0 w-full h-full z-30"
                     style={{
                       backgroundImage: 'url(/blanknailbk.png)',
                       backgroundSize: 'contain',
@@ -149,7 +175,7 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                   />
                   
                   {/* ホバー効果 */}
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30">
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-40">
                       <span className="text-[8px] text-white font-bold">OPEN</span>
                   </div>
                 </Link>
@@ -165,6 +191,7 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                       backgroundRepeat: 'no-repeat',
                     }}
                   />
+                  <SoulOverlay auraColor={displayAccentColor} />
                   <div className="relative z-10 flex flex-col items-center justify-center">
                     <span className="text-xl font-light">+</span>
                     <span className="text-[8px]">ADD</span>

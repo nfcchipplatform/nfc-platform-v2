@@ -4,7 +4,10 @@
 import { useEffect, useRef, useState } from "react";
 import { POINT_COUNT, AURA_COLORS, PURPLE_AURA_COLOR, SHAPE_LIBRARY } from "../constants/soulData";
 
-export function useSoulAnimation(phase: "LOADING" | "STANDBY" | "PRESSED") {
+export function useSoulAnimation(
+  phase: "LOADING" | "STANDBY" | "PRESSED",
+  auraOverride?: string
+) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [targetType, setTargetType] = useState<string>("BASE");
   const [auraColor, setAuraColor] = useState(AURA_COLORS[0]);
@@ -15,6 +18,12 @@ export function useSoulAnimation(phase: "LOADING" | "STANDBY" | "PRESSED") {
   const phaseRef = useRef(phase);
 
   useEffect(() => { phaseRef.current = phase; }, [phase]);
+
+  useEffect(() => {
+    if (auraOverride) {
+      setAuraColor(auraOverride);
+    }
+  }, [auraOverride]);
 
   const triggerExplosion = () => {
     if (targetType === "BASE" || isExploding) return;
@@ -31,13 +40,22 @@ export function useSoulAnimation(phase: "LOADING" | "STANDBY" | "PRESSED") {
       if (phaseRef.current !== "STANDBY") return;
       const keys = Object.keys(SHAPE_LIBRARY).filter((key) => key !== "HEART");
       setTargetType(keys[Math.floor(Math.random() * keys.length)]);
-      setAuraColor(AURA_COLORS[Math.floor(Math.random() * AURA_COLORS.length)]);
+      if (!auraOverride) {
+        setAuraColor(AURA_COLORS[Math.floor(Math.random() * AURA_COLORS.length)]);
+      }
       setTimeout(() => { if (phaseRef.current !== "PRESSED") setTargetType("BASE"); }, 5000);
     }, 10000);
     return () => clearInterval(cycle);
-  }, [phase, isExploding]);
+  }, [phase, isExploding, auraOverride]);
 
-  useEffect(() => { if (phase === "PRESSED") { setTargetType("BASE"); setAuraColor(AURA_COLORS[Math.floor(Math.random() * AURA_COLORS.length)]); } }, [phase]);
+  useEffect(() => {
+    if (phase === "PRESSED") {
+      setTargetType("BASE");
+      if (!auraOverride) {
+        setAuraColor(AURA_COLORS[Math.floor(Math.random() * AURA_COLORS.length)]);
+      }
+    }
+  }, [phase, auraOverride]);
 
   // ハートが残っている場合は通常形状に戻す
   useEffect(() => {
@@ -74,7 +92,8 @@ export function useSoulAnimation(phase: "LOADING" | "STANDBY" | "PRESSED") {
           p.vx += (tx - p.x) * 0.08; p.vy += (ty - p.y) * 0.08;
           p.vx *= 0.8; p.vy *= 0.8; p.x += p.vx; p.y += p.vy;
         });
-        ctx.beginPath(); ctx.strokeStyle = layer === 1 ? PURPLE_AURA_COLOR : auraColor; ctx.lineWidth = 2.5; ctx.shadowBlur = 15; ctx.shadowColor = ctx.strokeStyle as string;
+        const baseColor = layer === 1 ? PURPLE_AURA_COLOR : (auraOverride ?? auraColor);
+        ctx.beginPath(); ctx.strokeStyle = baseColor; ctx.lineWidth = 2.5; ctx.shadowBlur = 15; ctx.shadowColor = ctx.strokeStyle as string;
         ctx.globalCompositeOperation = "screen";
         for (let i = 0; i <= pts.length; i++) {
           const p0 = pts[i % pts.length], p1 = pts[(i+1) % pts.length];

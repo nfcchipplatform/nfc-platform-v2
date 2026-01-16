@@ -6,12 +6,62 @@
 import { useEffect, useRef, useState } from "react";
 import { POINT_COUNT, AURA_COLORS, PURPLE_AURA_COLOR, SHAPE_LIBRARY } from "../constants/soulData";
 import { selectSoulImage, ImageDisplayConfig, DEFAULT_IMAGE_DISPLAY_CONFIG } from "../lib/soulImageDisplayAlgorithm";
-import { SoulImageConfig, getAllSoulImages } from "../lib/soulImageConfig";
+import { SoulImageConfig, SoulImageFilter, filterSoulImages } from "../lib/soulImageConfig";
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const normalized = hex.replace("#", "");
+  if (normalized.length !== 6) return null;
+  const r = parseInt(normalized.slice(0, 2), 16);
+  const g = parseInt(normalized.slice(2, 4), 16);
+  const b = parseInt(normalized.slice(4, 6), 16);
+  return { r, g, b };
+}
+
+function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
+  const rn = r / 255;
+  const gn = g / 255;
+  const bn = b / 255;
+  const max = Math.max(rn, gn, bn);
+  const min = Math.min(rn, gn, bn);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case rn:
+        h = (gn - bn) / d + (gn < bn ? 6 : 0);
+        break;
+      case gn:
+        h = (bn - rn) / d + 2;
+        break;
+      default:
+        h = (rn - gn) / d + 4;
+        break;
+    }
+    h /= 6;
+  }
+
+  return { h, s, l };
+}
+
+function applySaturation(hex: string, saturationScale: number): string {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return hex;
+  const { h, s, l } = rgbToHsl(rgb.r, rgb.g, rgb.b);
+  const nextS = Math.min(1, Math.max(0, s * saturationScale));
+  return `hsl(${Math.round(h * 360)}, ${Math.round(nextS * 100)}%, ${Math.round(l * 100)}%)`;
+}
 
 export function useSoulAnimationWithImage(
   phase: "LOADING" | "STANDBY" | "PRESSED",
   imageDisplayConfig: ImageDisplayConfig = DEFAULT_IMAGE_DISPLAY_CONFIG,
-  effect?: { forceShape?: string; burst?: boolean }
+  effect?: { forceShape?: string; burst?: boolean },
+  filters: SoulImageFilter = {},
+  progress: number = 0,
+  auraOverride?: string
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -30,6 +80,12 @@ export function useSoulAnimationWithImage(
 
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
+  useEffect(() => {
+    if (auraOverride) {
+      setAuraColor(auraOverride);
+    }
+  }, [auraOverride]);
+
   const preloadImage = (image: SoulImageConfig | null) => {
     if (!image) return;
     if (imageCacheRef.current.has(image.path)) return;
@@ -45,7 +101,7 @@ export function useSoulAnimationWithImage(
   };
 
   const getNextUnseenImage = (): SoulImageConfig | null => {
-    const allImages = getAllSoulImages();
+    const allImages = filterSoulImages(filters);
     if (allImages.length === 0) return null;
 
     // 未使用の画像を優先
@@ -121,7 +177,13 @@ export function useSoulAnimationWithImage(
       console.error("Failed to load soul image:", selectedImage.path);
     };
     img.src = selectedImage.path;
-  }, [imageDisplayConfig, targetType]);
+  }, [imageDisplayConfig, targetType, filters]);
+
+  useEffect(() => {
+    prefetchQueueRef.current = [];
+    usedImageIdsRef.current.clear();
+    setCurrentSoulImage(null);
+  }, [filters]);
 
   const advanceImage = () => {
     if (!imageDisplayConfig.enabled) return;
@@ -165,18 +227,22 @@ export function useSoulAnimationWithImage(
       if (phaseRef.current !== "STANDBY") return;
       const keys = Object.keys(SHAPE_LIBRARY).filter((key) => key !== "HEART");
       setTargetType(keys[Math.floor(Math.random() * keys.length)]);
-      setAuraColor(AURA_COLORS[Math.floor(Math.random() * AURA_COLORS.length)]);
+      if (!auraOverride) {
+        setAuraColor(AURA_COLORS[Math.floor(Math.random() * AURA_COLORS.length)]);
+      }
       setTimeout(() => { if (phaseRef.current !== "PRESSED") setTargetType("BASE"); }, 5000);
     }, 10000);
     return () => clearInterval(cycle);
-  }, [phase, isExploding]);
+  }, [phase, isExploding, auraOverride]);
 
   useEffect(() => { 
     if (phase === "PRESSED") { 
       setTargetType("BASE"); 
-      setAuraColor(AURA_COLORS[Math.floor(Math.random() * AURA_COLORS.length)]); 
+      if (!auraOverride) {
+        setAuraColor(AURA_COLORS[Math.floor(Math.random() * AURA_COLORS.length)]); 
+      }
     } 
-  }, [phase]);
+  }, [phase, auraOverride]);
 
   // ハートが残っている場合は通常形状に戻す
   useEffect(() => {
@@ -195,7 +261,8 @@ export function useSoulAnimationWithImage(
     let animationFrameId: number;
 
     const render = () => {
-      time += 0.04;
+      const speed = 1 + Math.min(1, Math.max(0, progress)) * 1.5;
+      time += 0.04 * speed;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       [pointsRef.current, purplePointsRef.current].forEach((pts, layer) => {
@@ -282,7 +349,9 @@ export function useSoulAnimationWithImage(
         
         // 魂の線を描画（画像の上に重ねる）
         ctx.beginPath();
-        ctx.strokeStyle = layer === 1 ? PURPLE_AURA_COLOR : auraColor;
+        const saturationScale = 1 + Math.min(1, Math.max(0, progress)) * 0.7;
+        const baseColor = layer === 1 ? PURPLE_AURA_COLOR : (auraOverride ?? auraColor);
+        ctx.strokeStyle = applySaturation(baseColor, saturationScale);
         ctx.lineWidth = 2.5;
         ctx.shadowBlur = 15;
         ctx.shadowColor = ctx.strokeStyle as string;
@@ -306,7 +375,7 @@ export function useSoulAnimationWithImage(
     
     render();
     return () => cancelAnimationFrame(animationFrameId);
-  }, [targetType, auraColor, phase, isExploding, imageDisplayConfig]);
+  }, [targetType, auraColor, phase, isExploding, imageDisplayConfig, progress]);
 
   return { 
     canvasRef, 

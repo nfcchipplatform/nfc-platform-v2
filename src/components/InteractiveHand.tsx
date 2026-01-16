@@ -4,36 +4,69 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { NAIL_CONFIG, NailPoint } from "../constants/soulData";
-import { useSoulAnimationWithImage } from "../hooks/useSoulAnimationWithImage";
+import SoulCanvas, { SoulCanvasHandle } from "./SoulCanvas";
+import { useHandInteraction } from "../hooks/useHandInteraction";
 import { ImageDisplayConfig, DEFAULT_IMAGE_DISPLAY_CONFIG } from "../lib/soulImageDisplayAlgorithm";
+import { getTheme } from "../lib/themeConfig";
+import { withCloudinaryParams } from "../utils/imageLoader";
+import { SoulImageConfig } from "../lib/soulImageConfig";
 
 interface ProfileSummary { id: string; username: string | null; name: string | null; image: string | null; }
 
-export default function InteractiveHand({ slots }: { slots: (ProfileSummary | null)[] }) {
+const ELEMENT_TAGS = ["Fire", "Wind", "Void", "Earth", "Water"];
+
+export default function InteractiveHand({ slots, themeId = "default" }: { slots: (ProfileSummary | null)[]; themeId?: string }) {
   // 最初からLOADING状態でhandopenを表示（読み込みを待たない）
-  const [phase, setPhase] = useState<"LOADING" | "STANDBY" | "PRESSED">("LOADING");
+  const theme = useMemo(() => getTheme(themeId), [themeId]);
+  const auraAccentColor = theme.accentColor;
   const [isAssetsReady, setIsAssetsReady] = useState(false);
   const [isHandCloseReady, setIsHandCloseReady] = useState(false); // handcloseが読み込まれたかどうか
-  const [pressedStartTime, setPressedStartTime] = useState<number | null>(null);
-  const [soulOpacity, setSoulOpacity] = useState(0.8);
+  const [currentSoulImage, setCurrentSoulImage] = useState<SoulImageConfig | null>(null);
+  const soulCanvasRef = useRef<SoulCanvasHandle | null>(null);
   
-  // 画像表示設定（デフォルトで有効、画像が無い場合はフォールバック画像を表示）
+  const equippedElementTags = useMemo(() => {
+    return slots
+      .map((slot, index) => (slot ? ELEMENT_TAGS[index] : null))
+      .filter((tag): tag is string => Boolean(tag));
+  }, [slots]);
+
+  const equippedUserIds = useMemo(() => {
+    return slots
+      .filter((slot): slot is ProfileSummary => Boolean(slot))
+      .map((slot) => slot.id);
+  }, [slots]);
+
+  const hasEquippedFinger = equippedElementTags.length > 0 || equippedUserIds.length > 0;
+
+  // 画像表示設定（装備がない場合は魂のみ表示）
   const imageDisplayConfig: ImageDisplayConfig = useMemo(() => ({
     ...DEFAULT_IMAGE_DISPLAY_CONFIG,
-    enabled: true, // 画像表示を有効にする
-  }), []);
+    enabled: hasEquippedFinger,
+  }), [hasEquippedFinger]);
 
-  const likeTimeoutRef = useRef<number | null>(null);
-  const likedThisPressRef = useRef(false);
-  const [showLike, setShowLike] = useState(false);
-  const [likeBurst, setLikeBurst] = useState(false);
+  const handleAdvanceImage = useCallback(() => {
+    soulCanvasRef.current?.advanceImage();
+  }, []);
 
-  // フックからアニメーション状態を取得（画像表示機能付き）
-  const { canvasRef, targetType, triggerExplosion, isExploding, currentSoulImage, advanceImage } = useSoulAnimationWithImage(
+  const handleTriggerExplosion = useCallback(() => {
+    soulCanvasRef.current?.triggerExplosion();
+  }, []);
+
+  const {
     phase,
-    imageDisplayConfig,
-    { burst: likeBurst }
-  );
+    setPhase,
+    soulOpacity,
+    pressProgress,
+    chargeFail,
+    showLike,
+    likeBurst,
+    handlePointerDown,
+    handlePointerUp,
+  } = useHandInteraction({
+    currentSoulImage,
+    onAdvanceImage: handleAdvanceImage,
+    onLikeExplosion: handleTriggerExplosion,
+  });
 
   // ネイルコレクション（5本すべて）の画像を特定
   const nailCollectionImages = useMemo(() => {
@@ -54,9 +87,7 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
         return new Promise((resolve) => {
           const img = document.createElement('img');
           // Cloudinary最適化パラメータを追加（高解像度対応）
-          const optimizedSrc = src?.startsWith('http') 
-            ? `${src}?f_auto,q_auto,w_400,dpr_auto` 
-            : src;
+          const optimizedSrc = src ? withCloudinaryParams(src) : src;
           img.src = optimizedSrc;
           img.onload = () => resolve();
           img.onerror = () => resolve(); // エラーでも続行
@@ -93,105 +124,17 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
         await new Promise(resolve => setTimeout(resolve, remainingTime));
       }
       
-      // 5. ローディング完了（ネイル画像とhandcloseが確実に読み込まれた後にSTANDBYに移行）
+      // 5. ローディング完了（ネイル画像とhandcloseが確実に読み込まれた後に表示）
       setIsAssetsReady(true);
-      setPhase("STANDBY");
     };
     preload();
   }, [slots, nailCollectionImages]);
 
-  // 指を閉じる/開く処理の共通化（メモ化で再レンダリングを防止）
-  const handlePointerDown = useCallback(() => {
-    setPhase("PRESSED");
-    setPressedStartTime(Date.now());
-    likedThisPressRef.current = false;
-  }, []);
-  const handlePointerUp = useCallback(() => {
-    if (likedThisPressRef.current) return;
-    setPhase("STANDBY");
-    setPressedStartTime(null);
-    setSoulOpacity(0.8);
-    const shouldAdvance = !likedThisPressRef.current;
-    likedThisPressRef.current = false;
-    if (likeTimeoutRef.current) {
-      window.clearTimeout(likeTimeoutRef.current);
-      likeTimeoutRef.current = null;
-    }
-    // LIKEされなかった場合はすぐ次の画像へ
-    if (shouldAdvance) {
-      advanceImage();
-    }
-  }, []);
-
-  // handgooを3秒保持したらLIKEを記録（過去20件のみ保持）
   useEffect(() => {
-    if (phase !== "PRESSED" || !currentSoulImage || likedThisPressRef.current) return;
-    if (likeTimeoutRef.current) {
-      window.clearTimeout(likeTimeoutRef.current);
+    if (isAssetsReady) {
+      setPhase("STANDBY");
     }
-
-    likeTimeoutRef.current = window.setTimeout(() => {
-      if (likedThisPressRef.current || phase !== "PRESSED") return;
-      likedThisPressRef.current = true;
-
-      if (typeof window === "undefined") return;
-      const key = "soulLikeHistory";
-      const existingRaw = window.localStorage.getItem(key);
-      const existing = existingRaw ? JSON.parse(existingRaw) : [];
-      const nextEntry = {
-        id: currentSoulImage.id,
-        path: currentSoulImage.path,
-        tags: currentSoulImage.tags ?? [],
-        likedAt: new Date().toISOString(),
-      };
-      const updated = [nextEntry, ...existing].slice(0, 20);
-      window.localStorage.setItem(key, JSON.stringify(updated));
-
-      // LIKE演出（手は押された状態のまま、バースト後に戻す）
-      setShowLike(true);
-      setLikeBurst(true);
-      window.setTimeout(() => setShowLike(false), 1200);
-      window.setTimeout(() => {
-        setLikeBurst(false);
-        // バーストが終わったらhandcloseに戻して次の未表示画像へ
-        setPhase("STANDBY");
-        setPressedStartTime(null);
-        setSoulOpacity(0.8);
-        advanceImage();
-      }, 900);
-    }, 3000);
-
-    return () => {
-      if (likeTimeoutRef.current) {
-        window.clearTimeout(likeTimeoutRef.current);
-        likeTimeoutRef.current = null;
-      }
-    };
-  }, [phase, currentSoulImage]);
-
-  // STANDBYに戻ったらハート演出をリセット
-  useEffect(() => {
-    if (phase === "STANDBY") {
-      setLikeBurst(false);
-      setShowLike(false);
-    }
-  }, [phase]);
-
-  // 押し続けている時間に応じて魂の不透明度を調整（0.6秒かけて）
-  useEffect(() => {
-    if (phase !== "PRESSED" || pressedStartTime === null) return;
-
-    const FADE_DURATION = 600; // 0.6秒
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - pressedStartTime;
-      const progress = Math.min(elapsed / FADE_DURATION, 1.0);
-      
-      // 魂の不透明度を0.8から1.0に上げる（handの上に濃い魂が重なる）
-      setSoulOpacity(0.8 + (0.2 * progress));
-    }, 16); // 約60fps
-
-    return () => clearInterval(interval);
-  }, [phase, pressedStartTime]);
+  }, [isAssetsReady, setPhase]);
   
   // 手の画像URLをメモ化
   const handImageSrc = useMemo(() => {
@@ -205,15 +148,13 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
     return NAIL_CONFIG.map((config, index) => {
       const user = slots[index];
       // Retinaディスプレイ対応のため、幅400px + dpr_autoで高解像度を確保
-      const optimizedImageUrl = user?.image?.startsWith('http') 
-        ? `${user.image}?f_auto,q_auto,w_400,dpr_auto` 
-        : user?.image;
+      const optimizedImageUrl = user?.image ? withCloudinaryParams(user.image) : user?.image;
       return { config, user, optimizedImageUrl };
     });
   }, [slots]);
 
   return (
-    <div className="relative w-full max-w-[450px] mx-auto overflow-hidden aspect-[3/4] select-none touch-none bg-transparent"
+    <div className={`relative w-full max-w-[450px] mx-auto overflow-hidden aspect-[3/4] select-none touch-none bg-transparent ${chargeFail ? "charge-fail" : ""}`}
       style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
       onContextMenu={(e) => e.preventDefault()}>
       <style jsx>{`
@@ -225,6 +166,9 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
           text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
           opacity: 0.5;
         }
+        .charge-fail {
+          animation: charge-fail 0.18s ease-in-out;
+        }
         @keyframes soul-burst {
           0% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; filter: drop-shadow(0 0 6px rgba(255,255,255,0.4)); }
           70% { transform: translate(-50%, -50%) scale(1.6) rotate(8deg); opacity: 0.6; }
@@ -234,6 +178,13 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
           0% { transform: scale(0.8); opacity: 0; }
           20% { transform: scale(1.1); opacity: 1; }
           100% { transform: scale(1.2); opacity: 0; }
+        }
+        @keyframes charge-fail {
+          0% { transform: translateX(0); }
+          25% { transform: translateX(-2px); }
+          50% { transform: translateX(2px); }
+          75% { transform: translateX(-1px); }
+          100% { transform: translateX(0); }
         }
       `}</style>
       
@@ -265,34 +216,21 @@ export default function InteractiveHand({ slots }: { slots: (ProfileSummary | nu
       </div>
 
       {/* 2. 魂（もやもや）層: 背景と同じ操作イベントを追加（アセット読み込み後に表示） */}
-      {isAssetsReady && (
-        <canvas 
-          ref={canvasRef} 
-          width={400} 
-          height={400} 
-          onClick={triggerExplosion}
-          onPointerDown={handlePointerDown}
-          onPointerUp={handlePointerUp}
-          onPointerLeave={handlePointerUp} 
-          className={`absolute pointer-events-auto transition-all duration-1000 ease-in-out ${
-            isExploding ? "opacity-0 -translate-y-[200px] scale-[1.5]" : ""
-          } ${likeBurst ? "soul-burst" : ""} ${phase === "PRESSED" ? "scale-[1.2]" : targetType === "BASE" ? "scale-[0.5]" : "scale-[0.67] cursor-pointer"}`}
-          style={{ 
-            left: phase === "PRESSED" ? "50%" : "45.59%", 
-            top: phase === "PRESSED" ? "32%" : "67.22%", 
-            transform: `translate(-50%, -50%) ${
-              phase === "PRESSED" 
-                ? "scale(1.2)" 
-                : targetType === "BASE" 
-                  ? "scale(0.5)" 
-                  : "scale(0.67)"
-            }`,
-            touchAction: "none",
-            opacity: isExploding ? 0 : soulOpacity,
-            zIndex: phase === "PRESSED" ? 100 : 50 // handgooの時だけ魂を前に、handcloseの時は後ろに
-          }} 
-        />
-      )}
+      <SoulCanvas
+        ref={soulCanvasRef}
+        phase={phase}
+        isAssetsReady={isAssetsReady}
+        imageDisplayConfig={imageDisplayConfig}
+        filters={{ elementTags: equippedElementTags, userIds: equippedUserIds }}
+        progress={pressProgress}
+        auraColor={auraAccentColor}
+        soulOpacity={soulOpacity}
+        likeBurst={likeBurst}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        onImageChange={setCurrentSoulImage}
+      />
 
       {showLike && (
         <div className="absolute inset-0 flex items-center justify-center z-[120] pointer-events-none">
