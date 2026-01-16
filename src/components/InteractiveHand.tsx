@@ -312,24 +312,20 @@ export default function InteractiveHand({
           }}
         >
           <svg width="120" height="120">
-            <circle
-              cx="60"
-              cy="60"
-              r="48"
-              stroke="rgba(255,255,255,0.15)"
+            <path
+              d="M60 28 Q96 60 60 92 Q24 60 60 28"
+              stroke="rgba(0,0,0,0.25)"
               strokeWidth="3"
               fill="none"
             />
-            <circle
-              cx="60"
-              cy="60"
-              r="48"
-              stroke="rgba(255,255,255,0.85)"
+            <path
+              d="M60 28 Q96 60 60 92 Q24 60 60 28"
+              stroke="rgba(0,0,0,0.9)"
               strokeWidth="3"
               fill="none"
-              strokeDasharray={`${Math.round(2 * Math.PI * 48 * pressProgress)} ${Math.round(2 * Math.PI * 48)}`}
+              pathLength={100}
+              strokeDasharray={`${Math.round(pressProgress * 100)} 100`}
               strokeLinecap="round"
-              transform="rotate(-90 60 60)"
             />
           </svg>
         </div>
