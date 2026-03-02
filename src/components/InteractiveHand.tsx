@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { NAIL_CONFIG } from "../constants/soulData";
@@ -32,6 +32,19 @@ export default function InteractiveHand({
     phase === "IDLE" ? "/handopen.png" : phase === "PRESSING" ? "/handclose.png" : "/handgoo.png";
   const showNonThumbNails = phase === "PRESSING" || phase === "HELD";
   const showThumbNail = phase === "HELD";
+  const [isBackgroundLoaded, setIsBackgroundLoaded] = useState(false);
+
+  useEffect(() => {
+    setIsBackgroundLoaded(false);
+  }, [handImageSrc]);
+
+  useEffect(() => {
+    const sources = ["/handopen.png", "/handclose.png", "/handgoo.png"];
+    sources.forEach((src) => {
+      const img = new window.Image();
+      img.src = src;
+    });
+  }, []);
 
   const nailConfigs = useMemo(() => {
     return NAIL_CONFIG.map((config, index) => {
@@ -70,10 +83,12 @@ export default function InteractiveHand({
           quality={100}
           sizes="(max-width: 450px) 100vw, 450px"
           draggable={false}
+          onLoadingComplete={() => setIsBackgroundLoaded(true)}
         />
       </div>
 
       {nailConfigs.map(({ config, user, optimizedImageUrl }) => {
+        if (!isBackgroundLoaded) return null;
         const isThumb = config.id === "thumb";
         if (isThumb && !showThumbNail) return null;
         if (!isThumb && (!showNonThumbNails || !user)) return null;
