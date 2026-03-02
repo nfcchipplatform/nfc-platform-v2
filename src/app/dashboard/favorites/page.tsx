@@ -209,14 +209,16 @@ export default function FavoritesPage() {
                     
                     {/* 5つのスロットカード */}
                     {SLOT_CONFIG.map((slot) => (
-                        <div key={slot.id} className={`relative p-4 sm:p-5 rounded-xl border-2 bg-white shadow-sm transition-shadow hover:shadow-md ${slot.color} min-h-[180px] flex flex-col overflow-hidden`}>
-                            <div className={`absolute top-0 right-0 px-2 sm:px-3 py-1 rounded-bl-lg rounded-tr-lg text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${slot.bg} ${slot.text}`}>
+                        <div key={slot.id} className={`relative p-4 sm:p-5 rounded-xl border-2 bg-white shadow-sm transition-shadow hover:shadow-md ${slot.color} min-h-[180px] flex flex-col`}>
+                            {/* 属性ラベルは非表示 */}
+                            {/* <div className={`absolute top-0 right-0 px-2 sm:px-3 py-1 rounded-bl-lg rounded-tr-lg text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${slot.bg} ${slot.text}`}>
                                 {slot.element}
-                            </div>
+                            </div> */}
                             
                             <div className="mb-3 mt-2 pr-2">
                                 <h3 className="font-bold text-gray-800 text-sm sm:text-base">{slot.name}</h3>
-                                <p className="text-[10px] text-gray-400">{slot.desc}</p>
+                                {/* 説明文は非表示 */}
+                                {/* <p className="text-[10px] text-gray-400">{slot.desc}</p> */}
                             </div>
 
                             <div className="relative flex flex-col sm:flex-row gap-2 mt-auto">
