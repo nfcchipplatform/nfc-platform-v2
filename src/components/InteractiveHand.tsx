@@ -28,9 +28,10 @@ export default function InteractiveHand({
     holdDuration: 2000,
   });
 
-  const handImageSrc = phase === "IDLE" ? "/handopen.png" : phase === "PRESSING" ? "/handclose.png" : "/handgoo.png";
-  const shouldShowNails = phase !== "IDLE";
-  const showThumb = phase === "HELD";
+  const handImageSrc =
+    phase === "IDLE" ? "/handopen.png" : phase === "PRESSING" ? "/handclose.png" : "/handgoo.png";
+  const showNonThumbNails = phase === "PRESSING" || phase === "HELD";
+  const showThumbNail = phase === "HELD";
 
   const nailConfigs = useMemo(() => {
     return NAIL_CONFIG.map((config, index) => {
@@ -74,9 +75,8 @@ export default function InteractiveHand({
 
       {nailConfigs.map(({ config, user, optimizedImageUrl }) => {
         const isThumb = config.id === "thumb";
-        if (!shouldShowNails) return null;
-        if (isThumb && !showThumb) return null;
-        if (!isThumb && !user) return null;
+        if (isThumb && !showThumbNail) return null;
+        if (!isThumb && (!showNonThumbNails || !user)) return null;
         if (isThumb && !optimizedImageUrl) return null;
 
         const commonProps = {
