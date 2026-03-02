@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { NAIL_CONFIG } from "../constants/soulData";
 import { withCloudinaryParams } from "../utils/imageLoader";
+import { useHandInteraction } from "../hooks/useHandInteraction";
 
 interface ProfileSummary {
   id: string;
@@ -23,6 +24,13 @@ export default function InteractiveHand({
   ownerImage?: string | null;
 }) {
   void themeId;
+  const { phase, handlePointerDown, handlePointerUp } = useHandInteraction({
+    holdDuration: 2000,
+  });
+
+  const handImageSrc = phase === "IDLE" ? "/handopen.png" : phase === "PRESSING" ? "/handclose.png" : "/handgoo.png";
+  const shouldShowNails = phase !== "IDLE";
+  const showThumb = phase === "HELD";
 
   const nailConfigs = useMemo(() => {
     return NAIL_CONFIG.map((config, index) => {
@@ -34,10 +42,26 @@ export default function InteractiveHand({
   }, [slots, ownerImage]);
 
   return (
-    <div className="relative w-full max-w-[450px] mx-auto overflow-hidden aspect-[3/4] select-none touch-none bg-transparent">
-      <div className="absolute inset-0">
+    <div
+      className="relative w-full max-w-[450px] mx-auto overflow-hidden aspect-[3/4] select-none touch-none bg-transparent"
+      style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" }}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <div
+        className="absolute inset-0"
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        style={{
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          WebkitTouchCallout: "none",
+          touchAction: "none",
+          WebkitTapHighlightColor: "transparent",
+        }}
+      >
         <Image
-          src="/handclose.png"
+          src={handImageSrc}
           alt="Hand illustration"
           fill
           className="object-contain opacity-100"
@@ -50,6 +74,8 @@ export default function InteractiveHand({
 
       {nailConfigs.map(({ config, user, optimizedImageUrl }) => {
         const isThumb = config.id === "thumb";
+        if (!shouldShowNails) return null;
+        if (isThumb && !showThumb) return null;
         if (!isThumb && !user) return null;
         if (isThumb && !optimizedImageUrl) return null;
 
