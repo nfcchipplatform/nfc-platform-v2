@@ -22,7 +22,7 @@ export default function DashboardLayout({
   const menuItems = [
     { name: "ダッシュボード", path: "/dashboard" },
     { name: "プロフィール編集", path: "/dashboard/profile" },
-    { name: "マイフィンガー設定", path: "/dashboard/favorites" },
+    // { name: "マイフィンガー設定", path: "/dashboard/favorites" }, // Phase 1では非表示
     { name: "ダイレクトリンク", path: "/dashboard/direct-link" },
     { name: "アカウント設定", path: "/dashboard/settings" },
   ];

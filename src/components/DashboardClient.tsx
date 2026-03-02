@@ -10,7 +10,7 @@ import { getProfileViewCount } from "@/actions/trackView";
 import { linkNfcCard } from "@/actions/linkNfcCard";
 import { QRCodeSVG } from 'qrcode.react';
 import HamsaHand from "@/components/HamsaHand";
-import FollowButton from "@/components/FollowButton";
+// import FollowButton from "@/components/FollowButton"; // Phase 1では非表示
 
 interface ProfileSummary {
     id: string;
@@ -32,12 +32,12 @@ export default function DashboardClient() {
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
   const [viewCount, setViewCount] = useState(0);
   
-  // フォロワー/フォロー中データ
-  const [followers, setFollowers] = useState<ProfileSummary[]>([]);
-  const [following, setFollowing] = useState<ProfileSummary[]>([]);
-  const [followerCount, setFollowerCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
-  const [isLoadingFollowers, setIsLoadingFollowers] = useState(true);
+  // Phase 1ではフォロワー/フォロー中データは非表示
+  // const [followers, setFollowers] = useState<ProfileSummary[]>([]);
+  // const [following, setFollowing] = useState<ProfileSummary[]>([]);
+  // const [followerCount, setFollowerCount] = useState(0);
+  // const [followingCount, setFollowingCount] = useState(0);
+  // const [isLoadingFollowers, setIsLoadingFollowers] = useState(true);
   
   const [copySuccess, setCopySuccess] = useState('');
   const [origin, setOrigin] = useState('');
@@ -83,33 +83,34 @@ export default function DashboardClient() {
       if (result.success) setViewCount(result.count || 0);
     };
 
-    const fetchFollowersData = async () => {
-      try {
-        const res = await fetch('/api/followers');
-        if (res.ok) {
-          const data = await res.json();
-          setFollowers(data.followers || []);
-          setFollowerCount(data.count || 0);
-        }
-      } catch (error) {
-        console.error("Fetch followers error:", error);
-      } finally {
-        setIsLoadingFollowers(false);
-      }
-    };
+    // Phase 1: フォロワー/フォロー中は非表示のため取得を停止
+    // const fetchFollowersData = async () => {
+    //   try {
+    //     const res = await fetch('/api/followers');
+    //     if (res.ok) {
+    //       const data = await res.json();
+    //       setFollowers(data.followers || []);
+    //       setFollowerCount(data.count || 0);
+    //     }
+    //   } catch (error) {
+    //     console.error("Fetch followers error:", error);
+    //   } finally {
+    //     setIsLoadingFollowers(false);
+    //   }
+    // };
 
-    const fetchFollowingData = async () => {
-      try {
-        const res = await fetch('/api/following');
-        if (res.ok) {
-          const data = await res.json();
-          setFollowing(data.following || []);
-          setFollowingCount(data.count || 0);
-        }
-      } catch (error) {
-        console.error("Fetch following error:", error);
-      }
-    };
+    // const fetchFollowingData = async () => {
+    //   try {
+    //     const res = await fetch('/api/following');
+    //     if (res.ok) {
+    //       const data = await res.json();
+    //       setFollowing(data.following || []);
+    //       setFollowingCount(data.count || 0);
+    //     }
+    //   } catch (error) {
+    //     console.error("Fetch following error:", error);
+    //   }
+    // };
 
     // NFC紐付け処理 (裏で実行)
     const handleLinkCard = async () => {
@@ -131,8 +132,8 @@ export default function DashboardClient() {
 
     fetchFavoritesData();
     fetchViewCountData();
-    fetchFollowersData();
-    fetchFollowingData();
+    // fetchFollowersData();
+    // fetchFollowingData();
     handleLinkCard();
 
   }, [status, session, searchParams, router, update]);
@@ -174,14 +175,15 @@ export default function DashboardClient() {
             />
             )}
 
-            <div className="mt-8 mb-2">
+            {/* Phase 1: データを装備するボタンは非表示 */}
+            {/* <div className="mt-8 mb-2">
                 <Link
                   href="/dashboard/favorites"
                   className="inline-flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 px-6 py-3 rounded-full hover:bg-indigo-100 transition-colors shadow-sm"
                 >
                     データを装備する (Edit Slots)
                 </Link>
-            </div>
+            </div> */}
         </div>
       </div>
 
@@ -229,10 +231,9 @@ export default function DashboardClient() {
 
       </div>
 
-      {/* 3. フォロワー/フォロー中カード */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* 3. フォロワー/フォロー中カード (Phase 1では非表示) */}
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
-        {/* フォロワーカード */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
             フォロワー ({followerCount})
@@ -282,7 +283,6 @@ export default function DashboardClient() {
           )}
         </div>
 
-        {/* フォロー中カード */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
             フォロー中 ({followingCount})
@@ -332,7 +332,7 @@ export default function DashboardClient() {
           )}
         </div>
 
-      </div>
+      </div> */}
     </div>
   );
 }

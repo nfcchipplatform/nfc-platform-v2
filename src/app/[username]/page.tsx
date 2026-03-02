@@ -3,12 +3,10 @@
 import { PrismaClient } from "@prisma/client";
 import { trackProfileView } from "@/actions/trackView";
 import DirectLinkInterstitial from "@/components/DirectLinkInterstitial";
-import FollowButton from "@/components/FollowButton";
 import InteractiveHand from "@/components/InteractiveHand";
 import SalonFooter from "@/components/SalonFooter";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { checkIsFollowing } from "@/actions/followActions";
 import Link from "next/link";
 import { getTheme } from "@/lib/themeConfig";
 import { Suspense } from "react";
@@ -96,10 +94,10 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
     console.error("Failed to track view:", err);
   });
   
-  // フォロー状態チェックのみawait（必要最小限）
-  const isFollowing = session?.user?.id && !isOwner 
-    ? await checkIsFollowing(user.id) 
-    : false;
+  // Phase 1ではフォロー機能を非表示のため、状態取得も停止
+  // const isFollowing = session?.user?.id && !isOwner 
+  //   ? await checkIsFollowing(user.id) 
+  //   : false;
 
   // --- テーマ決定ロジック (常にデフォルトを使用) ---
   const themeId = "default";
@@ -136,9 +134,10 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
           
           {/* アクションボタン */}
           <div className="mt-4 flex gap-2 justify-center">
-              {!isOwner && session?.user?.id && (
+              {/* Phase 1: フォロー機能は非表示 */}
+              {/* {!isOwner && session?.user?.id && (
                   <FollowButton targetUserId={user.id} isFollowingInitial={isFollowing} />
-              )}
+              )} */}
           </div>
         </div>
 
