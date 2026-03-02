@@ -4,48 +4,34 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type HandInteractionOptions = {
-  holdDuration?: number;
+  initialDelayMs?: number;
 };
 
-export function useHandInteraction({ holdDuration = 2000 }: HandInteractionOptions = {}) {
-  const [phase, setPhase] = useState<"IDLE" | "PRESSING" | "HELD">("IDLE");
-  const [pressedStartTime, setPressedStartTime] = useState<number | null>(null);
-  const [pressProgress, setPressProgress] = useState(0);
-  const pressProgressRef = useRef(0);
-
-  const handlePointerDown = useCallback(() => {
-    setPhase("PRESSING");
-    setPressedStartTime(Date.now());
-    setPressProgress(0);
-    pressProgressRef.current = 0;
-  }, []);
-
-  const handlePointerUp = useCallback(() => {
-    setPhase("IDLE");
-    setPressedStartTime(null);
-    setPressProgress(0);
-    pressProgressRef.current = 0;
-  }, []);
+export function useHandInteraction({ initialDelayMs = 2000 }: HandInteractionOptions = {}) {
+  const [phase, setPhase] = useState<"INITIAL" | "IDLE" | "PRESSING">("INITIAL");
+  const hasLeftInitialRef = useRef(false);
 
   useEffect(() => {
-    if (phase !== "PRESSING" || pressedStartTime === null) return;
+    if (phase !== "INITIAL" || hasLeftInitialRef.current) return;
+    const timeout = window.setTimeout(() => {
+      hasLeftInitialRef.current = true;
+      setPhase("IDLE");
+    }, initialDelayMs);
+    return () => window.clearTimeout(timeout);
+  }, [phase, initialDelayMs]);
 
-    const interval = window.setInterval(() => {
-      const elapsed = Date.now() - pressedStartTime;
-      const progress = Math.min(elapsed / holdDuration, 1.0);
-      setPressProgress(progress);
-      pressProgressRef.current = progress;
-      if (progress >= 1) {
-        setPhase("HELD");
-      }
-    }, 16);
+  const handlePointerDown = useCallback(() => {
+    if (phase === "INITIAL") return;
+    setPhase("PRESSING");
+  }, [phase]);
 
-    return () => window.clearInterval(interval);
-  }, [phase, pressedStartTime, holdDuration]);
+  const handlePointerUp = useCallback(() => {
+    if (phase === "INITIAL") return;
+    setPhase("IDLE");
+  }, [phase]);
 
   return {
     phase,
-    pressProgress,
     handlePointerDown,
     handlePointerUp,
   };

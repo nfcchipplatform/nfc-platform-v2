@@ -25,13 +25,13 @@ export default function InteractiveHand({
 }) {
   void themeId;
   const { phase, handlePointerDown, handlePointerUp } = useHandInteraction({
-    holdDuration: 2000,
+    initialDelayMs: 2000,
   });
 
   const handImageSrc =
-    phase === "IDLE" ? "/handopen.png" : phase === "PRESSING" ? "/handclose.png" : "/handgoo.png";
-  const showNonThumbNails = phase === "PRESSING" || phase === "HELD";
-  const showThumbNail = phase === "HELD";
+    phase === "INITIAL" ? "/handopen.png" : phase === "IDLE" ? "/handclose.png" : "/handgoo.png";
+  const showNonThumbNails = phase === "IDLE" || phase === "PRESSING";
+  const showThumbNail = phase === "PRESSING";
   const [isBackgroundLoaded, setIsBackgroundLoaded] = useState(false);
 
   useEffect(() => {
@@ -90,9 +90,10 @@ export default function InteractiveHand({
       {nailConfigs.map(({ config, user, optimizedImageUrl }) => {
         if (!isBackgroundLoaded) return null;
         const isThumb = config.id === "thumb";
-        if (isThumb && !showThumbNail) return null;
-        if (!isThumb && (!showNonThumbNails || !user)) return null;
         if (isThumb && !optimizedImageUrl) return null;
+        if (!isThumb && (!user || !optimizedImageUrl)) return null;
+        if (isThumb && !showThumbNail) return null;
+        if (!isThumb && !showNonThumbNails) return null;
 
         const commonProps = {
           className: "absolute block border-2 border-black overflow-hidden group transition-transform duration-300",
