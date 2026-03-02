@@ -186,9 +186,8 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                   </div>
                 </Link>
               ) : (
-                <Link
-                  href={isThumb ? "/dashboard/profile" : isOwner ? "/dashboard/favorites" : "#"}
-                  className="flex flex-col items-center justify-center w-full h-full opacity-60 hover:opacity-100 transition-opacity relative"
+                <div
+                  className="flex flex-col items-center justify-center w-full h-full opacity-60 relative"
                 >
                   {/* 未登録時はblanknail.pngのみ表示 */}
                   <div 
@@ -206,11 +205,12 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
                       {elementGlyph}
                     </div>
                   )}
-                  <div className="relative z-10 flex flex-col items-center justify-center">
+                  {/* Phase 1: 未割り当て時の +ADD 表示は非表示 */}
+                  {/* <div className="relative z-10 flex flex-col items-center justify-center">
                     <span className="text-xl font-light">+</span>
                     <span className="text-[8px]">ADD</span>
-                  </div>
-                </Link>
+                  </div> */}
+                </div>
               )}
             </div>
 
