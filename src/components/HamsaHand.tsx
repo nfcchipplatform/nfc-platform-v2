@@ -114,10 +114,10 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
         return (
           <div key={index} className={`absolute ${el.pos} flex flex-col items-center w-20 z-10`}>
             
-            {/* 元素ラベル */}
-            <span className={`text-[9px] font-bold uppercase tracking-tight mb-1 px-2 py-0.5 rounded-full shadow-sm border border-white/50 backdrop-blur-sm ${colorClass}`}>
+            {/* 元素ラベル (Phase 1では非表示) */}
+            {/* <span className={`text-[9px] font-bold uppercase tracking-tight mb-1 px-2 py-0.5 rounded-full shadow-sm border border-white/50 backdrop-blur-sm ${colorClass}`}>
               {el.label}
-            </span>
+            </span> */}
 
             {/* アイコン本体 - blanknail.pngを使用したマイネイル表示 */}
             <div 

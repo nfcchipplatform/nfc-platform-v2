@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { updateFavorites } from "@/actions/updateFavorites";
@@ -33,6 +33,22 @@ export default function FavoritesPage() {
     const router = useRouter();
 
     const [inputs, setInputs] = useState<string[]>(Array(5).fill(''));
+    const [suggestions, setSuggestions] = useState<Record<number, ProfileSummary[]>>({
+        1: [],
+        2: [],
+        3: [],
+        4: [],
+    });
+    const [isSuggesting, setIsSuggesting] = useState<Record<number, boolean>>({
+        1: false,
+        2: false,
+        3: false,
+        4: false,
+    });
+    const [openSlot, setOpenSlot] = useState<number | null>(null);
+    const debounceTimers = useRef<Record<number, ReturnType<typeof setTimeout> | null>>({});
+    const abortControllers = useRef<Record<number, AbortController | null>>({});
+    const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const [isFetching, setIsFetching] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -69,13 +85,88 @@ export default function FavoritesPage() {
         if (status === "unauthenticated") router.push("/login");
     }, [status, router, fetchFavorites]);
 
-    const handleInputChange = (index: number, value: string) => {
+    const scheduleSearch = (index: number, value: string) => {
+        const query = value.trim();
+
+        if (debounceTimers.current[index]) {
+            clearTimeout(debounceTimers.current[index] as ReturnType<typeof setTimeout>);
+        }
+
+        if (abortControllers.current[index]) {
+            abortControllers.current[index]?.abort();
+        }
+
+        if (!query) {
+            setIsSuggesting((prev) => ({ ...prev, [index]: false }));
+            setSuggestions((prev) => ({ ...prev, [index]: [] }));
+            return;
+        }
+
+        setIsSuggesting((prev) => ({ ...prev, [index]: true }));
+
+        debounceTimers.current[index] = setTimeout(async () => {
+            const controller = new AbortController();
+            abortControllers.current[index] = controller;
+            try {
+                const response = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`, {
+                    signal: controller.signal,
+                });
+                if (!response.ok) throw new Error("Search failed");
+                const data = await response.json();
+                setSuggestions((prev) => ({ ...prev, [index]: data.users || [] }));
+            } catch (err) {
+                if ((err as Error).name !== "AbortError") {
+                    console.error(err);
+                    setSuggestions((prev) => ({ ...prev, [index]: [] }));
+                }
+            } finally {
+                setIsSuggesting((prev) => ({ ...prev, [index]: false }));
+            }
+        }, 300);
+    };
+
+    const handleInputChange = (index: number, value: string, options?: { skipSearch?: boolean }) => {
+        const shouldSkipSearch = options?.skipSearch ?? false;
         const newInputs = [...inputs];
         newInputs[index] = value;
         setInputs(newInputs);
         setSuccess("");
         setError("");
+        if (!shouldSkipSearch && index > 0) {
+            setOpenSlot(index);
+            scheduleSearch(index, value);
+        }
     };
+
+    const handleSuggestionSelect = (index: number, user: ProfileSummary) => {
+        const value = user.username || user.id;
+        handleInputChange(index, value, { skipSearch: true });
+        setSuggestions((prev) => ({ ...prev, [index]: [] }));
+        setOpenSlot(null);
+    };
+
+    const handleInputFocus = (index: number) => {
+        if (blurTimer.current) clearTimeout(blurTimer.current);
+        setOpenSlot(index);
+        if (inputs[index]) {
+            scheduleSearch(index, inputs[index]);
+        }
+    };
+
+    const handleInputBlur = () => {
+        if (blurTimer.current) clearTimeout(blurTimer.current);
+        blurTimer.current = setTimeout(() => setOpenSlot(null), 150);
+    };
+
+    useEffect(() => {
+        return () => {
+            Object.values(debounceTimers.current).forEach((timer) => {
+                if (timer) clearTimeout(timer);
+            });
+            Object.values(abortControllers.current).forEach((controller) => controller?.abort());
+            if (blurTimer.current) clearTimeout(blurTimer.current);
+        };
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -128,21 +219,65 @@ export default function FavoritesPage() {
                                 <p className="text-[10px] text-gray-400">{slot.desc}</p>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row gap-2 mt-auto">
+                            <div className="relative flex flex-col sm:flex-row gap-2 mt-auto">
                                 <input
                                     type="text"
                                     value={inputs[slot.id]}
                                     onChange={(e) => handleInputChange(slot.id, e.target.value)}
+                                    onFocus={() => handleInputFocus(slot.id)}
+                                    onBlur={handleInputBlur}
                                     placeholder="ユーザーID または ユーザーネーム"
                                     className="flex-1 min-w-0 bg-gray-50 border border-gray-200 rounded px-2 sm:px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
                                 />
+                                {openSlot === slot.id && inputs[slot.id].trim() && (
+                                    <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 overflow-hidden">
+                                        {isSuggesting[slot.id] && (
+                                            <div className="px-3 py-2 text-xs text-gray-400">検索中...</div>
+                                        )}
+                                        {!isSuggesting[slot.id] && suggestions[slot.id].length === 0 && (
+                                            <div className="px-3 py-2 text-xs text-gray-400">一致するユーザーがいません</div>
+                                        )}
+                                        {suggestions[slot.id].map((user) => (
+                                            <button
+                                                type="button"
+                                                key={user.id}
+                                                onMouseDown={() => handleSuggestionSelect(slot.id, user)}
+                                                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-indigo-50 transition-colors text-left"
+                                            >
+                                                {user.image ? (
+                                                    <img
+                                                        src={user.image}
+                                                        alt=""
+                                                        className="w-7 h-7 rounded-full object-cover bg-gray-200"
+                                                    />
+                                                ) : (
+                                                    <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-500">
+                                                        ID
+                                                    </div>
+                                                )}
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-semibold text-gray-800 truncate">
+                                                        {user.name || "No Name"}
+                                                    </p>
+                                                    <p className="text-xs text-gray-400 truncate">
+                                                        @{user.username || user.id}
+                                                    </p>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                             
                             {/* クリアボタン */}
                             {inputs[slot.id] && (
                                 <button 
                                     type="button"
-                                    onClick={() => handleInputChange(slot.id, '')}
+                                    onClick={() => {
+                                        handleInputChange(slot.id, '', { skipSearch: true });
+                                        setSuggestions((prev) => ({ ...prev, [slot.id]: [] }));
+                                        setOpenSlot(null);
+                                    }}
                                     className="text-[10px] text-red-400 mt-2 hover:underline block text-right w-full"
                                 >
                                     解除する
