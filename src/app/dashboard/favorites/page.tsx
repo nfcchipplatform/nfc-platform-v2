@@ -17,13 +17,11 @@ interface ProfileSummary {
 }
 
 interface FavoritesData {
-    followingList: ProfileSummary[];
     top5Slots: (ProfileSummary | null)[];
 }
 
 // 五大元素の定義 (設定画面用)
 const SLOT_CONFIG = [
-  { id: 0, name: "親指", element: "火 (Fire)",   desc: "認証・ID・自己証明", color: "border-red-500",    bg: "bg-red-50",    text: "text-red-700" },
   { id: 1, name: "人差", element: "風 (Wind)",   desc: "伝達・SNS・拡散",   color: "border-emerald-500", bg: "bg-emerald-50", text: "text-emerald-700" },
   { id: 2, name: "中指", element: "空 (Void)",   desc: "秘密・削除・虚空",   color: "border-violet-500",  bg: "bg-violet-50",  text: "text-violet-700" },
   { id: 3, name: "薬指", element: "地 (Earth)",  desc: "資産・決済・所有",   color: "border-amber-500",   bg: "bg-amber-50",   text: "text-amber-700" },
@@ -34,12 +32,7 @@ export default function FavoritesPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
 
-    const [followingList, setFollowingList] = useState<ProfileSummary[]>([]);
     const [inputs, setInputs] = useState<string[]>(Array(5).fill(''));
-    
-    // モーダル用state
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [activeSlot, setActiveSlot] = useState<number | null>(null);
 
     const [isFetching, setIsFetching] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -55,11 +48,9 @@ export default function FavoritesPage() {
             if (!response.ok) throw new Error("Fetch failed");
             
             const data: FavoritesData = await response.json();
-            setFollowingList(data.followingList || []);
-            
             const newInputs = Array(5).fill('');
             data.top5Slots.forEach((user, index) => {
-                if (user && index < 5) {
+                if (user && index > 0 && index < 5) {
                     newInputs[index] = user.username || user.id;
                 }
             });
@@ -92,7 +83,9 @@ export default function FavoritesPage() {
         setError("");
         setSuccess("");
         
-        const result = await updateFavorites(inputs);
+        const inputsForSave = [...inputs];
+        inputsForSave[0] = "";
+        const result = await updateFavorites(inputsForSave);
 
         if (result.success) {
             setSuccess("五大元素スロットを更新しました！");
@@ -103,30 +96,19 @@ export default function FavoritesPage() {
         setIsSaving(false);
     };
 
-    // フォローリストから選択して入力する処理
-    const selectUserForSlot = (usernameOrId: string) => {
-        if (activeSlot !== null) {
-            handleInputChange(activeSlot, usernameOrId);
-            setIsModalOpen(false);
-            setActiveSlot(null);
-        }
-    };
-
-    const openSelectionModal = (index: number) => {
-        setActiveSlot(index);
-        setIsModalOpen(true);
-    };
-
     if (status === "loading" || isFetching) return <div className="p-10 text-center animate-pulse">読み込み中...</div>;
 
     return (
         <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
             <div className="flex items-center justify-between mb-8">
-                <h1 className="text-2xl font-bold text-gray-800">マイフィンガー設定</h1>
+                <h1 className="text-2xl font-bold text-gray-800">ネイル装備 / 検索</h1>
                 <Link href="/dashboard" className="text-sm text-gray-500 hover:text-indigo-600">
                     ← ダッシュボードへ戻る
                 </Link>
             </div>
+            <p className="mb-8 text-sm text-gray-500">
+                親指はあなた自身のプロフィールで固定です。人差・中指・薬指・小指に「ユーザーID」または「ユーザーネーム」を入力して装備できます。
+            </p>
             
             {error && <p className="mb-6 text-red-500 bg-red-50 p-4 rounded-lg font-bold border border-red-200">{error}</p>}
             {success && <p className="mb-6 text-green-700 bg-green-50 p-4 rounded-lg font-bold border border-green-200">{success}</p>}
@@ -151,17 +133,9 @@ export default function FavoritesPage() {
                                     type="text"
                                     value={inputs[slot.id]}
                                     onChange={(e) => handleInputChange(slot.id, e.target.value)}
-                                    placeholder="ユーザーIDを入力"
+                                    placeholder="ユーザーID または ユーザーネーム"
                                     className="flex-1 min-w-0 bg-gray-50 border border-gray-200 rounded px-2 sm:px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
                                 />
-                                <button 
-                                    type="button"
-                                    onClick={() => openSelectionModal(slot.id)}
-                                    className="bg-gray-100 text-gray-600 px-3 sm:px-4 py-2 rounded hover:bg-gray-200 transition-colors text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
-                                    title="検索"
-                                >
-                                    検索
-                                </button>
                             </div>
                             
                             {/* クリアボタン */}
@@ -197,46 +171,6 @@ export default function FavoritesPage() {
 
                 </div>
             </form>
-
-            {/* --- ユーザー選択モーダル --- */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}>
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-                        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                            <h3 className="font-bold text-gray-700">リストから選択</h3>
-                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 px-2 py-1">閉じる</button>
-                        </div>
-                        
-                        <div className="overflow-y-auto p-4 space-y-2 flex-1">
-                            {followingList.length === 0 ? (
-                                <div className="text-center py-10 text-gray-400 text-sm">
-                                    フォローしているユーザーがいません。<br/>
-                                    <Link href="/" className="text-indigo-500 underline mt-2 inline-block">ユーザーを探す</Link>
-                                </div>
-                            ) : (
-                                followingList.map(user => (
-                                    <button 
-                                        key={user.id}
-                                        onClick={() => selectUserForSlot(user.username || user.id)}
-                                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-indigo-50 transition-colors border border-transparent hover:border-indigo-100 text-left group"
-                                    >
-                                        {user.image ? (
-                                            <img src={user.image} alt="" className="w-10 h-10 rounded-full object-cover bg-gray-200" />
-                                        ) : (
-                                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">ID</div>
-                                        )}
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-bold text-sm text-gray-800 truncate">{user.name || 'No Name'}</p>
-                                            <p className="text-xs text-gray-400 truncate">@{user.username}</p>
-                                        </div>
-                                        <span className="text-xs font-bold text-indigo-600 opacity-0 group-hover:opacity-100">選択</span>
-                                    </button>
-                                ))
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
 
         </div>
     );
