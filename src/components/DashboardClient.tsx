@@ -18,6 +18,7 @@ interface ProfileSummary {
     name: string | null;
     image: string | null;
     title: string | null;
+    nfcCardId: string | null;
     isFollowing?: boolean; // 自分がそのユーザーをフォローしているか
 }
 

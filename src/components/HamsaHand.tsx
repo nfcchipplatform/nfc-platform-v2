@@ -13,6 +13,7 @@ interface ProfileSummary {
   name: string | null;
   image: string | null;
   title: string | null;
+  nfcCardId: string | null;
 }
 
 interface HamsaHandProps {

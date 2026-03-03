@@ -29,17 +29,10 @@ export async function updateFavorites(inputs: string[]) {
       // 空欄はスキップ（エラーにはしない）
       if (!input) continue;
 
-      // 1. まずIDとして検索
-      let targetUser = await prisma.user.findUnique({
-        where: { id: input },
+      // チップID(nfcCardId)として検索
+      const targetUser = await prisma.user.findUnique({
+        where: { nfcCardId: input },
       });
-
-      // 2. IDで見つからなければ、ユーザー名(username)として検索
-      if (!targetUser) {
-        targetUser = await prisma.user.findUnique({
-          where: { username: input },
-        });
-      }
 
       if (targetUser) {
         // ユーザーが見つかった場合

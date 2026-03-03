@@ -34,6 +34,7 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
     select: {
       id: true,
       username: true,
+      nfcCardId: true,
       name: true,
       image: true,
       title: true,
@@ -50,6 +51,7 @@ export default async function UserProfilePage({ params, searchParams }: UserProf
             select: {
               id: true,
               username: true,
+              nfcCardId: true,
               name: true,
               image: true,
               title: true,

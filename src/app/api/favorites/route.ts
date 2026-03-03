@@ -25,30 +25,11 @@ export async function GET(request: Request) {
         name: true,
         image: true,
         title: true,
+        nfcCardId: true,
       },
     });
 
-    // --- 2. フォロー中リスト (全件) を取得 ---
-    const rawFollowing = await prisma.follow.findMany({
-        where: { followerId: ownerId },
-        select: {
-            following: {
-                select: {
-                    id: true,
-                    username: true,
-                    name: true,
-                    image: true,
-                    title: true,
-                }
-            }
-        },
-        orderBy: { createdAt: 'desc' },
-    });
-
-    // 扱いやすい形に変換
-    const followingList = rawFollowing.map(f => f.following);
-
-    // --- 3. トップ5選抜リスト (Favorite) を取得 ---
+    // --- 2. トップ5選抜リスト (Favorite) を取得 ---
     const favorites = await prisma.favorite.findMany({
       where: { ownerId: ownerId, slotIndex: { gte: 1, lte: 4 } },
       select: {
@@ -60,6 +41,7 @@ export async function GET(request: Request) {
                   name: true,
                   image: true,
                   title: true,
+                  nfcCardId: true,
               }
           }
       },
@@ -77,9 +59,8 @@ export async function GET(request: Request) {
       }
     });
 
-    // 両方のデータを返す
+    // データを返す
     return NextResponse.json({ 
-        followingList, 
         top5Slots 
     });
 

@@ -12,6 +12,7 @@ interface ProfileSummary {
   username: string | null;
   name: string | null;
   image: string | null;
+  nfcCardId: string | null;
 }
 
 export default function InteractiveHand({
@@ -126,8 +127,9 @@ export default function InteractiveHand({
           );
         }
 
+        const cardHref = user?.nfcCardId ? `/card/${user.nfcCardId}` : "#";
         return (
-          <Link key={config.id} href={`/${user?.username ?? ""}`} {...commonProps}>
+          <Link key={config.id} href={cardHref} {...commonProps}>
             {optimizedImageUrl && (
               <Image
                 src={optimizedImageUrl}
