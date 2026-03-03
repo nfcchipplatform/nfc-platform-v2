@@ -161,8 +161,7 @@ export default function DashboardClient() {
         {/* カラフルなグラデーションラインを削除 */}
         
         <div className="p-6 text-center">
-            <h3 className="text-xs font-black text-gray-400 tracking-[0.2em] uppercase mb-1">Digital Hamsa</h3>
-            <p className="text-[10px] text-gray-300 mb-4">Five Elements Protection</p>
+            {/* タイトル文言は非表示 */}
             
             {isLoadingFavorites ? (
             <div className="h-64 flex items-center justify-center text-gray-400 text-sm animate-pulse">Initializing System...</div>
