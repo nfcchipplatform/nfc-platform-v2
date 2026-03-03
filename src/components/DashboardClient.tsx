@@ -64,6 +64,7 @@ export default function DashboardClient() {
               name: session.user.name || null,
               image: session.user.image || null,
               title: (session.user as any).title ?? null,
+              nfcCardId: (session.user as any).nfcCardId ?? null,
             };
           }
           // favorites are mapped only to slots[1..4]
