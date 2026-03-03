@@ -141,7 +141,9 @@ export default function DashboardClient() {
   }, [status, session, searchParams, router, update]);
 
   const profileUrl = (status === "authenticated" && origin) 
-    ? `${origin}/${(session.user as any).username || ''}` 
+    ? ((session.user as any).nfcCardId
+        ? `${origin}/card/${(session.user as any).nfcCardId}`
+        : `${origin}/${(session.user as any).username || ''}`)
     : "";
 
   const copyUrlToClipboard = () => {

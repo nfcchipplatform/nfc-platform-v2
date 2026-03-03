@@ -107,7 +107,13 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
             >
               {user ? (
                 <Link
-                  href={isThumb ? "/dashboard/profile" : `/${user.username}`}
+                  href={
+                    isThumb
+                      ? "/dashboard/profile"
+                      : user.nfcCardId
+                        ? `/card/${user.nfcCardId}`
+                        : "#"
+                  }
                   className="block w-full h-full relative group"
                 >
                   {/* レイヤー1: blanknail.pngをベースとして配置（光沢や質感を含む） */}
