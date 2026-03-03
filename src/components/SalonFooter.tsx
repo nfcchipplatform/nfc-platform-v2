@@ -16,7 +16,7 @@ interface SalonFooterProps {
 export default function SalonFooter({ salon }: SalonFooterProps) {
     return (
         <div className="w-full mt-12 pt-8 pb-4 border-t border-gray-200/50 flex flex-col items-center text-center z-10">
-            <p className="text-[10px] text-gray-400 mb-4 uppercase tracking-widest">Presented by</p>
+            {/* Presented by は非表示 */}
             
             <div className="flex items-center gap-4 bg-white/50 backdrop-blur-sm p-4 rounded-xl shadow-sm border border-gray-100 max-w-sm w-full mx-4">
                 {/* 店舗画像 */}
