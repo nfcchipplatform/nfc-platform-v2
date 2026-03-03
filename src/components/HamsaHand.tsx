@@ -77,30 +77,7 @@ export default function HamsaHand({ slots, isOwner = false, themeId = "default",
          <div className="absolute w-[80%] h-[80%] border-[1px] border-current rounded-full opacity-30" style={{ color: displayAccentColor }}></div>
       </div> */}
 
-      {/* --- 中心のプロフィールアイコン --- */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-        <div 
-          className="relative w-24 h-24 rounded-full shadow-2xl border-4 z-20 transition-transform hover:scale-105 overflow-hidden bg-white"
-          style={{ borderColor: displayAccentColor }}
-        >
-          {profileImage ? (
-            <img 
-              src={profileImage} 
-              alt="Profile" 
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
-              <span className="text-xs">No Img</span>
-            </div>
-          )}
-            
-            {/* サイバーテーマの場合のスキャンライン演出 */}
-            {theme.id === 'cyber' && (
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-500/10 to-transparent animate-pulse"></div>
-            )}
-        </div>
-      </div>
+      {/* --- 中心のプロフィールアイコン（親指と重複するため非表示） --- */}
 
       {/* --- 5本の指 --- */}
       {ELEMENT_LABELS.map((el, index) => {
