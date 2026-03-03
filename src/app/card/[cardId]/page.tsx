@@ -1,6 +1,9 @@
 // src/app/card/[cardId]/page.tsx
 
 import { PrismaClient } from "@prisma/client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 
 const prisma = new PrismaClient();
@@ -20,32 +23,16 @@ export default async function CardPage({ params }: CardPageProps) {
     where: { nfcCardId: cardId },
     select: {
       id: true,
-      name: true,
-      image: true,
+      username: true,
     },
   });
 
   if (userWithCard) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
-        <div className="p-8 bg-white rounded-xl shadow-lg w-full max-w-md text-center">
-          <h1 className="text-2xl font-bold mb-6 text-gray-800">
-            {userWithCard.name || "Unknown"} のネイル
-          </h1>
-          {userWithCard.image ? (
-            <img
-              src={userWithCard.image}
-              alt={userWithCard.name || "Nail"}
-              className="w-32 h-32 rounded-full object-cover mx-auto bg-gray-100"
-            />
-          ) : (
-            <div className="w-32 h-32 rounded-full bg-gray-100 mx-auto flex items-center justify-center text-gray-400">
-              No Image
-            </div>
-          )}
-        </div>
-      </div>
-    );
+    const session = await getServerSession(authOptions);
+    if (session?.user?.id === userWithCard.id) {
+      redirect('/dashboard');
+    }
+    redirect(`/${userWithCard.username}?entry=nfc`);
   }
 
   return (
